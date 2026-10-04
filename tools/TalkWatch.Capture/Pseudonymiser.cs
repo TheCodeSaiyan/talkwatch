@@ -55,7 +55,7 @@ public sealed partial class Pseudonymiser(byte[] key)
     private static partial Regex ProseField();
 
     // Property names that contain a trigger word but hold something that is never personal.
-    [GeneratedRegex(@"^(hostname|filename|file_name|typename|type_name|username_attribute|content_?type|content_?length|text_?direction)$|file_?name$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^(filename|file_name|typename|type_name|username_attribute|content_?type|content_?length|text_?direction)$|file_?name$", RegexOptions.IgnoreCase)]
     private static partial Regex NotPersonal();
 
     // Menu, group and attendant titles are chosen by the business, and often name it.
@@ -63,6 +63,13 @@ public sealed partial class Pseudonymiser(byte[] key)
     private static partial Regex TitleField();
 
     private readonly Dictionary<string, string> _titles = new(StringComparer.Ordinal);
+
+    // A console's hostname is whatever whoever set it up called it, which can name them or the business. Kept consistent
+    // rather than made a person's name, so it still reads as a machine.
+    [GeneratedRegex(@"^host_?name$", RegexOptions.IgnoreCase)]
+    private static partial Regex HostField();
+
+    private readonly Dictionary<string, string> _hosts = new(StringComparer.Ordinal);
 
     [GeneratedRegex(@"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")]
     private static partial Regex Email();
@@ -241,6 +248,11 @@ public sealed partial class Pseudonymiser(byte[] key)
         if (TitleField().IsMatch(property))
         {
             return Consistent(_titles, text, n => $"Title {n}");
+        }
+
+        if (HostField().IsMatch(property))
+        {
+            return Consistent(_hosts, text, n => $"console-{n}");
         }
 
         if (SecretField().IsMatch(property))
