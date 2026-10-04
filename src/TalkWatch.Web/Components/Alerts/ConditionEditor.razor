@@ -1,0 +1,190 @@
+@* One condition: lines, a weekly window, or callers. Changes go straight into the condition it is given. *@
+@using TalkWatch.Core.Alerts
+@using TalkWatch.Core.Calls
+
+@switch (Condition.Kind)
+{
+    case EditCondition.WordsKind:
+        <span>the voicemail says</span>
+        <input class="callers" aria-label="Words or phrases" placeholder="urgent, burst pipe, cancel" @bind="Condition.Words" />
+        <span class="muted" style="font-size: 12px">any of them, whole words; whoever the flow tells learns they were said</span>
+        break;
+
+    case EditCondition.RangLongerKind:
+        <span>it rang for more than</span>
+        <input type="number" class="minutes" min="1" max="@RangLongerCondition.MaxSeconds" aria-label="Seconds" @bind="Condition.RingSeconds" />
+        <span>seconds before it was answered, went to voicemail or they hung up</span>
+        break;
+
+    case EditCondition.ForwardedKind:
+        <span>it</span>
+        <select aria-label="Put through outside or not" @bind="Condition.Forwarded">
+            <option value="true">was put through to an outside contact</option>
+            <option value="false">was not put through to an outside contact</option>
+        </select>
+        <span class="muted" style="font-size: 12px">a mobile in a ring group, a switchboard option or an overflow; an incoming call flow then starts as Talk puts it through</span>
+        break;
+
+    case EditCondition.KnownKind:
+        <span>the caller</span>
+        <select aria-label="Known or not" @bind="Condition.Known">
+            <option value="true">is someone known</option>
+            <option value="false">is not someone known</option>
+        </select>
+        <span class="muted" style="font-size: 12px">a name of their own on the call, or a contact with their number</span>
+        break;
+
+    case EditCondition.AbroadKind:
+        <span>the caller rang from</span>
+        <select aria-label="Where from" @bind="Condition.Abroad">
+            <option value="true">abroad</option>
+            <option value="false">this country</option>
+        </select>
+        <span class="muted" style="font-size: 12px">told by their number; withheld callers are neither</span>
+        break;
+
+    case EditCondition.QualityKind:
+        <span>call quality was below</span>
+        <input type="number" class="minutes" min="1" max="100" aria-label="Score" @bind="Condition.QualityBelow" />
+        <span>of 100</span>
+        break;
+
+    case EditCondition.MenuKind:
+        <span>the caller chose</span>
+        @foreach (var item in Condition.MenuItems.ToList())
+        {
+            <span class="chip">@Names.MenuOptions.GetValueOrDefault(item, "a removed option") <button type="button" class="remove" aria-label="Remove @Names.MenuOptions.GetValueOrDefault(item, "option")" @onclick="() => Condition.MenuItems.Remove(item)">×</button></span>
+        }
+        <select @key="Condition.MenuItems.Count" aria-label="Add a menu option" value="" @onchange="AddMenuItem">
+            <option value="">@(Condition.MenuItems.Count == 0 ? "Choose a menu option…" : "or…")</option>
+            @foreach (var (id, name) in Names.MenuOptions.Where(o => !Condition.MenuItems.Contains(o.Key)).OrderBy(o => o.Value))
+            {
+                <option value="@id">@name</option>
+            }
+        </select>
+        break;
+
+    case EditCondition.RepeatKind:
+        <span>the caller has rung</span>
+        <input type="number" class="minutes" min="2" max="@RepeatCallerCondition.MaxCalls" aria-label="Calls" @bind="Condition.RepeatCalls" />
+        <span>times in</span>
+        <input type="number" class="minutes" min="1" max="@Flows.MaxWaitMinutes" aria-label="Minutes" @bind="Condition.RepeatMinutes" />
+        <span>minutes, this call included</span>
+        break;
+
+    case EditCondition.CallerMissedKind:
+        <span>the caller has gone unanswered</span>
+        <input type="number" class="minutes" min="1" max="@CallerMissedCondition.MaxCalls" aria-label="Times" @bind="Condition.MissedCalls" />
+        <span>times in the last</span>
+        <input type="number" class="minutes" min="1" max="168" aria-label="Hours" @bind="Condition.MissedHours" />
+        <span>hours, this call included (missed or sent to voicemail)</span>
+        break;
+
+    case EditCondition.NumberMissedKind:
+        <span>the number it came in on has gone unanswered</span>
+        <input type="number" class="minutes" min="1" max="@NumberMissedCondition.MaxCalls" aria-label="Calls" @bind="Condition.MissedCalls" />
+        <span>times in the last</span>
+        <input type="number" class="minutes" min="1" max="@NumberMissedCondition.MaxMinutes" aria-label="Minutes" @bind="Condition.MissedMinutes" />
+        <span>minutes, this call included</span>
+        break;
+
+    case EditCondition.WaitingKind:
+        <span>at least</span>
+        <input type="number" class="minutes" min="1" max="@WaitingCallersCondition.MaxCallers" aria-label="Callers" @bind="Condition.WaitingCallers" />
+        <span>missed callers on that number are still to be called back</span>
+        break;
+
+    case EditCondition.AnswerRateKind:
+        <span>that number's answer rate over the last</span>
+        <input type="number" class="minutes" min="1" max="@AnswerRateCondition.MaxHours" aria-label="Hours" @bind="Condition.RateHours" />
+        <span>hours is below</span>
+        <input type="number" class="minutes" min="1" max="100" aria-label="Percent" @bind="Condition.RatePercent" />
+        <span>% (once there are @AnswerRateCondition.MinimumCalls calls to judge by)</span>
+        break;
+
+    case EditCondition.LineKind or EditCondition.RangKind:
+        <span>@(Condition.Kind == EditCondition.RangKind ? "it rang" : "on")</span>
+        @foreach (var line in Condition.Lines.ToList())
+        {
+            <span class="chip">@FlowText.Line(line, Names) <button type="button" class="remove" aria-label="Remove @FlowText.Line(line, Names)" @onclick="() => Condition.Lines.Remove(line)">×</button></span>
+        }
+        @* Keyed on the count for the same reason as the recipient picker: a fresh select after each pick. *@
+        <select @key="Condition.Lines.Count" aria-label="Add a line" value="" @onchange="AddLine">
+            <option value="">@Prompt</option>
+            @foreach (var (line, name) in Names.Lines.Where(l => !Condition.Lines.Contains(l.Key) && (Condition.Kind != EditCondition.RangKind || FlowText.Rings(l.Key.Kind))).OrderBy(l => l.Value))
+            {
+                <option value="@($"{line.Kind}:{line.Key}")">@name</option>
+            }
+        </select>
+        break;
+
+    case EditCondition.CallerKind:
+        <select aria-label="Which callers" @bind="Condition.Mode">
+            <option value="@CallerMode.Except">not from</option>
+            <option value="@CallerMode.Only">only from</option>
+        </select>
+        <input class="callers" aria-label="Callers" placeholder="07700 900123, +44800*, withheld" @bind="Condition.Callers" />
+        break;
+
+    default:
+        <select aria-label="Inside or outside" @bind="Condition.Outside">
+            <option value="false">inside</option>
+            <option value="true">outside</option>
+        </select>
+        @foreach (var day in FlowText.WeekFromMonday)
+        {
+            <label class="day"><input type="checkbox" checked="@Condition.Days.Contains(day)" @onchange="e => Toggle(day, e)" /> @day.ToString()[..3]</label>
+        }
+        <input type="time" aria-label="From" @bind="Condition.Start" />
+        <span>to</span>
+        <input type="time" aria-label="To" @bind="Condition.End" />
+        break;
+}
+
+@code {
+    [Parameter, EditorRequired] public EditCondition Condition { get; set; } = default!;
+
+    [Parameter] public FlowNames Names { get; set; } = FlowNames.None;
+
+    private string Prompt => (Condition.Kind == EditCondition.RangKind, Condition.Lines.Count == 0) switch
+    {
+        (true, true) => "Choose a person or group…",
+        (true, false) => "or…",
+        (false, true) => "Choose a line…",
+        _ => "or another line…",
+    };
+
+    private void AddMenuItem(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var item) && !Condition.MenuItems.Contains(item))
+        {
+            Condition.MenuItems.Add(item);
+        }
+    }
+
+    private void AddLine(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+        var at = value?.IndexOf(':', StringComparison.Ordinal) ?? -1;
+        if (at > 0 && Enum.TryParse<LineKind>(value![..at], out var kind))
+        {
+            var line = new LineRef(kind, value[(at + 1)..]);
+            if (!Condition.Lines.Contains(line))
+            {
+                Condition.Lines.Add(line);
+            }
+        }
+    }
+
+    private void Toggle(DayOfWeek day, ChangeEventArgs e)
+    {
+        if (e.Value is true)
+        {
+            Condition.Days.Add(day);
+        }
+        else
+        {
+            Condition.Days.Remove(day);
+        }
+    }
+}

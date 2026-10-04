@@ -1,0 +1,298 @@
+@page "/operator"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@implements IDisposable
+@* The operator's screen, meant to stay open all day: calls that need someone, everyone's presence by team, and the
+   callers waiting for a call-back. TalkWatch reads Talk and never controls calls, so answering and transferring stay on
+   the handset; this screen is for seeing who is free and what is ringing, at a glance. Everything goes through the
+   viewer's access scope, in a database scope of its own for each read. *@
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
+@using TalkWatch.Core.Calls
+@using TalkWatch.Web.Components.Calls
+@using TalkWatch.Web.Services
+@using TalkWatch.Data
+@inject CurrentSite Site
+@inject LiveStatus Status
+@inject IngestionStatus Ingestion
+@inject LineDirectorySync Directory
+@inject IServiceScopeFactory Scopes
+@inject TimeProvider Clock
+
+<PageTitle>Operator · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <h1>Operator</h1>
+        <div class="sub">Who is free, what is ringing, and who is waiting to be called back.</div>
+    </div>
+    <div class="tools"><span class="cap" data-c="none" title="TalkWatch reads Talk and never controls calls">Answer and transfer on the handset</span></div>
+</header>
+
+<div class="op-grid">
+    <div class="stack" style="gap: 16px">
+        <section class="plane" aria-label="Needs someone">
+            <div class="plane-head"><div class="row" style="gap: 10px"><h2>Needs someone</h2><span class="mono muted" style="font-size: 12px">@_waiting.Count</span></div></div>
+            <div class="calls-live" role="list" aria-live="polite" data-op-waiting>
+                @if (_waiting.Count == 0)
+                {
+                    <p class="empty" style="padding: 16px">Nothing ringing or in the menu.</p>
+                }
+                @foreach (var c in _waiting)
+                {
+                    <LiveCallRow Call="c" Now="Clock.GetUtcNow()" Last="2" @key="c.Call.TalkUuid" />
+                }
+            </div>
+        </section>
+        <section class="plane" aria-label="In progress">
+            <div class="plane-head"><div class="row" style="gap: 10px"><h2>In progress</h2><span class="mono muted" style="font-size: 12px">@_talking.Count</span></div></div>
+            <div class="calls-live" role="list" data-op-talking>
+                @if (_talking.Count == 0)
+                {
+                    <p class="empty" style="padding: 16px">No one is on a call.</p>
+                }
+                @foreach (var c in _talking)
+                {
+                    <LiveCallRow Call="c" Now="Clock.GetUtcNow()" Last="1" @key="c.Call.TalkUuid" />
+                }
+            </div>
+        </section>
+    </div>
+
+    <section class="plane" aria-label="People">
+        <div class="plane-head">
+            <div class="row" style="gap: 10px"><h2>People</h2><span class="mono muted" style="font-size: 12px">@_people.Count(p => Presence(p) == "available") free of @_people.Count</span></div>
+            <div class="end"><span class="cap" data-c="talk">Talk's live feed</span></div>
+        </div>
+        @if (_people.Count == 0)
+        {
+            <p class="empty" style="padding: 16px">No one to show. Nobody's line has been granted to you, or the directory has not loaded yet.</p>
+        }
+        @foreach (var team in _teams)
+        {
+            <div class="team-h" data-team="@team.Name"><span class="eyebrow">@team.Name</span><span class="mono faint" style="font-size: 11px">@team.People.Count(p => Presence(p) == "available") free</span></div>
+            <div class="pfield" style="border: 0; border-radius: 0">
+                @foreach (var p in team.People)
+                {
+                    <div class="pcell" data-person="@p.Uuid" data-p="@Presence(p)" @key="team.Name + p.Uuid">
+                        <span class="avatar">@Initials(p.Name)</span>
+                        <span class="who"><b>@p.Name</b><span class="x">@(p.Ext is null ? "" : "Ext " + p.Ext)</span></span>
+                        <span class="row" style="gap: 6px" title="@PresenceWords(p)"><span class="pr" data-p="@Presence(p)" aria-hidden="true"></span><span class="state">@PresenceWords(p)</span></span>
+                    </div>
+                }
+                @foreach (var c in team.Contacts)
+                {
+                    <div class="pcell contact" data-contact="@c.Uuid" title="An outside number this group puts calls to. Talk knows no presence for it." @key="team.Name + c.Uuid">
+                        <span class="avatar">@Initials(c.DisplayName)</span>
+                        <span class="who"><b>@c.DisplayName</b><span class="x mono">@(c.PhoneNumbers?.FirstOrDefault()?.Did ?? "")</span></span>
+                        <span class="state muted">Outside number · forward</span>
+                    </div>
+                }
+            </div>
+        }
+        @* Outside numbers calls are put through to: listed apart, with no presence, since Talk knows none for them. *@
+        @if (_contacts.Count > 0)
+        {
+            <div class="team-h" data-team="Forwarded to"><span class="eyebrow">Forwarded to</span><span class="mono faint" style="font-size: 11px">outside numbers</span></div>
+            <div class="pfield" style="border: 0; border-radius: 0">
+                @foreach (var c in _contacts)
+                {
+                    <div class="pcell contact" data-contact="@c.Uuid" @key="c.Uuid">
+                        <span class="avatar">@Initials(c.DisplayName)</span>
+                        <span class="who"><b>@c.DisplayName</b><span class="x mono">@(c.PhoneNumbers?.FirstOrDefault()?.Did ?? "")</span></span>
+                        <span class="state muted">Contact</span>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="plane" aria-label="Call-backs waiting">
+        <div class="plane-head"><div class="row" style="gap: 10px"><h2>Call-backs waiting</h2><span class="mono muted" style="font-size: 12px">@_callBacks.Count</span></div><div class="end"><a class="btn ghost sm" href="/callbacks">All</a></div></div>
+        @if (_callBacks.Count == 0)
+        {
+            <p class="empty" style="padding: 16px">Nobody to call back.</p>
+        }
+        else
+        {
+            <ul style="list-style: none; margin: 0; padding: 0" data-op-callbacks>
+                @foreach (var cb in _callBacks)
+                {
+                    var waited = Clock.GetUtcNow() - cb.Last;
+                    <li class="row" style="padding: 9px 16px; border-bottom: 1px solid var(--line); gap: 10px">
+                        <span class="oc" data-o="missed"><Icon Name="missed" /></span>
+                        <a class="who" href="/calls/@cb.LatestUuid" style="flex: 1; text-decoration: none; color: inherit"><b>@cb.Who</b><span class="n">@(cb.Times == 1 ? "Rang once" : $"Rang {cb.Times} times")</span></a>
+                        <span class="num" style="font-size: 12px; color: @(waited.TotalHours >= 24 ? "var(--bad)" : waited.TotalHours >= 4 ? "var(--warn)" : "var(--fg-2)")">@Wait(waited)</span>
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+</div>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    // A ring group's people, and the outside numbers it forwards calls to: members that are contacts, and where an
+    // unanswered call goes next. Contacts have no presence, so they are never counted as free.
+    private sealed record Team(string Name, List<LiveUser> People, List<TalkWatch.Core.Talk.TalkContact> Contacts);
+
+    private sealed record WaitingCaller(string Who, int Times, DateTimeOffset Last, string LatestUuid);
+
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+    private bool _admin;
+    private HashSet<string> _allowedUsers = [];
+    private HashSet<string> _allowedContacts = [];
+    private List<LiveUser> _people = [];
+    private List<TalkWatch.Core.Talk.TalkContact> _contacts = [];
+    private List<Team> _teams = [];
+    private List<LiveCall> _waiting = [];
+    private List<LiveCall> _talking = [];
+    private List<WaitingCaller> _callBacks = [];
+    private CancellationTokenSource? _pending;
+    private Timer? _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = (await AuthenticationState!).User;
+        _admin = _user.Can(Permission.AllCalls);
+        await ReadAsync();
+        Group();
+        Status.Changed += OnPresence;
+        Ingestion.CallsStored += OnCallsStored;
+        _timer = new Timer(_ => OnCallsStored(), null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private async Task ReadAsync()
+    {
+        using var scope = Scopes.CreateScope();
+        scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UsePrincipal(_user);
+        var db = scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>();
+        if (!_admin)
+        {
+            _allowedUsers = (await db.Grants.AsNoTracking().Where(g => g.Kind == LineKind.User).Select(g => g.Key).ToListAsync()).ToHashSet(StringComparer.Ordinal);
+            _allowedContacts = (await db.Grants.AsNoTracking().Where(g => g.Kind == LineKind.Contact).Select(g => g.Key).ToListAsync()).ToHashSet(StringComparer.Ordinal);
+        }
+
+        var now = Clock.GetUtcNow();
+        var current = await db.Calls.AsNoTracking().Current(now).Where(c => c.Outcome == CallOutcome.InProgress).OrderBy(c => c.Time).Take(40).ToListAsync();
+        var names = await ChronicleLoader.NamesAsync(db, current.SelectMany(c => new[] { c.FromE164, c.ToE164, c.AnsweredByE164 }));
+        var chronicles = await ChronicleLoader.ForAsync(db, current, names);
+        var live = current.Select(c => LiveCalls.Of(c, chronicles[c.Id], names)).ToList();
+        _waiting = [.. live.Where(c => c.State is "ringing" or "menu" or "routing")];
+        _talking = [.. live.Where(c => c.State is "connected" or "voicemail" or "calling")];
+
+        // Waiting callers, longest wait first: the same rule as Call-backs, over the same window.
+        var since = now - TimeSpan.FromDays(Pages.CallBacks.RecentDays);
+        var open = await db.Calls.AsNoTracking().Returnable().Where(c => c.ReturnedAt == null && c.Time >= since)
+            .Select(c => new { c.TalkUuid, c.FromE164, c.FromRaw, c.CallerName, c.Time }).ToListAsync();
+        var callerNames = await CallerNames.ForAsync(db, open.Select(c => c.FromE164));
+        _callBacks = [.. open.GroupBy(c => c.FromE164!).Select(g =>
+        {
+            var latest = g.MaxBy(c => c.Time)!;
+            var name = g.OrderByDescending(c => c.Time).Select(c => c.CallerName).FirstOrDefault(n => !string.IsNullOrEmpty(n));
+            return new WaitingCaller(CallerNames.Who(name, latest.FromRaw ?? g.Key, g.Key, callerNames), g.Count(), latest.Time, latest.TalkUuid);
+        }).OrderBy(c => c.Last).Take(12)];
+    }
+
+    // Everyone this person may see, under each ring group they belong to; people in no group are listed last. With a
+    // number chosen in the switcher, only the ring groups and people a call to that number can reach; paging groups,
+    // which take no calls, never.
+    private void Group()
+    {
+        var (users, _) = Status.Snapshot();
+        var did = _user.FindFirstValue(AccessScopeHolder.DidClaim);
+        var reach = did is null ? null : Directory.Current.Reachable(did, new NumberNormaliser(Site.Region));
+        var narrowed = reach is { Complete: true };
+        _people = [.. users.Where(u => (_admin || _allowedUsers.Contains(u.Uuid)) && (!narrowed || reach!.Users.Contains(u.Uuid)
+            || Directory.Current.Groups.Any(g => reach.Groups.Contains(g.Id) && g.TakesCalls && (g.MemberList?.Contains(u.Uuid) ?? false))))];
+        var byUuid = _people.ToDictionary(u => u.Uuid, StringComparer.Ordinal);
+        var grouped = new HashSet<string>(StringComparer.Ordinal);
+        var teams = new List<Team>();
+        var mayContact = (TalkWatch.Core.Talk.TalkContact c) => _admin || _allowedContacts.Contains(c.Id.ToString(System.Globalization.CultureInfo.InvariantCulture))
+            || (c.Uuid is { } u && _allowedContacts.Contains(u));
+        var contactsByUuid = Directory.Current.Contacts.Where(c => c.Uuid is not null).ToDictionary(c => c.Uuid!, StringComparer.Ordinal);
+        var contactUuids = contactsByUuid.Keys.ToHashSet(StringComparer.Ordinal);
+        var inTeams = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var g in Directory.Current.Groups.Where(g => g.TakesCalls && (!narrowed || reach!.Groups.Contains(g.Id))).OrderBy(g => g.Name, StringComparer.Ordinal))
+        {
+            var outside = g.ContactsIn(contactUuids).Select(contactsByUuid.GetValueOrDefault).OfType<TalkWatch.Core.Talk.TalkContact>()
+                .Where(mayContact).OrderBy(c => c.DisplayName, StringComparer.CurrentCultureIgnoreCase).ToList();
+            var members = (g.MemberList ?? []).Select(m => byUuid.GetValueOrDefault(m)).OfType<LiveUser>().OrderBy(u => u.Name, StringComparer.Ordinal).ToList();
+            if (members.Count == 0 && outside.Count == 0)
+            {
+                continue;
+            }
+
+            teams.Add(new Team(g.Name ?? $"Ring group {g.Id}", members, outside));
+            inTeams.UnionWith(outside.Select(c => c.Uuid!));
+            grouped.UnionWith(members.Select(m => m.Uuid));
+        }
+
+        var others = _people.Where(u => !grouped.Contains(u.Uuid)).OrderBy(u => u.Name, StringComparer.Ordinal).ToList();
+        if (others.Count > 0)
+        {
+            teams.Add(new Team(teams.Count == 0 ? "Everyone" : "Not in a ring group", others, []));
+        }
+
+        _teams = teams;
+
+        // Contacts a grant covers by id or by uuid, as calls name them either way.
+        // Outside numbers a switchboard puts calls straight through to, in no team.
+        _contacts = [.. (narrowed ? reach! : Directory.Current.Reachable()).Contacts
+            .Where(c => mayContact(c) && !inTeams.Contains(c.Uuid ?? ""))
+            .OrderBy(c => c.DisplayName, StringComparer.CurrentCultureIgnoreCase)];
+    }
+
+    private void OnPresence() => InvokeAsync(() =>
+    {
+        Group();
+        StateHasChanged();
+    });
+
+    private void OnCallsStored()
+    {
+        _pending?.Cancel();
+        _pending = new CancellationTokenSource();
+        var token = _pending.Token;
+        _ = InvokeAsync(async () =>
+        {
+            try
+            {
+                await Task.Delay(250, token);
+                await ReadAsync();
+                StateHasChanged();
+            }
+            catch (TaskCanceledException)
+            {
+            }
+        });
+    }
+
+    private static string Wait(TimeSpan t) => t.TotalMinutes < 60 ? $"{(int)t.TotalMinutes} min" : t.TotalHours < 48 ? $"{(int)t.TotalHours} h" : $"{(int)t.TotalDays} days";
+
+    private static string Presence(LiveUser u) => u.State;
+
+    private static string PresenceWords(LiveUser u) => Presence(u) switch
+    {
+        "busy" => "On a call",
+        "dnd" => "Do not disturb",
+        "offline" => "Offline",
+        _ => "Available",
+    };
+
+    private static string Initials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length switch { 0 => "?", 1 => parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant(), _ => string.Concat(parts[0][0], parts[^1][0]).ToUpperInvariant() };
+    }
+
+    public void Dispose()
+    {
+        Status.Changed -= OnPresence;
+        Ingestion.CallsStored -= OnCallsStored;
+        _timer?.Dispose();
+        _pending?.Cancel();
+        _pending?.Dispose();
+    }
+}

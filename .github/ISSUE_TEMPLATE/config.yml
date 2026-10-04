@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: A security problem
+    url: https://github.com/TheCodeSaiyan/talkwatch/security/advisories/new
+    about: Report it privately, not in an issue.
+  - name: Help with UniFi Talk or the console itself
+    url: https://community.ui.com/
+    about: TalkWatch isn't affiliated with Ubiquiti; the console's own behaviour is theirs to answer.

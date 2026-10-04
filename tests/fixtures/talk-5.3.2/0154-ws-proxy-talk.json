@@ -1,0 +1,65 @@
+{
+  "event": "DEVICES_UPDATED",
+  "data": [
+    {
+      "mac": "6022320c0574",
+      "ip": "10.50.50.19",
+      "model": "UVP-TOUCH-MAX",
+      "sshd_port": 32768,
+      "mgmt_is_default": true,
+      "version": "2.26.3",
+      "last_seen": "2026-09-27T11:43:11.210Z",
+      "auth_key": null,
+      "con_ip": null,
+      "con_port": null,
+      "uptime": 118,
+      "con_status": "newly_adopted",
+      "hashed_key": null,
+      "anonymous_device_id": "24ae2255-d762-318c-abd7-46eda82bffdf",
+      "additional_data": {
+        "is_autolink_device": false,
+        "adoption_started_at": 1790509405924
+      },
+      "ucp4": true,
+      "cfp": null,
+      "wsdc_change_ready": null,
+      "auth_key_digest": null,
+      "is_locked_device": false,
+      "status": "online",
+      "adoptionStartedAt": 1790509405923,
+      "serial_number": "59c64884",
+      "uplink_info": {
+        "mac": "02:e8:bc:f1:b6:5d",
+        "name": "Sam28",
+        "uri": "/network/default/devices/properties/02:e8:bc:f1:b6:5d"
+      },
+      "adopted": true,
+      "last_inform": null,
+      "pending_delete": null,
+      "user_id": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+      "display_name": "Jordan Hughes 29",
+      "secretary_mode": null,
+      "last_updated": null,
+      "user_id_line2": null,
+      "additional_config": {},
+      "battery_level": null,
+      "last_synced_contact_ids": [
+        "Rowan30",
+        "Alex31",
+        "Kit32",
+        "Harper33"
+      ],
+      "contact_list": [],
+      "sip_reg": true,
+      "user": "Nico Archer 20",
+      "phone_number": "+441174960404",
+      "phone_numbers": null,
+      "user_line2": "Reese Ellison 2",
+      "ext": "0002",
+      "update_available": false,
+      "is_assigned": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+      "device_update_data": null,
+      "is_assigned_to_instant_adopt_user": false
+    }
+  ]
+}

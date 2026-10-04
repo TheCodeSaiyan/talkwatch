@@ -1,0 +1,25 @@
+[
+  {
+    "time": "2026-09-30T00:08:46.148Z",
+    "event": "call_started",
+    "event_data": {
+      "to": "+441174960404",
+      "from": "+447700900774",
+      "from_contact_id": 1,
+      "to_smart_attendant_id": 15
+    },
+    "event_uuid": "240eab6b-4cf2-43c1-a1de-1f0b1695b30a"
+  },
+  {
+    "time": "2026-09-30T00:09:17.562Z",
+    "event": "entered_sa_menu",
+    "event_data": {
+      "sa_id": 15,
+      "sa_item_id": 19,
+      "sa_item_key": 3,
+      "sa_item_type": "ivr",
+      "sa_item_title": "Title 17"
+    },
+    "event_uuid": "b6299ac6-a0e8-4328-835a-ec581431c845"
+  }
+]

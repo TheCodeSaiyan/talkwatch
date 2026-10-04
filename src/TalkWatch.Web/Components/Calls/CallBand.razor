@@ -1,0 +1,23 @@
+@* The call's life as one proportional ribbon: menu, ringing, talking, voicemail. Labelled when a stretch is wide enough to
+   carry its words, and read out whole for a screen reader. *@
+@using TalkWatch.Core.Calls
+
+@if (Chronicle.Band.Count > 0)
+{
+    var total = Chronicle.Band.Sum(b => b.Length.TotalSeconds);
+    <div class="band" role="img" aria-label="@string.Join(", ", Chronicle.Band.Select(b => $"{CallMarks.BandWord(b.Kind)} {Core.Calls.Chronicle.Seconds(b.Length)}"))" data-band>
+        @foreach (var b in Chronicle.Band)
+        {
+            <div class="@CallMarks.BandClass(b.Kind)" style="flex: @b.Length.TotalSeconds.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)" title="@CallMarks.BandWord(b.Kind) @CallMarks.Duration(b.Length)">
+                @if (b.Length.TotalSeconds / total > 0.12)
+                {
+                    @($"{CallMarks.BandWord(b.Kind)} {CallMarks.Duration(b.Length)}")
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Chronicle Chronicle { get; set; } = default!;
+}

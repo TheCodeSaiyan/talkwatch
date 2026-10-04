@@ -1,0 +1,634 @@
+@* A report as it is kept and emailed, in TalkWatch's own look: the signal colours and mark of the design system, the
+   light theme every mail client shows. Email rules apply: tables for layout, every style inline, no web fonts, no SVG
+   (Gmail drops both), so the mark and the bars are coloured cells. Rendered once, when the report runs, with the access
+   of the person it is for. *@
+@using TalkWatch.Core.Calls
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+
+<div data-report style="margin: 0; padding: 24px 12px; background: @Ground; font-family: @Font; color: @Fg; -webkit-text-size-adjust: 100%;">
+    @* What a mail client shows beside the subject, before the message is opened. *@
+    <span style="display: none; max-height: 0; overflow: hidden; opacity: 0; mso-hide: all;">@Preheader</span>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width: 680px; margin: 0 auto; background: @Card; border: 1px solid @Line; border-top: 4px solid @Live; border-radius: 10px; border-collapse: separate;">
+        <tr>
+            <td style="padding: 20px 28px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td style="vertical-align: middle;">
+                            @* The mark: the three signal lines of the brand, drawn as cells. *@
+                            <table role="presentation" cellpadding="0" cellspacing="0" style="display: inline-table; vertical-align: middle; margin-right: 8px;">
+                                <tr><td style="width: 18px; height: 2px; background: @Live; border-radius: 2px; font-size: 0; line-height: 0;">&nbsp;</td></tr>
+                                <tr><td style="height: 3px; font-size: 0; line-height: 0;">&nbsp;</td></tr>
+                                <tr><td style="width: 13px; height: 2px; background: @Live; border-radius: 2px; font-size: 0; line-height: 0;">&nbsp;</td></tr>
+                                <tr><td style="height: 3px; font-size: 0; line-height: 0;">&nbsp;</td></tr>
+                                <tr><td style="width: 18px; height: 2px; background: @Live; border-radius: 2px; font-size: 0; line-height: 0;">&nbsp;</td></tr>
+                            </table><span style="font-size: 15px; letter-spacing: -0.02em; vertical-align: middle; color: @Fg;">Talk<b>Watch</b></span>
+                        </td>
+                        <td align="right" style="vertical-align: middle; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: @Fg3;" data-report-site>@Content.SiteName</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 18px 28px 4px;">
+                <h1 style="margin: 0 0 4px; font-size: 22px; line-height: 1.25; font-weight: 650; letter-spacing: -0.01em; color: @Fg;">@Content.Name</h1>
+                <p style="margin: 0; font-size: 13px; color: @Fg3;" data-report-period>@Period@(Content.Audience is { } who ? $", for {who}" : "")</p>
+                @if (Content.Covers is { } covers)
+                {
+                    <p style="margin: 6px 0 0; font-size: 13px; color: @Fg2;" data-report-numbers><span style="color: @Fg3;">Covers</span> <b style="font-weight: 600;">@covers</b></p>
+                }
+                @if (Content.Hours is { } countedHours)
+                {
+                    <p style="margin: 6px 0 0; font-size: 13px; color: @Fg2;" data-report-hours><span style="color: @Fg3;">Counting only calls</span> <b style="font-weight: 600;">@countedHours</b></p>
+                }
+            </td>
+        </tr>
+
+        @if (Content.Stats is { } s && Content.Sections.HasFlag(ReportSections.Figures))
+        {
+            var answered = s.Count(CallOutcome.Answered);
+            var missed = s.CountMissed;
+            var voicemail = s.CountVoicemail;
+            var hungUp = s.Count(CallOutcome.HungUpAtSwitchboard);
+            var p = Content.Previous;
+            <tr>
+                <td style="padding: 18px 22px 0;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="6" data-report-figures>
+                        <tr>
+                            @Tile(s.Inbound.ToString(), "calls in", Fg, change: p is null ? null : Change(s.Inbound, p.Inbound, null))
+                            @Tile(answered.ToString(), s.AnswerRate is { } rate ? $"answered · {rate:P0} answer rate" : "answered", Ok,
+                                change: p is null ? null : s.AnswerRate is { } now && p.AnswerRate is { } then ? Points(now, then) : Change(answered, p.Count(CallOutcome.Answered), true))
+                            @Tile(missed.ToString(), "missed", missed > 0 ? Bad : Fg3, change: p is null ? null : Change(missed, p.CountMissed, false))
+                            @Tile(voicemail.ToString(), "voicemail", voicemail > 0 ? Route : Fg3, change: p is null ? null : Change(voicemail, p.CountVoicemail, null))
+                        </tr>
+                        <tr>
+                            @Tile(hungUp.ToString(), "hung up in the menu", hungUp > 0 ? Warn : Fg3, small: true, change: p is null ? null : Change(hungUp, p.Count(CallOutcome.HungUpAtSwitchboard), false))
+                            @Tile(s.Count(CallOutcome.Outbound).ToString(), "calls out", Fg, small: true, change: p is null ? null : Change(s.Count(CallOutcome.Outbound), p.Count(CallOutcome.Outbound), null))
+                            @Tile(Seconds(s.Speed.MedianRing), "median ring", Fg, small: true,
+                                change: p is null || s.Speed.MedianRing is not { } ring || p.Speed.MedianRing is not { } ringBefore ? null : SecondsChange(ring, ringBefore))
+                            @Tile($"{s.CallBacks.Returned}/{s.CallBacks.Returnable}", "missed callers got back to", s.CallBacks.Returnable > s.CallBacks.Returned ? Warn : Ok, small: true)
+                        </tr>
+                    </table>
+                    @if (p is not null)
+                    {
+                        <p style="margin: 2px 6px 0; font-size: 12px; color: @Fg3;" data-report-compared>Changes are against the @PeriodBefore before.</p>
+                    }
+                </td>
+            </tr>
+            @if (s.Inbound > 0)
+            {
+                <tr>
+                    <td style="padding: 10px 28px 0;">
+                        @* How the calls in ended, as one bar: answered, voicemail, missed, hung up in the menu. *@
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius: 4px; overflow: hidden;" data-report-outcomes>
+                            <tr>
+                                @foreach (var (count, colour, _) in Outcomes(answered, voicemail, missed, hungUp).Where(o => o.Count > 0))
+                                {
+                                    <td style="width: @(Percent(count, s.Inbound))%; height: 8px; background: @colour; font-size: 0; line-height: 0;">&nbsp;</td>
+                                }
+                            </tr>
+                        </table>
+                        <p style="margin: 8px 0 0; font-size: 12px; color: @Fg3;">
+                            <span style="margin-right: 8px;">Of all @s.Inbound calls in:</span>
+                            @foreach (var (count, colour, label) in Outcomes(answered, voicemail, missed, hungUp).Where(o => o.Count > 0))
+                            {
+                                <span style="white-space: nowrap; margin-right: 12px;"><span style="display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: @colour; margin-right: 4px;"></span>@label @Percent(count, s.Inbound)%</span>
+                            }
+                        </p>
+                    </td>
+                </tr>
+            }
+            <tr>
+                <td style="padding: 12px 28px 0; font-size: 13px; color: @Fg2; line-height: 1.5;">
+                    A caller who gave up had waited @Seconds(s.Speed.MedianGiveUp) at the median. @s.Quality.Poor of @s.Quality.Scored scored calls had poor quality.
+                    @if (s.MissedByWeekdayAndHour.SelectMany(r => r).Any(c => c.Missed > 0))
+                    {
+                        <br />
+                        <span>Busiest times for calls nobody picked up: <b>@string.Join(", ", s.MissedByWeekdayAndHour.SelectMany((row, day) => row.Select((cell, hour) => (Day: CallStatistics.Week[day], Hour: hour, cell.Missed)))
+                            .Where(c => c.Missed > 0).OrderByDescending(c => c.Missed).Take(3).Select(c => $"{c.Day.ToString()[..3]} {c.Hour:00}:00 ({c.Missed})"))</b>.</span>
+                    }
+                </td>
+            </tr>
+        }
+
+        @if (Content.Sections.HasFlag(ReportSections.CallBacks))
+        {
+            @Section("Still to call back")
+            <tr>
+                <td style="padding: 0 28px;">
+                    @if (Content.CallBacks.Count == 0)
+                    {
+                        <p style="margin: 0; font-size: 14px; color: @Ok;" data-report-callbacks-empty>✓ Nobody: every missed caller has been got back to.</p>
+                    }
+                    else
+                    {
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" data-report-callbacks>
+                            <tr><th align="left" style="@Th">Caller</th><th align="right" style="@Th">Rang</th><th align="left" style="@Th">Last rang</th></tr>
+                            @foreach (var caller in Content.CallBacks)
+                            {
+                                <tr>
+                                    <td style="@Td"><b style="font-weight: 600;">@caller.Who</b>@if (caller.Voicemail)
+                                        {
+                                            <span style="display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 9px; font-size: 11px; color: @Route; background: #efebfb;">left voicemail</span>
+                                        }</td>
+                                    <td align="right" style="@Num">@caller.Times</td>
+                                    <td style="@Td; color: @Fg2;">@Local(caller.Last).ToString("ddd d MMM HH:mm")</td>
+                                </tr>
+                            }
+                        </table>
+                    }
+                </td>
+            </tr>
+        }
+
+        @if (Content.Stats is { } lines && Content.Sections.HasFlag(ReportSections.Lines))
+        {
+            @Section("By line")
+            <tr>
+                <td style="padding: 0 28px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" data-report-lines>
+                        <tr><th align="left" style="@Th">Line</th><th align="right" style="@Th">In</th><th align="left" style="@Th">Answered</th><th align="right" style="@Th">Missed</th><th align="right" style="@Th">Voicemail</th><th align="right" style="@Th">Hung up</th></tr>
+                        @foreach (var line in lines.ByLine)
+                        {
+                            <tr>
+                                <td style="@Td"><b style="font-weight: 600;">@line.Name</b></td>
+                                <td align="right" style="@Num">@line.Inbound</td>
+                                <td style="@Td">
+                                    @* The share answered, as a small bar beside the count. *@
+                                    <table role="presentation" cellpadding="0" cellspacing="0" style="display: inline-table; vertical-align: middle; width: 56px; margin-right: 6px;">
+                                        <tr>
+                                            @if (line.Answered > 0)
+                                            {
+                                                <td style="width: @(Percent(line.Answered, line.Inbound))%; height: 6px; background: @Ok; font-size: 0; line-height: 0;">&nbsp;</td>
+                                            }
+                                            @if (line.Inbound > line.Answered)
+                                            {
+                                                <td style="height: 6px; background: @Track; font-size: 0; line-height: 0;">&nbsp;</td>
+                                            }
+                                        </tr>
+                                    </table><span style="font-variant-numeric: tabular-nums;">@line.Answered</span>
+                                </td>
+                                <td align="right" style="@Num; color: @(line.Missed > 0 ? Bad : Fg3);">@line.Missed</td>
+                                <td align="right" style="@Num">@line.Voicemail</td>
+                                <td align="right" style="@Num">@line.HungUpAtSwitchboard</td>
+                            </tr>
+                        }
+                    </table>
+                </td>
+            </tr>
+        }
+
+        @if (Content.ByNumber is { Count: > 0 } byNumber)
+        {
+            @Section("By number")
+            <tr>
+                <td style="padding: 0 28px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" data-report-by-number>
+                        <tr><th align="left" style="@Th">Number</th><th align="right" style="@Th">In</th><th align="right" style="@Th">Answered</th><th align="right" style="@Th">Rate</th><th align="right" style="@Th">Missed</th><th align="right" style="@Th">Voicemail</th></tr>
+                        @foreach (var (number, stats) in byNumber)
+                        {
+                            <tr>
+                                <td style="@Td"><b style="font-weight: 600;">@number</b></td>
+                                <td align="right" style="@Num">@stats.Inbound</td>
+                                <td align="right" style="@Num">@stats.Count(CallOutcome.Answered)</td>
+                                <td align="right" style="@Num">@(stats.AnswerRate is { } r ? r.ToString("P0") : "–")</td>
+                                <td align="right" style="@Num; color: @(stats.CountMissed > 0 ? Bad : Fg3);">@stats.CountMissed</td>
+                                <td align="right" style="@Num">@stats.CountVoicemail</td>
+                            </tr>
+                        }
+                    </table>
+                    <p style="margin: 8px 0 0; font-size: 12px; color: @Fg3;">A call that went through more than one number counts under each.</p>
+                </td>
+            </tr>
+        }
+
+        @if (Content.Sections.HasFlag(ReportSections.Switchboard))
+        {
+            @Section("Switchboards")
+            <tr>
+                <td style="padding: 0 28px;">
+                    @if (Content.Switchboards.Count == 0)
+                    {
+                        <p style="margin: 0; font-size: 14px; color: @Fg2;">No calls reached a switchboard.</p>
+                    }
+                    @foreach (var board in Content.Switchboards)
+                    {
+                        <p style="margin: 0 0 8px; font-size: 14px; color: @Fg2;" data-report-switchboard="@board.InternalId"><b style="color: @Fg;">@board.Title</b>: @board.Calls calls reached it; <span style="color: @(board.HungUpInGreeting > 0 ? Warn : Fg2);">@board.HungUpInGreeting hung up during the
+                            @(board.GreetingSeconds is { } g ? $"{g:0}-second " : "")greeting</span>@(board.MedianHangUp is { } m ? $", at a median of {m.TotalSeconds:0} s" : "").</p>
+                        @if (board.Options.Count > 0)
+                        {
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 12px;">
+                                <tr><th align="left" style="@Th">Option</th><th align="right" style="@Th">Calls</th><th align="right" style="@Th">Answered</th><th align="right" style="@Th">Missed</th><th align="right" style="@Th">Voicemail</th></tr>
+                                @foreach (var option in board.Options)
+                                {
+                                    <tr><td style="@Td">@option.Label</td><td align="right" style="@Num">@option.Calls</td><td align="right" style="@Num">@option.Answered</td><td align="right" style="@Num; color: @(option.Missed > 0 ? Bad : Fg3);">@option.Missed</td><td align="right" style="@Num">@option.Voicemail</td></tr>
+                                }
+                            </table>
+                        }
+                    }
+                </td>
+            </tr>
+        }
+
+        @if (Content.Parts?.People is { } people)
+        {
+            @Section("Who answered")
+            <tr>
+                <td style="padding: 0 28px;">
+                    @if (people.Count == 0)
+                    {
+                        <p style="margin: 0; font-size: 14px; color: @Fg2;">Nobody answered or made a call in the period.</p>
+                    }
+                    else
+                    {
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" data-report-people>
+                            <tr><th align="left" style="@Th">Person</th><th align="right" style="@Th">Answered</th><th align="right" style="@Th">Avg talk</th><th align="right" style="@Th">Picked up in</th><th align="right" style="@Th">Calls out</th><th align="right" style="@Th">Voicemail</th></tr>
+                            @foreach (var person in people)
+                            {
+                                <tr>
+                                    <td style="@Td"><b style="font-weight: 600;">@person.Name</b></td>
+                                    <td align="right" style="@Num">@person.Answered</td>
+                                    <td align="right" style="@Num">@Minutes(person.AverageTalk)</td>
+                                    <td align="right" style="@Num">@Seconds(person.MedianPickUp)</td>
+                                    <td align="right" style="@Num">@person.CallsOut</td>
+                                    <td align="right" style="@Num">@person.Voicemails</td>
+                                </tr>
+                            }
+                        </table>
+                        <p style="margin: 8px 0 0; font-size: 12px; color: @Fg3;">Who answered: a person on the phone system, or the outside number a call was forwarded to. Picked up in: the median from the call starting to it being answered. Talk names who answered, not everyone a call rang, so missed calls aren't counted against anyone.</p>
+                    }
+                </td>
+            </tr>
+        }
+
+        @if (Content.Parts?.Missed is { } missedCalls)
+        {
+            @Section("Missed calls and voicemail")
+            <tr>
+                <td style="padding: 0 28px;">
+                    @if (missedCalls.Count == 0)
+                    {
+                        <p style="margin: 0; font-size: 14px; color: @Ok;" data-report-missed-empty>✓ None in the period.</p>
+                    }
+                    else
+                    {
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" data-report-missed>
+                            <tr><th align="left" style="@Th">When</th><th align="left" style="@Th">Caller</th><th align="left" style="@Th">Rang</th><th align="right" style="@Th">Waited</th><th align="left" style="@Th">Called back</th></tr>
+                            @foreach (var call in missedCalls)
+                            {
+                                <tr>
+                                    <td style="@Td; white-space: nowrap; color: @Fg2;">@Local(call.Time).ToString("ddd d MMM HH:mm")</td>
+                                    <td style="@Td"><b style="font-weight: 600;">@call.Caller</b>@if (call.Voicemail)
+                                        {
+                                            <span style="display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 9px; font-size: 11px; color: @Route; background: #efebfb;">@(call.Outside ? "outside voicemail" : "voicemail")</span>
+                                        }</td>
+                                    <td style="@Td; color: @Fg2;">@call.Line</td>
+                                    <td align="right" style="@Num">@Seconds(call.Rang)</td>
+                                    <td style="@Td; color: @(call.ReturnedAt is null ? Warn : Ok);">@(call.ReturnedAt is { } gotBack ? $"{How(call.ReturnedHow)} {Local(gotBack):ddd HH:mm}" : "Not yet")</td>
+                                </tr>
+                            }
+                        </table>
+                        @if (Content.Parts.MissedTotal > missedCalls.Count)
+                        {
+                            <p style="margin: 8px 0 0; font-size: 12px; color: @Fg3;">The first @missedCalls.Count of @Content.Parts.MissedTotal; the call list has them all.</p>
+                        }
+                    }
+                </td>
+            </tr>
+        }
+
+        @if (Content.Sections.HasFlag(ReportSections.BusiestTimes) && Content.Stats is { } grid)
+        {
+            var cells = grid.MissedByWeekdayAndHour;
+            var hours = Enumerable.Range(0, 24).Where(h => cells.Any(day => day[h].Inbound > 0)).ToList();
+            var busiest = Math.Max(1, cells.SelectMany(day => day).Max(c => c.Inbound));
+            @Section("Busiest times")
+            <tr>
+                <td style="padding: 0 28px;">
+                    @if (hours.Count == 0)
+                    {
+                        <p style="margin: 0; font-size: 14px; color: @Fg2;">No calls in the period.</p>
+                    }
+                    else
+                    {
+                        @* Calls by day and hour: the deeper the blue, the busier; a red figure is calls nobody took. *@
+                        <table role="presentation" cellpadding="0" cellspacing="2" style="font-size: 11px; font-variant-numeric: tabular-nums;" data-report-busiest>
+                            <tr><td></td>@foreach (var hour in hours)
+                                {
+                                    <td align="center" style="color: @Fg3; padding-bottom: 2px;">@hour.ToString("00")</td>
+                                }</tr>
+                            @for (var day = 0; day < 7; day++)
+                            {
+                                var row = cells[day];
+                                <tr>
+                                    <td style="color: @Fg3; padding-right: 6px;">@CallStatistics.Week[day].ToString()[..3]</td>
+                                    @foreach (var hour in hours)
+                                    {
+                                        var cell = row[hour];
+                                        <td align="center" width="26" height="22" style="background: @Shade(cell.Inbound, busiest); color: @(cell.Missed > 0 ? Bad : Fg2); font-weight: @(cell.Missed > 0 ? "650" : "400"); border-radius: 3px;" title="@cell.Inbound in, @cell.Missed missed">@(cell.Inbound == 0 ? "" : cell.Missed > 0 ? cell.Missed.ToString() : cell.Inbound.ToString())</td>
+                                    }
+                                </tr>
+                            }
+                        </table>
+                        <p style="margin: 8px 0 0; font-size: 12px; color: @Fg3;">Each square is an hour of the week: shaded by calls in, showing how many came in, or in red how many nobody took.</p>
+                    }
+                </td>
+            </tr>
+        }
+
+        @if (Content.Parts?.Callers is { } callers)
+        {
+            @Section("Callers")
+            <tr>
+                <td style="padding: 0 28px;">
+                    <p style="margin: 0 0 10px; font-size: 14px; color: @Fg2;" data-report-callers>@callers.Callers caller@(callers.Callers == 1 ? "" : "s"): @callers.Repeat rang more than once, @callers.New new to the line.</p>
+                    @if (callers.Top.Count > 0)
+                    {
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                            <tr><th align="left" style="@Th">Caller</th><th align="right" style="@Th">Calls</th><th align="right" style="@Th">Got through</th><th align="left" style="@Th"></th></tr>
+                            @foreach (var caller in callers.Top)
+                            {
+                                <tr>
+                                    <td style="@Td"><b style="font-weight: 600;">@caller.Who</b></td>
+                                    <td align="right" style="@Num">@caller.Calls</td>
+                                    <td align="right" style="@Num; color: @(caller.GotThrough < caller.Calls ? Warn : Fg);">@caller.GotThrough</td>
+                                    <td style="@Td; color: @Fg3; font-size: 12px;">@(caller.New ? "new" : "")</td>
+                                </tr>
+                            }
+                        </table>
+                    }
+                </td>
+            </tr>
+        }
+
+        @if (Content.Parts?.Sentiment is { } sentiment)
+        {
+            var rated = sentiment.Positive + sentiment.Neutral + sentiment.Negative;
+            @Section("How the calls went")
+            <tr>
+                <td style="padding: 0 28px;">
+                    @if (rated == 0)
+                    {
+                        <p style="margin: 0; font-size: 14px; color: @Fg2;">No calls Talk's transcription rated in the period.</p>
+                    }
+                    else
+                    {
+                        @* Talk's own rating of each transcribed call, as one bar: positive, neutral, negative. *@
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-radius: 4px; overflow: hidden;" data-report-sentiment>
+                            <tr>
+                                @foreach (var (count, colour) in new[] { (sentiment.Positive, Ok), (sentiment.Neutral, Track), (sentiment.Negative, Bad) }.Where(x => x.Item1 > 0))
+                                {
+                                    <td style="width: @(Percent(count, rated))%; height: 8px; background: @colour; font-size: 0; line-height: 0;">&nbsp;</td>
+                                }
+                            </tr>
+                        </table>
+                        <p style="margin: 8px 0 0; font-size: 12px; color: @Fg3;">Of @rated rated calls: <span style="color: @Ok;">positive @Percent(sentiment.Positive, rated)%</span>, neutral @Percent(sentiment.Neutral, rated)%, <span style="color: @Bad;">negative @Percent(sentiment.Negative, rated)%</span>.</p>
+                        @if (sentiment.NegativeCalls.Count > 0)
+                        {
+                            <p style="margin: 10px 0 4px; font-size: 13px; color: @Fg2;">Rated negative:</p>
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                @foreach (var (time, rater) in sentiment.NegativeCalls.Take(10))
+                                {
+                                    <tr><td style="@Td; white-space: nowrap; color: @Fg2; width: 130px;">@Local(time).ToString("ddd d MMM HH:mm")</td><td style="@Td">@rater</td></tr>
+                                }
+                            </table>
+                        }
+                    }
+                </td>
+            </tr>
+        }
+
+        @if (Content.Parts?.CallBacks is { } back)
+        {
+            @Section("How quickly callers were called back")
+            <tr>
+                <td style="padding: 0 22px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="6" data-report-callback-times>
+                        <tr>
+                            @Tile(back.Returned.ToString(), "got back to", Ok)
+                            @Tile(Minutes(back.Median), "median time to get back", Fg)
+                            @Tile($"{Percent(back.WithinHour, back.Returned)}%", "within an hour", back.Returned > 0 && back.WithinHour * 2 < back.Returned ? Warn : Ok)
+                            @Tile(back.Waiting.ToString(), "still waiting", back.Waiting > 0 ? Warn : Fg3)
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            @if (back.ByHow.Count > 0 || back.Slowest.Count > 0)
+            {
+                <tr>
+                    <td style="padding: 8px 28px 0; font-size: 13px; color: @Fg2; line-height: 1.5;">
+                        @if (back.ByHow.Count > 0)
+                        {
+                            <span>How: @string.Join(", ", back.ByHow.Select(h => $"{h.Count} {HowWords(h.How)}")).</span><br />
+                        }
+                        @if (back.Slowest.Count > 0)
+                        {
+                            <span>Slowest: @string.Join("; ", back.Slowest.Select(s => $"{s.Who} after {Minutes(s.After)}")).</span>
+                        }
+                    </td>
+                </tr>
+            }
+        }
+
+        @if (Content.Parts?.Outside is { } outside)
+        {
+            @Section("Outside voicemail")
+            <tr>
+                <td style="padding: 0 28px;">
+                    @if (outside.Count == 0)
+                    {
+                        <p style="margin: 0; font-size: 14px; color: @Fg2;">No calls went to an outside answering line's voicemail.</p>
+                    }
+                    else
+                    {
+                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" data-report-outside>
+                            <tr><th align="left" style="@Th">Contact</th><th align="right" style="@Th">Messages left</th><th align="right" style="@Th">Hung up at the greeting</th></tr>
+                            @foreach (var row in outside)
+                            {
+                                <tr><td style="@Td"><b style="font-weight: 600;">@row.Contact</b></td><td align="right" style="@Num; color: @Route;">@row.MessagesLeft</td><td align="right" style="@Num; color: @(row.HungUp > 0 ? Bad : Fg3);">@row.HungUp</td></tr>
+                            }
+                        </table>
+                    }
+                </td>
+            </tr>
+        }
+
+        @if (Content.Parts?.Alerts is { } alerts)
+        {
+            @Section("Alerts")
+            <tr>
+                <td style="padding: 0 22px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="6" data-report-alerts>
+                        <tr>
+                            @Tile(alerts.Raised.ToString(), "raised", Fg)
+                            @Tile(alerts.Acknowledged.ToString(), "acknowledged", alerts.Acknowledged < alerts.Raised ? Warn : Ok)
+                            @Tile(Minutes(alerts.MedianToAcknowledge), "median time to acknowledge", Fg)
+                            @Tile((alerts.Raised - alerts.Acknowledged).ToString(), "not acknowledged", alerts.Raised > alerts.Acknowledged ? Warn : Fg3)
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            @if (alerts.ByKind.Count > 0)
+            {
+                <tr>
+                    <td style="padding: 8px 28px 0; font-size: 13px; color: @Fg2; line-height: 1.5;">
+                        <span>By kind: @string.Join(", ", alerts.ByKind.Select(k => $"{k.Kind} {k.Count}")).</span>
+                        @if (alerts.ByWho.Count > 0)
+                        {
+                            <br /><span>Acknowledged by: @string.Join(", ", alerts.ByWho.Select(w => $"{w.Who} {w.Count}")).</span>
+                        }
+                    </td>
+                </tr>
+            }
+        }
+
+        @if (Content.Sections.HasFlag(ReportSections.CallList))
+        {
+            @Section("Every call")
+            <tr>
+                <td style="padding: 0 28px;">
+                    <p style="margin: 0; font-size: 14px; color: @Fg2;" data-report-call-list>@Content.CallCount calls in the period, listed in the attached CSV@(Content.Link is not null ? " and on the report's page" : "").</p>
+                </td>
+            </tr>
+        }
+
+        <tr>
+            <td style="padding: 26px 28px 24px;">
+                @if (Content.Link is { } reportLink)
+                {
+                    @* A button that holds in every mail client: a coloured cell around the link. *@
+                    <table role="presentation" cellpadding="0" cellspacing="0" style="margin: 0 0 16px;">
+                        <tr><td style="background: @Live; border-radius: 6px;"><a href="@reportLink" style="display: inline-block; padding: 10px 18px; font-size: 14px; font-weight: 600; color: #ffffff; text-decoration: none;">Open in TalkWatch</a></td></tr>
+                    </table>
+                }
+                <p style="margin: 0; padding-top: 14px; border-top: 1px solid @Line; font-size: 12px; line-height: 1.5; color: @Fg3;" data-report-footer>
+                    Sent by TalkWatch for @Content.SiteName. Who gets this report, and when, is set under Reports in TalkWatch.
+                </p>
+            </td>
+        </tr>
+    </table>
+</div>
+
+@code {
+    // The design system's light theme: what every mail client shows, and what a printed copy wants.
+    private const string Ground = "#eef1f4", Card = "#ffffff", Tint = "#f7f9fa", Line = "#dde3e8", LineStrong = "#c8d0d7", Track = "#e3e8ec";
+    private const string Fg = "#0e1418", Fg2 = "#3b4650", Fg3 = "#5e6a74";
+    private const string Live = "#0970a2", Ok = "#0a7856", Warn = "#945d00", Bad = "#c42b35", Route = "#5b42c9";
+    private const string Font = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+
+    private const string Th = "padding: 0 10px 6px 0; border-bottom: 1px solid " + LineStrong + "; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: " + Fg3 + ";";
+    private const string Td = "padding: 9px 10px 9px 0; border-bottom: 1px solid " + Line + "; font-size: 14px; color: " + Fg + "; vertical-align: middle";
+    private const string Num = Td + "; font-variant-numeric: tabular-nums";
+
+    [Parameter, EditorRequired] public ReportContent Content { get; set; } = default!;
+
+    private DateTimeOffset Local(DateTimeOffset at) => TimeZoneInfo.ConvertTime(at, Content.Zone);
+
+    private string Period
+    {
+        get
+        {
+            var (from, to) = (Local(Content.From), Local(Content.To.AddTicks(-1)));
+            return from.Date == to.Date ? from.ToString("dddd d MMMM yyyy") : $"{from:ddd d MMM} to {to:ddd d MMM yyyy}";
+        }
+    }
+
+    // A line of the headline figures, for the preview a mail client shows.
+    private string Preheader => Content.Stats is { } s && Content.Sections.HasFlag(ReportSections.Figures)
+        ? $"{s.Inbound} calls in, {s.Count(CallOutcome.Answered)} answered, {s.CountMissed} missed. {Period}."
+        : $"{Content.Name}, {Period}.";
+
+    private static string Seconds(TimeSpan? span) => span is { } s ? $"{Math.Round(s.TotalSeconds):0} s" : "–";
+
+    private static int Percent(int part, int whole) => whole == 0 ? 0 : (int)Math.Round(100.0 * part / whole);
+
+    // A length people read at a glance: seconds under a minute, minutes under an hour, then hours.
+    private static string Minutes(TimeSpan? span) => span is not { } t ? "–"
+        : t.TotalMinutes < 1 ? $"{Math.Round(t.TotalSeconds):0} s"
+        : t.TotalHours < 1 ? $"{Math.Round(t.TotalMinutes):0} min"
+        : t.TotalDays < 1 ? $"{t.TotalHours:0.#} h"
+        : $"{t.TotalDays:0.#} days";
+
+    private static string How(CallBackHow? how) => how switch
+    {
+        CallBackHow.CalledBack => "Rung back",
+        CallBackHow.GotThrough => "Got through",
+        CallBackHow.MarkedDone => "Marked done",
+        _ => "Done",
+    };
+
+    private static string HowWords(CallBackHow how) => how switch
+    {
+        CallBackHow.CalledBack => "rung back",
+        CallBackHow.GotThrough => "rang again and got through",
+        _ => "marked done",
+    };
+
+    // A cell of the busiest-times grid: deeper blue for busier, from the palette's tint to its signal blue.
+    private static string Shade(int calls, int busiest)
+    {
+        if (calls == 0)
+        {
+            return Tint;
+        }
+
+        var f = 0.15 + (0.85 * calls / busiest);
+        static int Mix(int from, int to, double f) => (int)Math.Round(from + ((to - from) * f));
+        return $"#{Mix(0xe6, 0x9c, f):x2}{Mix(0xf1, 0xc9, f):x2}{Mix(0xf7, 0xe6, f):x2}";
+    }
+
+    private static IEnumerable<(int Count, string Colour, string Label)> Outcomes(int answered, int voicemail, int missed, int hungUp) =>
+        [(answered, Ok, "answered"), (voicemail, Route, "voicemail"), (missed, Bad, "missed"), (hungUp, Warn, "hung up in the menu")];
+
+    private static RenderFragment Tile(string value, string label, string colour, bool small = false, (string Text, string Colour)? change = null) => __builder =>
+    {
+        <td width="25%" style="padding: @(small ? "10px 12px" : "14px 12px"); background: @Tint; border: 1px solid @Line; border-radius: 8px; vertical-align: top;">
+            <div style="font-size: @(small ? "18px" : "26px"); line-height: 1.1; font-weight: 650; font-variant-numeric: tabular-nums; color: @colour;">@value</div>
+            <div style="margin-top: 4px; font-size: 12px; line-height: 1.3; color: @Fg3;">@label</div>
+            @if (change is { } c)
+            {
+                <div style="margin-top: 3px; font-size: 12px; font-variant-numeric: tabular-nums; color: @c.Colour;" data-report-change>@c.Text</div>
+            }
+        </td>
+    };
+
+    // The change on the period before: green when it moved the good way, red the bad way, plain when neither is better.
+    private static (string, string) Change(int now, int before, bool? upIsGood)
+    {
+        var d = now - before;
+        var colour = d == 0 || upIsGood is null ? Fg3 : (d > 0) == upIsGood ? Ok : Bad;
+        return (d == 0 ? "same as before" : d > 0 ? $"+{d} on before" : $"−{-d} on before", colour);
+    }
+
+    private static (string, string) Points(double now, double before)
+    {
+        var d = (int)Math.Round((now - before) * 100);
+        return (d == 0 ? "same rate as before" : d > 0 ? $"+{d} pts on before" : $"−{-d} pts on before", d == 0 ? Fg3 : d > 0 ? Ok : Bad);
+    }
+
+    // Ringing longer is worse.
+    private static (string, string) SecondsChange(TimeSpan now, TimeSpan before)
+    {
+        var d = (int)Math.Round((now - before).TotalSeconds);
+        return (d == 0 ? "same as before" : d > 0 ? $"+{d} s on before" : $"−{-d} s on before", d == 0 ? Fg3 : d > 0 ? Bad : Ok);
+    }
+
+    // What the period before was: the day, the 7 days, or so many days.
+    private string PeriodBefore
+    {
+        get
+        {
+            var days = (int)Math.Round((Content.To - Content.From).TotalDays);
+            return days <= 1 ? "day" : days == 7 ? "7 days" : $"{days} days";
+        }
+    }
+
+    private static RenderFragment Section(string title) => __builder =>
+    {
+        <tr>
+            <td style="padding: 26px 28px 10px;">
+                <h2 style="margin: 0; font-size: 16px; font-weight: 650; color: @Fg;">@title</h2>
+            </td>
+        </tr>
+    };
+}

@@ -1,0 +1,25 @@
+[
+  {
+    "id": 1,
+    "parent_ulp_id": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+    "name": "Jordan Irving 44",
+    "items": [
+      {
+        "id": "user-abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+        "timeout": 30
+      }
+    ],
+    "unanswered_calls": "voicemail",
+    "transfer_to_node_id": null,
+    "transfer_to_parking_lot_uuid": null,
+    "vm_receiver_uuids": [
+      "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+    ],
+    "vm_receiver_group_id": null,
+    "transfer_to_user_uuid": null,
+    "transfer_to_contact_uuid": null,
+    "transfer_to_contact_did": null,
+    "transfer_to_group_id": null,
+    "transfer_to_queue_id": null
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "time": "2026-09-22T14:06:50.883Z",
+    "event": "call_started",
+    "event_data": {
+      "to": "+441144960042",
+      "from": "+441164960630",
+      "to_smart_attendant_id": 45
+    },
+    "event_uuid": "04516074-91c7-4216-91d2-924ad203d242"
+  },
+  {
+    "time": "2026-09-22T14:07:10.454Z",
+    "event": "call_hangup",
+    "event_data": {
+      "hangup_cause": "normal_end"
+    },
+    "event_uuid": "c1e9d86a-9a9f-41ac-ac9e-696c3d3df60a"
+  }
+]

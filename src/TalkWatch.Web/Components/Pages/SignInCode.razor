@@ -1,0 +1,39 @@
+@page "/signin/code"
+
+<PageTitle>Sign in · TalkWatch</PageTitle>
+
+<section class="auth signin" aria-labelledby="code-title">
+    <div class="auth-brand"><svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6c6 0 8 6 14 6M2 12h14M2 18c6 0 8-6 14-6" fill="none" stroke="var(--live)" stroke-width="1.8" stroke-linecap="round"></path><circle cx="19" cy="12" r="3" fill="var(--fg)"></circle></svg><span>Talk<b>Watch</b></span></div>
+    <h1 id="code-title">Enter your code</h1>
+    <p class="hint" style="margin: 0">Two-factor sign-in is on for this account.</p>
+
+    @if (!string.IsNullOrEmpty(Failed))
+    {
+        <p class="notice problem" role="alert">That code did not work. Try the newest code from your app, or a recovery code.</p>
+    }
+
+    <form method="post" action="/account/signin/code" class="stack" style="gap: 12px">
+        <AntiforgeryToken />
+        <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+        <label class="field"><span class="label">Code from your authenticator app</span><input class="input mono" name="Code" inputmode="numeric" autocomplete="one-time-code" required autofocus /></label>
+        <button type="submit" class="btn primary">Sign in</button>
+    </form>
+
+    <details class="auth-more">
+        <summary>Lost your phone?</summary>
+        <form method="post" action="/account/signin/code" class="stack" style="gap: 10px">
+            <AntiforgeryToken />
+            <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+            <input type="hidden" name="Recovery" value="true" />
+            <label class="field"><span class="label">Recovery code</span><input class="input mono" name="Code" autocomplete="off" required /></label>
+            <button type="submit" class="btn">Sign in with a recovery code</button>
+        </form>
+        <p class="hint">Each recovery code works once. Without one, an admin can turn two-factor sign-in off for you.</p>
+    </details>
+</section>
+
+@code {
+    [SupplyParameterFromQuery(Name = "failed")] private string? Failed { get; set; }
+
+    [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
+}

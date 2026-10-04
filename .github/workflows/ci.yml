@@ -1,0 +1,48 @@
+name: CI
+
+# CI runs on the maintainer's Docker with scripts/ci.sh, which posts a 'local-ci' status to each commit, so this
+# workflow no longer runs on every push. It is kept, and can be run by hand from the Actions tab, for when a hosted
+# runner is wanted again (at the latest, going public with the first tag).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - run: dotnet build -c Release
+      - run: dotnet test -c Release --no-build
+      # The same check as the pre-commit hook, for anyone who has not enabled it.
+      - name: Fixture guard
+        run: dotnet run --project tools/TalkWatch.FixtureGuard -c Release --no-build -- .
+
+  # Builds the image without pushing it, to prove the Dockerfile still works. Images are published by the release
+  # workflow, for a tag, to GHCR.
+  image:
+    needs: test
+    runs-on: ubuntu-latest
+    concurrency:
+      group: image-${{ github.ref }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          tags: talkwatch:ci
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha,scope=talkwatch
+          cache-to: type=gha,mode=max,scope=talkwatch

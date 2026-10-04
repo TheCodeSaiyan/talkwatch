@@ -1,0 +1,88 @@
+@* The rail's number switcher: look at every number's calls, or one DID's. The choice is kept on the account and narrows
+   every call page through the access scope, so no page can forget it. Static, a form per choice; in a database scope
+   of its own, as anything in the layout must be, and read without the chosen number, so every DID keeps its count. *@
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Core.Calls
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject IServiceScopeFactory Scopes
+@inject NavigationManager Nav
+@inject TimeProvider Clock
+@inject Microsoft.Extensions.Options.IOptions<SiteOptions> Site
+
+@if (_numbers.Count > 1 || _chosen is not null)
+{
+    <details class="menu ws numsw" data-number-switch data-chosen="@(_chosen is null ? null : "")">
+        <summary aria-label="@($"Showing calls on {Label}. Choose a number")">
+            <span class="wl">@Label <svg class="ico s" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6 8 10.5 12.5 6"></path></svg></span>
+            <span class="wn">@(_chosen is null ? $"{_numbers.Count} numbers" : Label == _chosen ? "only this number" : _chosen)</span>
+        </summary>
+        <form class="menu-panel numsw-panel" role="menu" method="post" action="/account/number">
+            <AntiforgeryToken />
+            <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+            <span class="eyebrow label">Show calls on</span>
+            <button type="submit" role="menuitemradio" name="Did" value="" aria-checked="@(_chosen is null ? "true" : "false")">
+                <span class="n">All numbers</span><span class="c num">@_numbers.Sum(n => n.Today)</span>
+            </button>
+            <div class="sep"></div>
+            @foreach (var number in _numbers)
+            {
+                <button type="submit" role="menuitemradio" name="Did" value="@number.Did" aria-checked="@(number.Did == _chosen ? "true" : "false")">
+                    <span class="n">@number.Name
+                        @if (number.Name != number.Did)
+                        {
+                            <small class="mono">@number.Did</small>
+                        }
+                    </span><span class="c num" title="Calls today">@number.Today</span>
+                </button>
+            }
+            <p class="hint">Calls today. Every call page follows your choice, on every device, until you change it.</p>
+        </form>
+    </details>
+}
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? Auth { get; set; }
+
+    private sealed record Number(string Did, string Name, int Today);
+
+    private List<Number> _numbers = [];
+    private string? _chosen;
+
+    private string Label => _chosen is null ? "All numbers" : _numbers.FirstOrDefault(n => n.Did == _chosen)?.Name ?? _chosen;
+
+    private string ReturnUrl => "/" + Nav.ToBaseRelativePath(Nav.Uri);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Auth is null || (await Auth).User is not { Identity.IsAuthenticated: true } user)
+        {
+            return;
+        }
+
+        _chosen = user.FindFirstValue(AccessScopeHolder.DidClaim);
+        using var scope = Scopes.CreateScope();
+        var holder = scope.ServiceProvider.GetRequiredService<AccessScopeHolder>();
+        holder.UsePrincipal(user);
+        holder.UseScope(holder.Resolve() with { Did = null });
+        var db = scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>();
+
+        var zone = TimeZoneInfo.FindSystemTimeZoneById(Site.Value.TimeZone);
+        var now = Clock.GetUtcNow();
+        var today = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(TimeZoneInfo.ConvertTime(now, zone).Date, zone), TimeSpan.Zero);
+        var lines = await db.Lines.AsNoTracking().Where(l => l.Kind == LineKind.Did && (l.Present || l.Key == _chosen))
+            .Select(l => new { l.Key, l.Name }).ToListAsync();
+        var counts = await (
+                from l in db.CallLines
+                join c in db.Calls on l.CallId equals c.Id
+                where l.Kind == LineKind.Did && c.Time >= today
+                group l by l.Key into g
+                select new { g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.Key, g => g.Count);
+        _numbers = lines
+            .Select(l => new Number(l.Key, string.IsNullOrWhiteSpace(l.Name) ? l.Key : l.Name, counts.GetValueOrDefault(l.Key)))
+            .OrderBy(n => n.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+    }
+}

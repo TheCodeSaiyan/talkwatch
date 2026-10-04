@@ -1,0 +1,19 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,props,csproj,slnx}]
+indent_size = 2
+
+# Test names read as sentences.
+[tests/**.cs]
+dotnet_diagnostic.CA1707.severity = none
+
+# EF Core migrations are generated, and regenerated; analysers judge the code people write.
+[src/TalkWatch.Data/Migrations/**.cs]
+generated_code = true

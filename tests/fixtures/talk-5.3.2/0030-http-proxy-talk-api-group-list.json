@@ -1,0 +1,39 @@
+[
+  {
+    "id": 1,
+    "uuid": "424b4f0d-662b-4e2e-aa16-182661c912b5",
+    "name": "Jordan Baker 27",
+    "image": null,
+    "vm_receiver_uuids": [],
+    "vm_greeting": {},
+    "call_handling": "simultaneous",
+    "ringback": null,
+    "no_answer_action": "",
+    "transfer_to_node_id": null,
+    "transfer_to_user_uuid": null,
+    "transfer_to_contact_uuid": null,
+    "transfer_to_contact_did": null,
+    "transfer_to_group_id": null,
+    "transfer_to_queue_id": null,
+    "transfer_to_parking_lot_uuid": null,
+    "simultaneous_ring_timeout": null,
+    "member_list": [
+      "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+    ],
+    "did_list": [],
+    "ext_list": [
+      "0004"
+    ],
+    "group_type": "ring_group",
+    "member_list_meta": [
+      {
+        "member_id": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+        "sequential_call_order": 0,
+        "sequential_call_leg_timeout": 30,
+        "group_member_data": {
+          "member_is_user": true
+        }
+      }
+    ]
+  }
+]

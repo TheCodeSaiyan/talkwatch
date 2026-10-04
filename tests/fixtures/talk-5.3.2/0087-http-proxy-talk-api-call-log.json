@@ -1,0 +1,58 @@
+{
+  "records": [
+    {
+      "time": "2026-08-28T15:22:50.453Z",
+      "from": "+441144960057",
+      "to": "+441144960042",
+      "answered_by": null,
+      "status": "accepted",
+      "duration": 6,
+      "recording_filename": null,
+      "is_video_call": false,
+      "is_intercom_call": false,
+      "is_group_intercom_call": false,
+      "direction": "in",
+      "uuid": "4040d176-0dcf-4d69-a4f5-81be98d59d48",
+      "country": "IT",
+      "recording": false,
+      "quality_score": null,
+      "vm_data": {},
+      "call_events": [
+        {
+          "time": "2026-08-28T15:22:50.498Z",
+          "event": "call_started",
+          "event_data": {
+            "to": "+441144960042",
+            "from": "+441144960057",
+            "to_smart_attendant_id": 45
+          },
+          "event_uuid": "8d5ffb43-bd61-49a9-960e-d11b777196d4"
+        },
+        {
+          "time": "2026-08-28T15:22:56.557Z",
+          "event": "call_hangup",
+          "event_data": {
+            "hangup_cause": "cancelled"
+          },
+          "event_uuid": "bca1c349-1ff6-4ebf-85d1-03f36e047323"
+        }
+      ],
+      "from_mac": null,
+      "from_id": null,
+      "from_contact_id": null,
+      "from_did": null,
+      "from_caller_name": null,
+      "to_id": null,
+      "to_group_id": null,
+      "to_contact_id": null,
+      "to_smart_attendant_id": 45,
+      "to_smart_attendant_title": "Title 18",
+      "to_queue_id": null,
+      "answered_by_mac": null,
+      "answered_by_user_uuid": null,
+      "answered_by_contact_id": null,
+      "answered_by_group_id": null
+    }
+  ],
+  "total_count": "1"
+}

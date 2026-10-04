@@ -1,0 +1,261 @@
+/* TalkWatch application layer, on top of tw.css (the design system). It does two jobs: the shell (the sticky Signal
+   Rail, the page frame, the attention strip) and a base for pages that are still plain markup, so every page reads as
+   TalkWatch before it is redesigned on its own. Everything comes from tw.css tokens; no colour is written here. */
+
+/* ---------- shell ---------- */
+/* Not clipped: the rail's blur makes it the box its fixed menus are placed in, so with overflow hidden every menu
+   opened from it (the account, Configure, the number switcher) was cut off. The workspaces scroll on their own. */
+.rail.shell { position: sticky; top: 0; z-index: 30; height: var(--rail-h); overflow: visible; }
+.rail-canvas > canvas { display: block; width: 100%; height: 100%; }
+/* The signature rises out of the line's strip to the rail's full height, over the empty stretch only. */
+.rail-canvas > canvas.rail-signature { position: absolute; left: 0; right: 0; bottom: 0; height: var(--rail-h); }
+.rail.shell .signals { flex: 1; min-width: 0; }
+.page { padding: 18px 24px 72px; display: flex; flex-direction: column; gap: 16px; max-width: 1600px; }
+.page > * { margin-top: 0; margin-bottom: 0; }
+.demo { margin: 0; padding: 6px 24px; background: var(--warn-soft); color: var(--fg); font-size: var(--t-sm); border-bottom: 1px solid var(--line); }
+.attention { display: flex; flex-direction: column; gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); }
+.attention p { margin: 0; padding: 8px 24px; font-size: var(--t-md); display: flex; gap: 10px; align-items: baseline; }
+.attention .drift, .attention .warn { background: var(--warn-soft); }
+.attention .drift { background: var(--bad-soft); }
+.attention b { font-weight: 600; }
+
+/* the viewer's menu and the Configure menu: <details>, so they work without script */
+.menu { position: relative; display: flex; align-items: stretch; }
+.menu > summary { list-style: none; cursor: pointer; display: flex; align-items: center; }
+.menu > summary::-webkit-details-marker { display: none; }
+.menu-panel { position: fixed; top: calc(var(--rail-h) + 6px); z-index: 45; min-width: 240px; padding: 4px; background: var(--s2); border: 1px solid var(--line-strong); border-radius: var(--r3); box-shadow: var(--shadow); display: flex; flex-direction: column; }
+.menu-panel.end { right: 10px; }
+.menu-panel a, .menu-panel button { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r2); color: var(--fg-2); text-decoration: none; font-size: var(--t-md); width: 100%; text-align: left; }
+.menu-panel a:hover, .menu-panel button:hover, .menu-panel a:focus-visible { background: var(--s4); color: var(--fg); outline: none; }
+.menu-panel .sep { height: 1px; background: var(--line); margin: 4px 6px; }
+.menu-panel .label { padding: 6px 10px 2px; }
+.menu-panel form { margin: 0; }
+.menu-panel .who { padding: 8px 10px; }
+.theme-choice { display: flex; gap: 4px; padding: 4px 6px 6px; }
+.theme-choice button { justify-content: center; padding: 5px 8px; border: 1px solid var(--control-edge); font-size: var(--t-sm); }
+.theme-choice button[aria-pressed="true"] { background: var(--s4); color: var(--fg); }
+/* the Configure menu is a workspace too: its name over what is behind it, like the others, not side by side */
+.ws-menu > summary { height: 100%; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; }
+
+/* the Alerts workspace carries the bell's job: the unread count and a pop-up as an alert arrives */
+.ws .wn b[data-bell] { min-width: 1ch; }
+.popup { position: fixed; top: calc(var(--rail-h) + 8px); right: 12px; z-index: 50; max-width: 360px; padding: 10px 12px; border-radius: var(--r3); background: var(--s4); color: var(--fg); border: 1px solid var(--line-strong); box-shadow: var(--shadow); text-decoration: none; font-size: var(--t-md); animation: toastIn var(--d-component) var(--ease); }
+.popup b { display: block; font-weight: 600; }
+
+/* ---------- a base for pages that are still plain markup ---------- */
+.page h1 { font-size: var(--t-xl); }
+.page h2 { font-size: var(--t-lg); margin-top: 8px; }
+.page h3 { font-size: var(--t-base); }
+.page p, .page li { max-width: 78ch; }
+.page a:not(.btn):not(.button):not(.ws) { color: var(--live); text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--live) 45%, transparent); }
+.page a:not(.btn):not(.button):hover { text-decoration-color: currentColor; }
+.page section:not(.figures):not(.plane):not(.metrics) { display: flex; flex-direction: column; gap: 10px; }
+.hint, .page small { color: var(--fg-3); font-size: var(--t-sm); }
+.empty { color: var(--fg-2); }
+
+/* tables read like the design system's data grid */
+.page table:not(.heat-table):not(.dg):not(.report-paper *) { width: 100%; border-collapse: separate; border-spacing: 0; font-size: var(--t-md); background: var(--s1); border: 1px solid var(--line); border-radius: var(--r3); overflow: hidden; }
+.page table:not(.heat-table):not(.dg):not(.report-paper *) th { text-align: left; font-weight: 500; font-size: var(--t-xs); color: var(--fg-3); text-transform: uppercase; letter-spacing: .07em; padding: 0 12px; height: 34px; border-bottom: 1px solid var(--line); background: var(--s1); white-space: nowrap; }
+.page table:not(.heat-table):not(.dg):not(.report-paper *) td { padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.page table:not(.heat-table):not(.dg):not(.report-paper *) tbody tr:last-child td { border-bottom: 0; }
+.page table:not(.heat-table):not(.dg):not(.report-paper *) tbody tr:hover { background: var(--s2); }
+.page table td:has(> a:only-child) a { font-variant-numeric: tabular-nums; }
+.table-wrap, .page table { max-width: 100%; }
+@media (max-width: 760px) { .page table:not(.heat-table):not(.dg):not(.report-paper *) { display: block; overflow-x: auto; } }
+
+/* forms */
+.page form { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; margin: 0; }
+/* a form laid out as a column (the newer pages) keeps that, whatever the rule above does for the older ones */
+.page form.stack { flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
+.page form > label, .page fieldset > label { display: flex; flex-direction: column; gap: 5px; font-size: var(--t-sm); color: var(--fg-2); font-weight: 500; }
+.page label:has(> input[type=checkbox]), .page label:has(> input[type=radio]) { flex-direction: row; align-items: center; gap: 8px; color: var(--fg); font-weight: 400; font-size: var(--t-md); }
+.page input:not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=hidden]):not(.filter-input), .page select, .page textarea {
+  height: 32px; padding: 0 10px; border: 1px solid var(--control-edge); border-radius: var(--r2); background: var(--s1); color: var(--fg); font-size: var(--t-md); min-width: 0; }
+.page textarea { height: auto; padding: 8px 10px; }
+.page input:focus, .page select:focus, .page textarea:focus { outline: none; border-color: var(--live); box-shadow: 0 0 0 3px var(--live-soft); }
+.page input[type=checkbox], .page input[type=radio] { accent-color: var(--live); width: 15px; height: 15px; }
+.page fieldset { border: 1px solid var(--line); border-radius: var(--r3); padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 10px 14px; }
+.page legend { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--fg-3); font-weight: 600; padding: 0 6px; }
+.page button:not(.btn):not(.ws):not(.iconbtn):not(.copy):not(.tab):not(.pp):not(.speed), .page .button {
+  display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border-radius: var(--r2); border: 1px solid var(--control-edge); background: var(--s2); font-size: var(--t-md); font-weight: 500; color: var(--fg); text-decoration: none; white-space: nowrap; cursor: pointer; transition: background var(--d-instant), border-color var(--d-instant); }
+.page button:not(.btn):not(.ws):not(.iconbtn):not(.copy):not(.tab):not(.pp):not(.speed):hover, .page .button:hover { background: var(--s3); }
+.page button[disabled] { opacity: .45; cursor: not-allowed; }
+.page audio { height: 32px; max-width: 280px; vertical-align: middle; }
+.audio { display: flex; align-items: center; gap: 8px; font-size: var(--t-sm); color: var(--fg-2); }
+
+/* status messages */
+.notice { margin: 0; }
+.notice.problem { border-color: color-mix(in srgb, var(--bad) 40%, transparent); background: var(--bad-soft); }
+
+/* ---------- pages still on their first design, re-themed ---------- */
+/* Dashboard and switchboards: figures as one joined strip, bars in signal colours */
+.periods { display: flex; gap: 4px; flex-wrap: wrap; }
+.periods a { padding: 5px 10px; border-radius: var(--r2); border: 1px solid var(--line); text-decoration: none !important; color: var(--fg-2) !important; font-size: var(--t-sm); }
+.periods a.current { background: var(--s4); color: var(--fg) !important; border-color: var(--control-edge); }
+.figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: var(--r3); background: var(--s1); overflow: hidden; }
+.figures > div { padding: 12px 16px 10px; border-right: 1px solid var(--line); color: var(--fg-2); font-size: var(--t-sm); }
+.figures strong { display: block; font: 500 var(--t-2xl)/1.15 var(--mono); letter-spacing: -.03em; color: var(--fg); font-variant-numeric: tabular-nums; }
+.bars { display: flex; align-items: flex-end; gap: 2px; height: 8rem; max-width: 48rem; }
+.bars .bar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+.bars .bar span { display: block; background: var(--live); opacity: .85; min-height: 1px; border-radius: 1.5px 1.5px 0 0; }
+.bars .bar small { font: 400 10px var(--mono); text-align: center; height: 1rem; color: var(--fg-3); }
+.heat-table { border-collapse: separate; border-spacing: 2px; font: 400 10px var(--mono); }
+.heat-table th { font-weight: 400; color: var(--fg-3); padding: 0 4px; }
+.heat-table td { width: 2.2rem; height: 1.5rem; text-align: center; border-radius: 2px; color: var(--fg); }
+@media (max-width: 40rem) { .heat-table { display: block; overflow-x: auto; } }
+
+/* alert flows: in the design system (tw.css), with the flows page and editor */
+
+/* browser alerts inbox */
+.inbox { list-style: none; padding: 0; margin: 0; border: 1px solid var(--line); border-radius: var(--r3); background: var(--s1); }
+.inbox li { padding: 10px 16px; border-bottom: 1px solid var(--line); max-width: none; }
+.inbox li:last-child { border-bottom: 0; }
+.inbox li.unread { box-shadow: inset 2px 0 0 var(--bad); }
+.inbox small { display: block; }
+
+/* Blazor's own validation and error boundary, in TalkWatch's colours */
+h1:focus { outline: none; }
+.valid.modified:not([type=checkbox]) { outline: 1px solid var(--ok); }
+.invalid { outline: 1px solid var(--bad); }
+.validation-message { color: var(--bad); font-size: var(--t-sm); }
+.blazor-error-boundary { background: var(--bad-soft); border: 1px solid color-mix(in srgb, var(--bad) 40%, transparent); border-radius: var(--r2); padding: 12px 14px; color: var(--fg); }
+.blazor-error-boundary::after { content: "Something went wrong drawing this part of the page. Reload to try again."; }
+
+@media (max-width: 760px) { .page { padding: 14px 16px 64px; } .demo, .attention p { padding-left: 16px; padding-right: 16px; } }
+
+/* call log: the filter bar's search sits inside the bar, the export menu opens under its button */
+.filters .filter-input { border: 0; background: transparent; box-shadow: none; height: 26px; }
+.filters .filter-add { margin: 0; }
+.chip a.x { color: var(--fg-3) !important; text-decoration: none !important; display: flex; align-items: center; }
+.export-menu .menu-panel { position: absolute; top: calc(100% + 6px); right: 0; }
+.dg .who b a, .dg a.row { text-decoration: none; }
+.dg audio { height: 28px; width: 170px; }
+.seg a { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; font-size: var(--t-sm); color: var(--fg-2) !important; text-decoration: none !important; border-right: 1px solid var(--line); }
+.seg a:last-child { border-right: 0; }
+.seg a[aria-pressed="true"] { background: var(--s4); color: var(--fg) !important; }
+.seg a:hover { color: var(--fg) !important; }
+.dg td a { text-decoration: none !important; }
+
+/* call-backs: one row per caller; how long they have waited sets the edge colour, from live to warn to bad */
+.cb-row { display: grid; grid-template-columns: 26px minmax(180px, 1.2fr) minmax(0, 1fr) 150px auto; gap: 14px; align-items: center; padding: 10px var(--pad); border-bottom: 1px solid var(--line); position: relative; max-width: none !important; }
+.cb-row:last-child { border-bottom: 0; }
+.cb-row::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; }
+.cb-row[data-tone="live"]::before { background: var(--live); }
+.cb-row[data-tone="warn"]::before { background: var(--warn); }
+.cb-row[data-tone="bad"]::before { background: var(--bad); }
+.cb-row .cb-wait { display: flex; flex-direction: column; font-size: var(--t-xs); }
+.cb-row .cb-wait .num { font-size: var(--t-md); color: var(--fg); }
+.cb-row[data-tone="warn"] .cb-wait .num { color: var(--warn); }
+.cb-row[data-tone="bad"] .cb-wait .num { color: var(--bad); }
+.cb-row .cb-actions form { margin: 0; }
+.cb-row.done { grid-template-columns: 26px minmax(180px, 1.2fr) minmax(0, 1fr) auto; }
+@media (max-width: 760px) { .cb-row { grid-template-columns: 26px minmax(0, 1fr) auto; } .cb-row .cb-voicemail { grid-column: 2 / -1; } .cb-row .cb-wait { grid-row: 1; grid-column: 3; } }
+
+/* alerts: severity as a stepped mark, the alert as a sentence, its state as a word */
+.alert-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; }
+.alert-row .alert-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.alert-row .alert-main b { font-weight: 600; }
+.alert-row .alert-main .muted { font-size: var(--t-sm); }
+.alert-list li.unread { box-shadow: inset 2px 0 0 var(--live); }
+
+/* analytics: the period in one sentence before any chart */
+.lede { font-size: var(--t-lg); line-height: 1.5; max-width: 90ch; margin: 0; }
+.lede b { font-weight: 600; }
+
+/* the waveform player: full in a call or a panel, compact inside a table row */
+.tw-player { width: 100%; max-width: 640px; }
+.audio:has(.tw-player) { display: block; }
+.dg .audio:has(.tw-player), .cb-row .audio:has(.tw-player) { display: inline-block; }
+.tw-player .pp[aria-busy="true"] { opacity: .6; }
+.dg .tw-player, .cb-row .tw-player { grid-template-columns: auto minmax(90px, 140px); padding: 0; border: 0; background: none; gap: 8px; }
+.dg .tw-player .ctl, .dg .tw-player .meta, .cb-row .tw-player .ctl { display: none; }
+.dg .tw-player .pp, .cb-row .tw-player .pp { width: 28px; height: 28px; }
+.dg .tw-player .wave, .cb-row .tw-player .wave { height: 26px; }
+.transcript [data-at] { cursor: pointer; }
+
+/* operator: calls that need someone, everyone by team, call-backs waiting; one column on a narrow screen */
+.op-grid { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(0, 1.5fr) minmax(260px, .9fr); gap: 16px; align-items: start; }
+.op-grid .lc { grid-template-columns: 22px minmax(0, 1fr) auto 54px; row-gap: 3px; padding-block: 8px; min-height: 0; }
+.op-grid .lc .trace { grid-column: 2 / -1; grid-row: 2; }
+.op-grid .lc .acts { display: none; }
+.team-h { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 16px 6px; border-top: 1px solid var(--line); }
+.team-h:first-of-type { border-top: 0; }
+@media (max-width: 1180px) { .op-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* a plain "nothing yet" line on a page still on its first design: a sentence, not a panel-sized gap */
+.page p.empty { display: block; padding: 4px 0; }
+
+/* reports: the list of reports, a copy shown on paper as it was emailed (its styles are the email's), who it went to */
+.rep-row { display: flex; flex-direction: column; gap: 6px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.rep-row:last-child { border-bottom: 0; }
+.rep-row.off { opacity: .6; }
+.rep-row form { display: inline-flex; }
+.rep-name { font-weight: 600; color: var(--fg); text-decoration: none; flex: 1; }
+.rep-name:hover { text-decoration: underline; }
+.report-paper { color-scheme: light; border-radius: var(--r2); overflow-x: auto; } /* the report brings its own ground and spacing */
+.report-paper a { color: #0b5cad; }
+.report-deliveries { list-style: none; margin: 0; padding: 0; }
+.report-deliveries li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.report-deliveries li:last-child { border-bottom: 0; }
+.dot-ic { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--s2); color: var(--fg-2); }
+.report-deliveries [data-tone="ok"] .dot-ic { background: var(--ok-soft); color: var(--ok); }
+.report-deliveries [data-tone="bad"] .dot-ic { background: var(--bad-soft); color: var(--bad); }
+.report-deliveries [data-tone="warn"] .dot-ic { background: var(--warn-soft); color: var(--warn); }
+.choice-list { display: flex; flex-direction: column; gap: 8px; }
+.choice-list > label { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.choice-list > label.indent { padding-left: 24px; }
+
+/* administration: rows of small things with an action on each (tokens, roles), form rows in a panel */
+ul.rows { list-style: none; margin: 0; padding: 0; }
+ul.rows > li { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+ul.rows > li:last-child { border-bottom: 0; }
+ul.rows form, .dg form { display: inline-flex; }
+.role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); gap: 16px; align-items: start; }
+.choice-list > label.preset { align-items: flex-start; }
+.choice-list > label.preset input { margin-top: 3px; }
+
+/* sign-in, the two-factor code and a notification's alert link: one panel, centred, with the brand above it */
+.auth { width: min(100%, 380px); margin: 64px auto 0; display: flex; flex-direction: column; gap: 14px; padding: 28px; background: var(--s1); border: 1px solid var(--line); border-radius: var(--r3); }
+.auth h1 { margin: 0; font-size: 22px; }
+.auth .btn { justify-content: center; }
+.auth-brand { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--fg); margin-bottom: 6px; }
+.auth-brand .brand-mark { width: 22px; height: 22px; }
+.auth-brand b { font-weight: 700; }
+.auth-or { display: flex; align-items: center; gap: 10px; color: var(--fg-3); font-size: 12px; }
+.auth-or::before, .auth-or::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+.auth-more summary { cursor: pointer; color: var(--fg-2); font-size: 13px; margin-bottom: 10px; }
+
+/* the account page: recovery codes in a grid, a key or token to copy in a box of its own, numbered setup steps */
+.code-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 6px; }
+.code-grid code, .secret-box { display: block; padding: 6px 10px; background: var(--s2); border: 1px solid var(--line); border-radius: var(--r2); font-family: var(--mono); word-break: break-all; }
+.steps-list { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; color: var(--fg-2); }
+
+/* the demo's guest sign-in, above the usual form */
+.demo-guest { display: flex; flex-direction: column; gap: 10px; padding: 14px; border: 1px solid color-mix(in srgb, var(--live) 40%, transparent); border-radius: var(--r2); background: color-mix(in srgb, var(--live) 8%, transparent); }
+
+/* The rail's number switcher, beside the brand: which calls every page is showing. A chosen number is tinted in the
+   routing colour, so a narrowed view never passes for the whole picture. */
+.numsw { border-right: 1px solid var(--line); }
+.numsw > summary { height: 100%; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; cursor: pointer; }
+.numsw .wn { font-family: var(--mono); }
+.numsw[data-chosen] { color: var(--route); background: color-mix(in srgb, var(--route) 10%, transparent); }
+.numsw[data-chosen] .wn { color: var(--route); }
+.numsw[data-chosen]::before { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--route); }
+.numsw-panel { min-width: 300px; max-height: 70vh; overflow: auto; }
+.numsw-panel button { display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left; }
+.numsw-panel .n { display: flex; flex-direction: column; min-width: 0; }
+.numsw-panel .n small { color: var(--fg-3); font-size: var(--t-xs); }
+.numsw-panel .c { font: 500 var(--t-xs) var(--mono); font-variant-numeric: tabular-nums; color: var(--fg-3); }
+.numsw-panel button[aria-checked="true"] { color: var(--route); }
+.numsw-panel button[aria-checked="true"] .n { font-weight: 600; }
+.numsw-panel .hint { white-space: normal; margin: 6px 8px 4px; font-size: var(--t-xs); color: var(--fg-3); max-width: 34ch; }
+
+/* A contact on the Operator board: an outside number, so no presence dot, and quieter than the people. */
+.pcell.contact .avatar { background: transparent; border: 1px dashed var(--line-strong); color: var(--fg-3); }
+.pcell.contact .state { font-size: var(--t-xs); }
+
+/* A flow tried on the last week's calls, under the editor's buttons. */
+.dry-run { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r2); background: var(--s2); }
+.dry-run p { margin: 0 0 6px; }
+.dry-run-hits { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: var(--t-sm); }
+.dry-run-hits .mono { color: var(--fg-3); }

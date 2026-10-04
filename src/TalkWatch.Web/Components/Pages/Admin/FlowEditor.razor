@@ -1,0 +1,308 @@
+@page "/flows/new"
+@page "/flows/{Id:guid}"
+@page "/admin/alerts/flows/new"
+@page "/admin/alerts/flows/{Id:guid}"
+@* Builds a flow step by step, as the chain it will run. Interactive, so steps can be added, moved and branched without
+   a page load each time; saving goes through the same checks as POST /admin/alerts/flows. A Manager sees only their own
+   flows, lines and channels (the database filters them), and can notify only themselves. *@
+@attribute [Authorize(Policy = "permission:alerts")]
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Core.Alerts
+@using TalkWatch.Core.Calls
+@using TalkWatch.Data
+@using TalkWatch.Web.Components.Alerts
+@using TalkWatch.Web.Services
+@inject TalkWatchDbContext Db
+@inject AccessScopeHolder Scope
+@inject AlertFlowStore Store
+@inject AlertService Alerting
+@inject Microsoft.Extensions.Options.IOptions<SiteOptions> SiteSettings
+@inject NavigationManager Navigation
+@inject LineDirectorySync Directory
+
+<PageTitle>@(Id is null ? "New flow" : "Edit flow") · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <a class="back" href="/flows"><Icon Name="left" Size="s" /> Flows</a>
+        <h1>@(Id is null ? "New flow" : "Edit flow")</h1>
+        <div class="sub">Runs top to bottom for each alert it applies to. Once someone acknowledges, it stops. Times are in @Alerting.Zone.Id.</div>
+    </div>
+</header>
+
+@if (_missing)
+{
+    <div class="plane"><div class="empty" data-kind="none" style="padding: 24px 16px"><b>That flow is not there any more.</b><p class="why">It may have been removed. <a href="/flows">Back to flows</a></p></div></div>
+}
+else if (_loaded)
+{
+    <section class="plane flow-editor">
+        <div class="plane-head">
+            <label class="flow-name"><span class="eyebrow">Name</span><input maxlength="@AlertFlowStore.MaxNameLength" @bind="_name" placeholder="Missed calls on the sales line" /></label>
+        </div>
+        <div class="plane-body">
+            <ol class="flowchain editing">
+                <li class="flow-step when">
+                    <span class="node-ic"><Icon Name="bell" Size="s" /></span>
+                    <b>When</b>
+                    <select aria-label="When" @bind="Trigger">
+                        @foreach (var type in Enum.GetValues<AlertEventType>().Where(t => _admin || !Flows.IsSiteAlert(t)))
+                        {
+                            <option value="@type">@FlowText.EventName(type)</option>
+                        }
+                    </select>
+                </li>
+                @foreach (var condition in _conditions.ToList())
+                {
+                    <li class="flow-insert"></li>
+                    <li class="flow-step if" data-step="if">
+                        <span class="node-ic"><Icon Name="@FlowText.Icon(condition.ToCondition())" Size="s" /></span>
+                        <b>If</b> <ConditionEditor Condition="condition" Names="_names" />
+                        <span class="step-controls"><button type="button" class="remove" aria-label="Remove this condition" @onclick="() => _conditions.Remove(condition)">×</button></span>
+                    </li>
+                }
+                <li class="flow-insert@(_addingCondition ? " open" : "")">
+                    <button type="button" class="plus" aria-expanded="@(_addingCondition ? "true" : "false")" aria-label="Limit when this flow runs" @onclick="() => _addingCondition = !_addingCondition">+</button>
+                    @if (_addingCondition)
+                    {
+                        <span class="insert-menu">
+                            <button type="button" @onclick="() => AddCondition(EditCondition.TimeKind)"><Icon Name="clock" Size="s" /> If time</button>
+                            @if (!Flows.IsSiteAlert(_trigger))
+                            {
+                                <button type="button" @onclick="() => AddCondition(EditCondition.LineKind)"><Icon Name="did" Size="s" /> If line</button>
+                                <button type="button" @onclick="() => AddCondition(EditCondition.RangKind)"><Icon Name="group" Size="s" /> If it rang</button>
+                            }
+                            @if (Flows.IsCallAlert(_trigger))
+                            {
+                                <button type="button" @onclick="() => AddCondition(EditCondition.CallerKind)"><Icon Name="user" Size="s" /> If caller</button>
+                                <button type="button" @onclick="() => AddCondition(EditCondition.RepeatKind)"><Icon Name="callbacks" Size="s" /> If repeat caller</button>
+                                <button type="button" @onclick="() => AddCondition(EditCondition.CallerMissedKind)"><Icon Name="callbacks" Size="s" /> If the caller keeps missing us</button>
+                                <button type="button" @onclick="() => AddCondition(EditCondition.NumberMissedKind)"><Icon Name="chart" Size="s" /> If the number keeps missing calls</button>
+                                <button type="button" @onclick="() => AddCondition(EditCondition.WaitingKind)"><Icon Name="callbacks" Size="s" /> If callers are waiting</button>
+                                <button type="button" @onclick="() => AddCondition(EditCondition.AnswerRateKind)"><Icon Name="chart" Size="s" /> If the answer rate drops</button>
+                                <button type="button" @onclick="() => AddCondition(EditCondition.RangLongerKind)"><Icon Name="clock" Size="s" /> If it rang long</button>
+                                <button type="button" @onclick="() => AddCondition(EditCondition.KnownKind)"><Icon Name="user" Size="s" /> If known caller</button>
+                                <button type="button" @onclick="() => AddCondition(EditCondition.ForwardedKind)"><Icon Name="phone" Size="s" /> If put through outside</button>
+                                <button type="button" @onclick="() => AddCondition(EditCondition.AbroadKind)"><Icon Name="did" Size="s" /> If from abroad</button>
+                                <button type="button" @onclick="() => AddCondition(EditCondition.QualityKind)"><Icon Name="warning" Size="s" /> If quality was poor</button>
+                                @if (_trigger == AlertEventType.VoicemailTranscribed && _admin)
+                                {
+                                    <button type="button" @onclick="() => AddCondition(EditCondition.WordsKind)"><Icon Name="transcript" Size="s" /> If it says</button>
+                                }
+                                @if (_names.MenuOptions.Count > 0)
+                                {
+                                    <button type="button" @onclick="() => AddCondition(EditCondition.MenuKind)"><Icon Name="attendant" Size="s" /> If they chose</button>
+                                }
+                            }
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="insert-hint">@(_conditions.Count == 0 ? "Only some of them? Add a condition" : "Another condition")</span>
+                    }
+                </li>
+                <li class="chain-cont"><FlowStepsEditor Steps="_steps" Names="_names" CallAlert="Flows.IsCallAlert(_trigger)" Transcribed="@(_trigger == AlertEventType.VoicemailTranscribed && _admin)" /></li>
+            </ol>
+        </div>
+        <div class="plane-foot">
+            @if (_problem is not null)
+            {
+                <p class="notice problem" role="alert">@_problem</p>
+            }
+            <div class="row">
+                <button type="button" class="btn primary" disabled="@_saving" @onclick="SaveAsync">Save flow</button>
+                <button type="button" class="btn" disabled="@_trying" @onclick="TryAsync" data-try>Try it on the last 7 days</button>
+                <a class="btn ghost" href="/flows">Cancel</a>
+            </div>
+            @* What the flow as it stands would have done, sending nothing: so a change can be judged before it is saved. *@
+            @if (_tried is { } tried)
+            {
+                <div class="dry-run" data-dry-run="@tried.Hits.Count" role="status">
+                    @if (tried.Why is { } why)
+                    {
+                        <p class="hint">@why</p>
+                    }
+                    else
+                    {
+                        <p><b>@(tried.Hits.Count == 0 ? "It would not have run" : $"It would have run on {tried.Hits.Count}") </b>of the @tried.Considered @(tried.Considered == 1 ? "call" : "calls") in the last 7 days that started it@(tried.Considered >= AlertService.DryRunCalls ? " (the latest " + AlertService.DryRunCalls + ")" : "").</p>
+                        @if (tried.Hits.Count > 0)
+                        {
+                            <ul class="dry-run-hits">
+                                @foreach (var hit in tried.Hits.Take(15))
+                                {
+                                    <li data-dry-call="@hit.Call.TalkUuid"><span class="mono">@TimeZoneInfo.ConvertTime(hit.Call.Time, _zone).ToString("ddd HH:mm")</span> <a href="/calls/@hit.Call.TalkUuid">@(hit.Call.CallerName ?? hit.Call.FromRaw ?? "Withheld number")</a> → @Reaches(hit.Plan)</li>
+                                }
+                            </ul>
+                            @if (tried.Hits.Count > 15)
+                            {
+                                <p class="hint">and @(tried.Hits.Count - 15) more.</p>
+                            }
+                        }
+                    }
+                </div>
+            }
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+    private bool _admin, _loaded, _missing, _saving, _addingCondition;
+    private string? _name, _problem;
+    private AlertEventType _trigger = AlertEventType.MissedCall;
+    private List<EditCondition> _conditions = [];
+    private List<EditStep> _steps = [EditStep.New(EditStep.NotifyKind)];
+    private FlowNames _names = FlowNames.None;
+
+    /// <summary>A condition the new trigger cannot have (a caller on a handset alert, a line on drift) goes with the change.</summary>
+    private AlertEventType Trigger
+    {
+        get => _trigger;
+        set
+        {
+            _trigger = value;
+            _conditions.RemoveAll(c => (EditCondition.CallKinds.Contains(c.Kind) && !Flows.IsCallAlert(value))
+                || (c.Kind == EditCondition.WordsKind && value != AlertEventType.VoicemailTranscribed)
+                || (c.Kind is EditCondition.LineKind or EditCondition.RangKind && Flows.IsSiteAlert(value)));
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = (await AuthenticationState!).User;
+        Scope.UsePrincipal(_user);
+        _admin = _user.Can(Permission.ManageAlerts);
+
+        if (Id is { } id)
+        {
+            var flow = await Db.AlertFlows.AsNoTracking().SingleOrDefaultAsync(f => f.Id == id);
+            if (flow is null || Flows.Read(flow.Definition) is not { } definition)
+            {
+                _missing = true;
+                return;
+            }
+
+            (_name, _trigger) = (flow.Name, definition.Trigger);
+            _conditions = [.. definition.Conditions.Select(EditCondition.From)];
+            _steps = [.. definition.Steps.Select(EditStep.From)];
+        }
+
+        _names = await NamesAsync(Db, _admin, _user.Identity?.Name, Directory.Current);
+        _loaded = true;
+    }
+
+    /// <summary>
+    /// What this person may name in a flow: every channel, person and ring group for an admin; their own for a Manager.
+    /// The directory says who is in each group, so a group nobody in TalkWatch is linked to can be flagged.
+    /// </summary>
+    public static async Task<FlowNames> NamesAsync(TalkWatchDbContext db, bool admin, string? self, Core.Talk.LineDirectory directory)
+    {
+        // The channels kept for contacts are named as the contacts, not offered as channels of their own.
+        var channels = await db.AlertChannels.AsNoTracking().Where(c => c.ContactUuid == null).ToListAsync();
+        var people = await db.Users.AsNoTracking().Where(u => admin || u.UserName == self).ToDictionaryAsync(u => u.Id, u => u.UserName ?? u.Id.ToString());
+        var lines = await db.Lines.AsNoTracking().ToListAsync();
+        var reachable = channels.Where(c => c.Enabled && c.OwnerUserId is not null).Select(c => c.OwnerUserId!.Value).ToHashSet();
+        var linked = admin
+            ? (await db.Users.AsNoTracking().Where(u => u.TalkUserUuid != null).Select(u => new { u.Id, u.TalkUserUuid }).ToListAsync())
+                .Where(u => reachable.Contains(u.Id)).Select(u => u.TalkUserUuid!).ToHashSet(StringComparer.Ordinal)
+            : [];
+        return new FlowNames(
+            people,
+            channels.ToDictionary(c => c.Id, c => c.Enabled ? c.Name : $"{c.Name} (off)"),
+            lines.ToDictionary(l => new LineRef(l.Kind, l.Key), l => l.Ext is { Length: > 0 } ext ? $"{l.Name} ({ext})" : l.Name),
+            reachable)
+        {
+            Groups = admin ? lines.Where(l => l.Kind == LineKind.RingGroup).ToDictionary(l => l.Key, l => l.Name, StringComparer.Ordinal) : new Dictionary<string, string>(),
+            MenuOptions = (await db.SwitchboardNodes.AsNoTracking().Where(n => n.InternalId != null && n.Key != null).ToListAsync())
+                .GroupBy(n => n.InternalId!.Value).Select(g => g.OrderByDescending(n => n.Present).First())
+                .ToDictionary(n => n.InternalId!.Value, n => $"{n.Key} {n.Title}".Trim()),
+            ReachableGroups = directory.Groups.Where(g => (g.MemberList ?? []).Any(linked.Contains)).Select(g => g.Id).ToHashSet(StringComparer.Ordinal),
+            Contacts = admin
+                ? directory.Contacts.Where(c => c.Uuid is { Length: > 0 } && (c.Address is not null || c.PhoneNumbers is { Count: > 0 }))
+                    .GroupBy(c => c.Uuid!).ToDictionary(g => g.Key, g => new ContactName(g.First().DisplayName, g.First().Address, g.First().PhoneNumbers?.FirstOrDefault()?.Did), StringComparer.Ordinal)
+                : new Dictionary<string, ContactName>(),
+            OutsideOffered = admin && directory.Contacts.Count > 0,
+            OutsideReachable = admin && await db.ContactLinks.AsNoTracking()
+                .AnyAsync(l => db.AlertChannels.Any(c => c.OwnerUserId == l.UserId && c.Enabled && c.Kind != ChannelKind.Email)),
+        };
+    }
+
+    private void AddCondition(string kind)
+    {
+        _conditions.Add(EditCondition.New(kind));
+        _addingCondition = false;
+    }
+
+    private bool _trying;
+    private AlertService.DryRun? _tried;
+    private TimeZoneInfo _zone = TimeZoneInfo.Utc;
+
+    // The flow as it stands in the editor, saved or not, over the last week's calls: nothing is sent.
+    private async Task TryAsync()
+    {
+        _trying = true;
+        _problem = null;
+        try
+        {
+            var flow = new FlowDefinition { Trigger = _trigger, Conditions = [.. _conditions.Select(c => c.ToCondition())], Steps = [.. _steps.Select(s => s.ToStep())] };
+            if (Flows.Problem(flow) is { } problem)
+            {
+                (_problem, _tried) = (problem, null);
+                return;
+            }
+
+            _zone = TimeZoneInfo.FindSystemTimeZoneById(SiteSettings.Value.TimeZone);
+            _tried = await Alerting.DryRunAsync(Db, flow, DateTimeOffset.UtcNow - TimeSpan.FromDays(7), CancellationToken.None);
+        }
+        finally
+        {
+            _trying = false;
+        }
+    }
+
+    // What a run would have done, in a phrase: who the first step notifies, and how many steps follow.
+    private string Reaches(IReadOnlyList<FlowStage> plan)
+    {
+        var first = plan[0];
+        var who = string.Join(", ", first.Notify.SelectMany(n => n.To).Select(r => FlowText.Recipient(r, _names)).Distinct());
+        var opening = who.Length > 0 ? $"notify {who}" : first.Assign.Count > 0 ? "assign the call-back" : "wait";
+        if (first.WaitMinutes > 0)
+        {
+            opening = $"after {FlowText.Minutes(first.WaitMinutes)}, {opening}";
+        }
+
+        return plan.Count == 1 ? opening : $"{opening}, then {plan.Count - 1} more step{(plan.Count == 2 ? "" : "s")} if nobody picks it up";
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        _problem = null;
+        try
+        {
+            var flow = new FlowDefinition
+            {
+                Trigger = _trigger,
+                Conditions = [.. _conditions.Select(c => c.ToCondition())],
+                Steps = [.. _steps.Select(s => s.ToStep())],
+            };
+            var (saved, problem) = await Store.SaveAsync(Id, _name, flow, _user, CancellationToken.None);
+            if (saved is null)
+            {
+                _problem = problem;
+                return;
+            }
+
+            Navigation.NavigateTo($"/flows?msg={Uri.EscapeDataString("Flow saved.")}", forceLoad: true);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

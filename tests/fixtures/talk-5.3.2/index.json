@@ -1,0 +1,1424 @@
+[
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_center/queue",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:25:46.4420000+00:00",
+    "file": "0001-http-proxy-talk-api-call-center-queue.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/account/cloud_urls",
+    "status": 404,
+    "contentType": "text/html",
+    "at": "2026-09-29T23:25:54.0960000+00:00",
+    "file": "0003-http-proxy-talk-api-account-cloud-urls.txt"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/number/search?country_code=GB&pattern=%2B44",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:25:54.0970000+00:00",
+    "file": "0004-http-proxy-talk-api-number-search.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/account/cloud_env",
+    "status": 404,
+    "contentType": "text/html",
+    "at": "2026-09-29T23:25:54.0980000+00:00",
+    "file": "0005-http-proxy-talk-api-account-cloud-env.txt"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/users",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:25:54.0980000+00:00",
+    "file": "0007-http-proxy-talk-api-users.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/device/24h_call_quality",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:25:54.0990000+00:00",
+    "file": "0008-http-proxy-talk-api-device-24h-call-quality.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/phone_designer",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:25:54.0990000+00:00",
+    "file": "0009-http-proxy-talk-api-phone-designer.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/dashboard/most_active_users",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:27.0830000+00:00",
+    "file": "0010-http-proxy-talk-api-dashboard-most-active-users.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/regulatory/bundle",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:27.0840000+00:00",
+    "file": "0011-http-proxy-talk-api-regulatory-bundle.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/setting/emergency_status",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:27.0840000+00:00",
+    "file": "0012-http-proxy-talk-api-setting-emergency-status.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/stats/calls/series?presetTime=1D&tz=%2B01%3A00",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:27.0840000+00:00",
+    "file": "0013-http-proxy-talk-api-stats-calls-series.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/dashboard/service_health?presetTime=1D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:27.0850000+00:00",
+    "file": "0014-http-proxy-talk-api-dashboard-service-health.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/install",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:27.0860000+00:00",
+    "file": "0015-http-proxy-talk-api-install.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/dashboard/consolidated_info",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:27.0860000+00:00",
+    "file": "0016-http-proxy-talk-api-dashboard-consolidated-info.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/switchboard/audio/9ac77ce9e337ac5e.mp3",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:26:29.3020000+00:00",
+    "file": "audio/0018.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/switchboard/audio/c61a2d0e6924838c.mp3",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:26:29.3030000+00:00",
+    "file": "audio/0019.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/switchboard/audio/508cd2532a31538a.mp3",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:26:29.3030000+00:00",
+    "file": "audio/0020.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/switchboard/audio/d2a1e29a78b36654.mp3",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:26:29.3040000+00:00",
+    "file": "audio/0021.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/switchboard/audio/0826fe5c20069c9a.mp3",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:26:29.3050000+00:00",
+    "file": "audio/0022.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/switchboard/audio/a77fb9d2fd16bd17.mp3",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:26:29.3050000+00:00",
+    "file": "audio/0023.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/switchboard/audio/4b3fd6bfa6783faf.mp3",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:26:29.3060000+00:00",
+    "file": "audio/0024.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/switchboard/audio/8a007be572dbaea5.mp3",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:26:29.3060000+00:00",
+    "file": "audio/0025.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/setting/hold_music",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:29.3340000+00:00",
+    "file": "0026-http-proxy-talk-api-setting-hold-music.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/switchboard",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:29.3450000+00:00",
+    "file": "0027-http-proxy-talk-api-switchboard.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/ring_flow",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:29.3460000+00:00",
+    "file": "0028-http-proxy-talk-api-ring-flow.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/contacts",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:29.3470000+00:00",
+    "file": "0029-http-proxy-talk-api-contacts.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/group_list",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:29.3470000+00:00",
+    "file": "0030-http-proxy-talk-api-group-list.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/number/list",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:29.3480000+00:00",
+    "file": "0031-http-proxy-talk-api-number-list.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/setting/config",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:29.3480000+00:00",
+    "file": "0032-http-proxy-talk-api-setting-config.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/third_party_sip/gateway_list",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:29.3480000+00:00",
+    "file": "0033-http-proxy-talk-api-third-party-sip-gateway-list.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/countries",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:33.3280000+00:00",
+    "file": "0034-http-proxy-talk-api-call-log-countries.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/transcript?page=1&size=25&sortBy=call_time&sortDirection=DESC",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:37.9780000+00:00",
+    "file": "0035-http-proxy-talk-api-transcript.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/transcript/countries",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:37.9780000+00:00",
+    "file": "0036-http-proxy-talk-api-transcript-countries.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/transcript/b04cf33cac2d48b18d5919b51258ae56",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:26:41.7700000+00:00",
+    "file": "0037-http-proxy-talk-api-transcript-b04cf33cac2d48b18d5919b51258ae56.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/recording/b0b735a9-68ab-440d-806c-cffbabd73489",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:26:41.8770000+00:00",
+    "file": "audio/0038.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/transcript/906e9fb1702c41efaffabdefac58006f",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:27:50.6560000+00:00",
+    "file": "0039-http-proxy-talk-api-transcript-906e9fb1702c41efaffabdefac58006f.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/recording/bdc86ea2-3b5f-461f-969d-928b0b928b42",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:27:50.7790000+00:00",
+    "file": "audio/0040.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/transcript?page=1&size=25&sortBy=call_time&sortDirection=DESC&sentiment=negative",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:27:58.1010000+00:00",
+    "file": "0041-http-proxy-talk-api-transcript.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/transcript?page=1&size=25&sortBy=call_time&sortDirection=DESC&sentiment=neutral",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:27:59.6540000+00:00",
+    "file": "0042-http-proxy-talk-api-transcript.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/transcript?page=1&size=25&sortBy=call_time&sortDirection=DESC&sentiment=positive",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:28:01.1110000+00:00",
+    "file": "0043-http-proxy-talk-api-transcript.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/transcript?page=1&size=25&sortBy=call_time&sortDirection=DESC&call_in=1",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:28:02.5560000+00:00",
+    "file": "0044-http-proxy-talk-api-transcript.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/switchboard/audio/8307fdb2c4973b54.mp3",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:28:47.5490000+00:00",
+    "file": "audio/0062.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/switchboard/audio/93ac8c13d0eb76b5.mp3",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:28:47.5500000+00:00",
+    "file": "audio/0063.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/switchboard/audio/ba8d4df276bcc295.mp3",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:29:05.3380000+00:00",
+    "file": "audio/0064.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/switchboard/audio/c6e2f13bd438774e.mp3",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:29:05.3380000+00:00",
+    "file": "audio/0065.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/switchboard/audio/custom_0b4aeaecea60e08e.mp3",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:29:17.9710000+00:00",
+    "file": "audio/0066.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/users",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:29:53.9250000+00:00",
+    "file": "0067-http-proxy-talk-api-users.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/c8d59f53-0744-4ec3-aa39-4dba46b51135",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:31:58.5280000+00:00",
+    "file": "0068-http-talk-api-call-log-flow-c8d59f53-0744-4ec3-aa39-4dba46b51135.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/b0b735a9-68ab-440d-806c-cffbabd73489",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:31:59.2170000+00:00",
+    "file": "0069-http-talk-api-call-log-flow-b0b735a9-68ab-440d-806c-cffbabd73489.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/transcript/by_call_uuid?call_uuid=b0b735a9-68ab-440d-806c-cffbabd73489&transcript_source=call",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:07.1250000+00:00",
+    "file": "0070-http-proxy-talk-api-transcript-by-call-uuid.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/a05bf527-1f57-436e-a79e-ca36b8dc809d",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:45.3040000+00:00",
+    "file": "0071-http-talk-api-call-log-flow-a05bf527-1f57-436e-a79e-ca36b8dc809d.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/6ccf41bf-2f65-476b-a420-11674ccf90f3",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:46.2420000+00:00",
+    "file": "0072-http-talk-api-call-log-flow-6ccf41bf-2f65-476b-a420-11674ccf90f3.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/e82ec71e-582f-4657-8316-600994f62e9a",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:47.3000000+00:00",
+    "file": "0073-http-talk-api-call-log-flow-e82ec71e-582f-4657-8316-600994f62e9a.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/7a6b22db-a886-4d76-b16a-cd6926d46da5",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:48.1830000+00:00",
+    "file": "0074-http-talk-api-call-log-flow-7a6b22db-a886-4d76-b16a-cd6926d46da5.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/transcript/by_call_uuid?call_uuid=7a6b22db-a886-4d76-b16a-cd6926d46da5&transcript_source=call",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:49.3090000+00:00",
+    "file": "0075-http-proxy-talk-api-transcript-by-call-uuid.txt"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/eba1d5fb-f036-43ee-85fb-d9f025e8220b",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:50.5990000+00:00",
+    "file": "0076-http-talk-api-call-log-flow-eba1d5fb-f036-43ee-85fb-d9f025e8220b.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01144960240&filter[status]=accepted&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:54.4330000+00:00",
+    "file": "0077-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01632960742&filter[status]=accepted,blocked&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:55.1510000+00:00",
+    "file": "0078-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01154960153&filter[status]=accepted,blocked,cancelled&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:55.6830000+00:00",
+    "file": "0079-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01154960672&filter[status]=accepted,blocked,cancelled,parked&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:56.1900000+00:00",
+    "file": "0080-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=02920180905&filter[status]=accepted,blocked,cancelled,parked,refused&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:56.7490000+00:00",
+    "file": "0081-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01414960195&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:57.3550000+00:00",
+    "file": "0082-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=02896496210&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:57.8000000+00:00",
+    "file": "0083-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=02896496110&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:58.2830000+00:00",
+    "file": "0084-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=02920180421&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:58.6790000+00:00",
+    "file": "0085-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01514960267&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:32:59.1650000+00:00",
+    "file": "0086-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01184960604&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:01.0170000+00:00",
+    "file": "0087-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01134960322&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:01.6490000+00:00",
+    "file": "0088-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=02079460643&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[call_type]=audio&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:03.7670000+00:00",
+    "file": "0089-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01632960002&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[call_type]=audio,video&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:04.2770000+00:00",
+    "file": "0090-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01154960646&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[call_type]=audio,video&filter[recording]=no&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:04.9340000+00:00",
+    "file": "0091-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01914980002&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[call_type]=audio,video&filter[recording]=no,yes&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:05.4180000+00:00",
+    "file": "0092-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01134960986&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[call_type]=audio,video&filter[recording]=no,yes&filter[experience]=excellent&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:07.3970000+00:00",
+    "file": "0093-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01174960323&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[call_type]=audio,video&filter[recording]=no,yes&filter[experience]=excellent,good&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:07.9370000+00:00",
+    "file": "0094-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01164960653&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[call_type]=audio,video&filter[recording]=no,yes&filter[experience]=excellent,good,na&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:08.4430000+00:00",
+    "file": "0095-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01632960242&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[call_type]=audio,video&filter[recording]=no,yes&filter[experience]=excellent,good,na,poor&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:08.8680000+00:00",
+    "file": "0096-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01632960377&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[call_type]=audio,video&filter[recording]=no,yes&filter[experience]=excellent,good,na,poor&filter[entity]=%7B%22type%22:%22user%22,%22id%22:%22user_abe3a229-7539-48dd-a8e3-e23fd4d9f72f%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:10.3180000+00:00",
+    "file": "0097-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01914980189&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[call_type]=audio,video&filter[recording]=no,yes&filter[experience]=excellent,good,na,poor&filter[entity]=%7B%22type%22:%22user%22,%22id%22:%22user_abe3a229-7539-48dd-a8e3-e23fd4d9f72f,user_04be8056-ce9f-48c2-9f3c-3a6e9f1bd766%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:10.7630000+00:00",
+    "file": "0098-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01164960608&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[call_type]=audio,video&filter[recording]=no,yes&filter[experience]=excellent,good,na,poor&filter[entity]=%7B%22type%22:%22user%22,%22id%22:%22user_abe3a229-7539-48dd-a8e3-e23fd4d9f72f,user_04be8056-ce9f-48c2-9f3c-3a6e9f1bd766,user_79e04f46-f645-4026-b2b2-35519a73f478%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:11.2250000+00:00",
+    "file": "0099-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01184960146&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[call_type]=audio,video&filter[recording]=no,yes&filter[experience]=excellent,good,na,poor&filter[entity]=%7B%22type%22:%22user%22,%22id%22:%22user_abe3a229-7539-48dd-a8e3-e23fd4d9f72f,user_04be8056-ce9f-48c2-9f3c-3a6e9f1bd766,user_79e04f46-f645-4026-b2b2-35519a73f478,user_58fe93e8-650b-4590-bdd8-4e8a19f250e7%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:11.6330000+00:00",
+    "file": "0100-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01614960614&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[call_type]=audio,video&filter[recording]=no,yes&filter[experience]=excellent,good,na,poor&filter[entity]=%7B%22type%22:%22user%22,%22id%22:%22user_abe3a229-7539-48dd-a8e3-e23fd4d9f72f,user_04be8056-ce9f-48c2-9f3c-3a6e9f1bd766,user_79e04f46-f645-4026-b2b2-35519a73f478,user_58fe93e8-650b-4590-bdd8-4e8a19f250e7,user_a4cbdcf5-01d7-4138-a22d-246b2b10ae8b%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:12.1950000+00:00",
+    "file": "0101-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01134960858&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[call_type]=audio,video&filter[recording]=no,yes&filter[experience]=excellent,good,na,poor&filter[entity]=%7B%22type%22:%22user%22,%22id%22:%22user_abe3a229-7539-48dd-a8e3-e23fd4d9f72f,user_04be8056-ce9f-48c2-9f3c-3a6e9f1bd766,user_79e04f46-f645-4026-b2b2-35519a73f478,user_58fe93e8-650b-4590-bdd8-4e8a19f250e7,user_a4cbdcf5-01d7-4138-a22d-246b2b10ae8b,user_28b32e9d-7f03-48cd-95ae-9a333cbc221d%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:13.0900000+00:00",
+    "file": "0102-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01184960889&filter[status]=accepted,blocked,cancelled,parked,refused,timed_out,voicemail&filter[direction]=in,internal,out&filter[country]=IT,GB&filter[call_type]=audio,video&filter[recording]=no,yes&filter[experience]=excellent,good,na,poor&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:15.0350000+00:00",
+    "file": "0103-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01632960678&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:17.5340000+00:00",
+    "file": "0104-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=01914980852&to_time=01914980227&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:20.4790000+00:00",
+    "file": "0105-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=01184960585&to_time=01134960786&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:21.0210000+00:00",
+    "file": "0106-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log?page=0&items_per_page=25&sort_key=time&sort_order=desc&from_time=0&to_time=01414960633&filter[entity]=%7B%22type%22:%22all%22,%22id%22:%22%22%7D",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:22.3290000+00:00",
+    "file": "0107-http-proxy-talk-api-call-log.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/number/search?country_code=GB&pattern=%2B44",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:44.0040000+00:00",
+    "file": "0109-http-proxy-talk-api-number-search.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/number_porting/list",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:44.0050000+00:00",
+    "file": "0110-http-proxy-talk-api-number-porting-list.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/number/list",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:47.5680000+00:00",
+    "file": "0111-http-proxy-talk-api-number-list.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/number/search?country_code=GB&pattern=%2B44",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:33:49.0700000+00:00",
+    "file": "0112-http-proxy-talk-api-number-search.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/emergency_address/list",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:34:04.3430000+00:00",
+    "file": "0113-http-proxy-talk-api-emergency-address-list.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/number/list",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:34:14.4840000+00:00",
+    "file": "0114-http-proxy-talk-api-number-list.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/owner_transfer/transfer_state",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:34:19.3870000+00:00",
+    "file": "0115-http-proxy-talk-api-owner-transfer-transfer-state.txt"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/user/info",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:34:19.3870000+00:00",
+    "file": "0116-http-proxy-talk-api-user-info.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/info/app_owner",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:34:19.3880000+00:00",
+    "file": "0117-http-proxy-talk-api-info-app-owner.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/recording/d84ca438-9c0a-4fd8-a389-95d6c150583e",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:35:12.2790000+00:00",
+    "file": "audio/0134.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/transcript/by_call_uuid?call_uuid=d84ca438-9c0a-4fd8-a389-95d6c150583e&transcript_source=call",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:35:12.2790000+00:00",
+    "file": "0135-http-proxy-talk-api-transcript-by-call-uuid.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/d84ca438-9c0a-4fd8-a389-95d6c150583e",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:35:12.2800000+00:00",
+    "file": "0136-http-talk-api-call-log-flow-d84ca438-9c0a-4fd8-a389-95d6c150583e.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/123ac094-54ae-4adc-be34-333a9bfa3498",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:35:20.0960000+00:00",
+    "file": "0137-http-talk-api-call-log-flow-123ac094-54ae-4adc-be34-333a9bfa3498.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/transcript/by_call_uuid?call_uuid=123ac094-54ae-4adc-be34-333a9bfa3498&transcript_source=call",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:35:21.8050000+00:00",
+    "file": "0138-http-proxy-talk-api-transcript-by-call-uuid.txt"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/recording/eba1d5fb-f036-43ee-85fb-d9f025e8220b",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-29T23:35:23.8990000+00:00",
+    "file": "audio/0139.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/transcription/eba1d5fb-f036-43ee-85fb-d9f025e8220b",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:35:23.8990000+00:00",
+    "file": "0140-http-call-log-transcription-eba1d5fb-f036-43ee-85fb-d9f025e8220b.json"
+  },
+  {
+    "kind": "http",
+    "method": "POST",
+    "path": "/proxy/talk/api/call_log/transcription",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:35:28.7080000+00:00",
+    "file": "0141-http-proxy-talk-api-call-log-transcription.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/transcription/eba1d5fb-f036-43ee-85fb-d9f025e8220b",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:35:33.9000000+00:00",
+    "file": "0142-http-call-log-transcription-eba1d5fb-f036-43ee-85fb-d9f025e8220b.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/transcription/eba1d5fb-f036-43ee-85fb-d9f025e8220b",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:35:38.9000000+00:00",
+    "file": "0143-http-call-log-transcription-eba1d5fb-f036-43ee-85fb-d9f025e8220b.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/phone_designer/wallpaper/list",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:35:56.2750000+00:00",
+    "file": "0144-http-proxy-talk-api-phone-designer-wallpaper-list.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/setting/ringtones",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:35:56.3180000+00:00",
+    "file": "0145-http-proxy-talk-api-setting-ringtones.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/applications",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:35:56.3190000+00:00",
+    "file": "0146-http-proxy-talk-api-applications.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/protect/cameras",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:35:56.3190000+00:00",
+    "file": "0147-http-proxy-talk-api-protect-cameras.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/access/doors",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:35:56.3190000+00:00",
+    "file": "0148-http-proxy-talk-api-access-doors.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/peer_consoles",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:35:56.3200000+00:00",
+    "file": "0149-http-proxy-talk-api-peer-consoles.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/protect/cameras/64f4e768024f1003e4000411/snapshot",
+    "status": 200,
+    "contentType": "image/jpeg",
+    "at": "2026-09-29T23:35:58.2460000+00:00",
+    "file": null
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/protect/cameras/685bc990001c1003e423e3ab/snapshot",
+    "status": 200,
+    "contentType": "image/jpeg",
+    "at": "2026-09-29T23:35:58.2470000+00:00",
+    "file": null
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/protect/cameras/64f4e01514960192e4000410/snapshot",
+    "status": 200,
+    "contentType": "image/jpeg",
+    "at": "2026-09-29T23:35:58.2470000+00:00",
+    "file": null
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/number/search?country_code=GB&pattern=%2B44",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-29T23:36:31.8940000+00:00",
+    "file": "0153-http-proxy-talk-api-number-search.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:06:42.8370000+00:00",
+    "file": "0154-ws-proxy-talk.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:06:42.8370000+00:00",
+    "file": "0155-ws-proxy-talk.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:06:42.8370000+00:00",
+    "file": "0156-ws-proxy-talk.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:06:42.8380000+00:00",
+    "file": "0157-ws-proxy-talk.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:06:48.8630000+00:00",
+    "file": "0158-ws-proxy-talk.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:06:48.9170000+00:00",
+    "file": "0159-ws-proxy-talk.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:06:49.0420000+00:00",
+    "file": "0160-ws-proxy-talk.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:06:49.1530000+00:00",
+    "file": "0161-ws-proxy-talk.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:06:49.2090000+00:00",
+    "file": "0162-ws-proxy-talk.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:06:49.2740000+00:00",
+    "file": "0163-ws-proxy-talk.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:06:55.3000000+00:00",
+    "file": "0164-ws-proxy-talk.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:07:33.9060000+00:00",
+    "file": "0169-ws-proxy-talk.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:07:35.2580000+00:00",
+    "file": "0170-ws-proxy-talk.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:08:28.2590000+00:00",
+    "file": "0178-ws-proxy-talk.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:08:47.2720000+00:00",
+    "file": "0184-ws-proxy-talk.json"
+  },
+  {
+    "kind": "ws",
+    "method": "receive",
+    "path": "/proxy/talk/",
+    "status": 101,
+    "contentType": null,
+    "at": "2026-09-30T00:09:43.8670000+00:00",
+    "file": "0190-ws-proxy-talk.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/countries",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:06:42.7150000+00:00",
+    "file": "0194-http-proxy-talk-api-call-log-countries.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/setup_complete",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:06:42.7160000+00:00",
+    "file": "0195-http-proxy-talk-api-setup-complete.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/info",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:06:42.7160000+00:00",
+    "file": "0196-http-proxy-talk-api-info.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/updates",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:06:42.7170000+00:00",
+    "file": "0197-http-proxy-talk-api-updates.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/ucore/system_info",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:06:42.7170000+00:00",
+    "file": "0198-http-proxy-talk-api-ucore-system-info.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/number/blocked",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:06:42.7170000+00:00",
+    "file": "0199-http-proxy-talk-api-number-blocked.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/contact_list",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:06:42.7180000+00:00",
+    "file": "0200-http-proxy-talk-api-contact-list.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/number/list",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:06:42.7190000+00:00",
+    "file": "0201-http-proxy-talk-api-number-list.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/users",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:06:42.7200000+00:00",
+    "file": "0202-http-proxy-talk-api-users.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/sms/conversations",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:06:42.7200000+00:00",
+    "file": "0203-http-proxy-talk-api-sms-conversations.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/sms/trigger_sms_fetch",
+    "status": 200,
+    "contentType": "text/plain",
+    "at": "2026-09-30T00:06:42.7210000+00:00",
+    "file": "0204-http-proxy-talk-api-sms-trigger-sms-fetch.txt"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/identity/status",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:06:42.7220000+00:00",
+    "file": "0205-http-proxy-talk-api-identity-status.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/parking_lots",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:06:42.7230000+00:00",
+    "file": "0206-http-proxy-talk-api-parking-lots.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/ce09f9d8-011c-4e5d-97ce-c47f01ea8e7c",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:08:22.3910000+00:00",
+    "file": "0207-http-talk-api-call-log-flow-ce09f9d8-011c-4e5d-97ce-c47f01ea8e7c.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/ce09f9d8-011c-4e5d-97ce-c47f01ea8e7c",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:08:23.6280000+00:00",
+    "file": "0208-http-talk-api-call-log-flow-ce09f9d8-011c-4e5d-97ce-c47f01ea8e7c.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/transcript/by_call_uuid?call_uuid=ce09f9d8-011c-4e5d-97ce-c47f01ea8e7c&transcript_source=call",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:08:25.9970000+00:00",
+    "file": "0209-http-proxy-talk-api-transcript-by-call-uuid.txt"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/ce09f9d8-011c-4e5d-97ce-c47f01ea8e7c",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:08:41.4490000+00:00",
+    "file": "0210-http-talk-api-call-log-flow-ce09f9d8-011c-4e5d-97ce-c47f01ea8e7c.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/69bb7b56-8403-4e6b-b47f-8cbb08b76dd3",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:08:54.7400000+00:00",
+    "file": "0211-http-talk-api-call-log-flow-69bb7b56-8403-4e6b-b47f-8cbb08b76dd3.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/69bb7b56-8403-4e6b-b47f-8cbb08b76dd3",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:09:17.8960000+00:00",
+    "file": "0212-http-talk-api-call-log-flow-69bb7b56-8403-4e6b-b47f-8cbb08b76dd3.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/69bb7b56-8403-4e6b-b47f-8cbb08b76dd3",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:09:33.3530000+00:00",
+    "file": "0213-http-talk-api-call-log-flow-69bb7b56-8403-4e6b-b47f-8cbb08b76dd3.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/call_log/flow/69bb7b56-8403-4e6b-b47f-8cbb08b76dd3",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:09:52.4390000+00:00",
+    "file": "0214-http-talk-api-call-log-flow-69bb7b56-8403-4e6b-b47f-8cbb08b76dd3.json"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/transcript/by_call_uuid?call_uuid=69bb7b56-8403-4e6b-b47f-8cbb08b76dd3&transcript_source=call",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:10:09.8460000+00:00",
+    "file": "0215-http-proxy-talk-api-transcript-by-call-uuid.txt"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/voicemail/data/69bb7b56-8403-4e6b-b47f-8cbb08b76dd3",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:10:09.8460000+00:00",
+    "file": "0216-http-talk-api-voicemail-data-69bb7b56-8403-4e6b-b47f-8cbb08b76dd3.json"
+  },
+  {
+    "kind": "http",
+    "method": "POST",
+    "path": "/proxy/talk/api/voicemail/recording",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-30T00:10:09.9960000+00:00",
+    "file": "audio/0217.mp3"
+  },
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/voicemail/data/ce09f9d8-011c-4e5d-97ce-c47f01ea8e7c",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T00:10:18.9200000+00:00",
+    "file": "0218-http-talk-api-voicemail-data-ce09f9d8-011c-4e5d-97ce-c47f01ea8e7c.json"
+  },
+  {
+    "kind": "http",
+    "method": "POST",
+    "path": "/proxy/talk/api/voicemail/recording",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-30T00:10:21.2390000+00:00",
+    "file": "audio/0219.mp3"
+  }
+]

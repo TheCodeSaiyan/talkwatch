@@ -1,0 +1,728 @@
+{
+  "entities": {
+    "nodes": {
+      "byId": {
+        "container": {
+          "childNodeIds": [
+            "swb_15",
+            "swb_45"
+          ],
+          "path": []
+        },
+        "swb_15": {
+          "id": "swb_15",
+          "internal_id": 15,
+          "ext": "0005",
+          "path": [
+            "container"
+          ],
+          "type": "root",
+          "title": "Title 10",
+          "numbers": [
+            "+441174960404"
+          ],
+          "disabled": false,
+          "greeting": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididun",
+          "hold_music": {
+            "type": "custom",
+            "title": "Title 9"
+          },
+          "voice_type": "voice2",
+          "ext_dialing": {
+            "enabled": true,
+            "target_scope": "allow_list",
+            "target_user_group_ids": [1,
+              "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+            ]
+          },
+          "vm_receiver": null,
+          "childNodeIds": [
+            "swb_16",
+            "swb_18",
+            "swb_19"
+          ],
+          "greeting_type": "generated",
+          "voice_language": "en-GB",
+          "generating_audio": false,
+          "sa_menu_noaction": "drop_call",
+          "greeting_file_name": "8a007be572dbaea5.mp3",
+          "greeting_waveform_data": null,
+          "noaction_vm_receiver_uuids": null,
+          "noaction_transfer_to_node_id": null,
+          "noaction_vm_receiver_group_id": null,
+          "noaction_transfer_to_parking_lot_uuid": null
+        },
+        "swb_16": {
+          "id": "swb_16",
+          "internal_id": 16,
+          "key": 1,
+          "path": [
+            "container",
+            "swb_15"
+          ],
+          "type": "ivr",
+          "title": "Title 11",
+          "keyword": "",
+          "disabled": false,
+          "greeting": "Lorem ipsum dolor sit amet",
+          "childNodeIds": [
+            "swb_37",
+            "swb_42"
+          ],
+          "greeting_type": "default",
+          "generating_audio": false,
+          "greeting_file_name": "4b3fd6bfa6783faf.mp3",
+          "user_call_handling": "Dakota43",
+          "greeting_waveform_data": null,
+          "noaction_vm_receiver_uuids": null,
+          "noaction_transfer_to_node_id": null,
+          "noaction_vm_receiver_group_id": null,
+          "noaction_transfer_to_parking_lot_uuid": null
+        },
+        "swb_37": {
+          "id": "swb_37",
+          "internal_id": 37,
+          "key": 1,
+          "type": "ivr",
+          "title": "Title 12",
+          "keyword": "",
+          "disabled": false,
+          "greeting_type": "default",
+          "generating_audio": false,
+          "greeting_file_name": "a77fb9d2fd16bd17.mp3",
+          "user_call_handling": "Dakota43",
+          "greeting_waveform_data": null,
+          "noaction_vm_receiver_uuids": null,
+          "noaction_transfer_to_node_id": null,
+          "noaction_vm_receiver_group_id": null,
+          "noaction_transfer_to_parking_lot_uuid": null,
+          "childNodeIds": [
+            "swb_39",
+            "swb_38"
+          ],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_16"
+          ]
+        },
+        "swb_39": {
+          "id": "swb_39",
+          "internal_id": 39,
+          "type": "time",
+          "title": "Title 13",
+          "greeting": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor in",
+          "holidays": [],
+          "day_ranges": {
+            "1": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "2": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "3": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "4": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "5": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "6": [],
+            "7": []
+          },
+          "greeting_type": "generated",
+          "generating_audio": false,
+          "holidays_enabled": false,
+          "greeting_file_name": "0826fe5c20069c9a.mp3",
+          "greeting_waveform_data": null,
+          "childNodeIds": [
+            "grp_39_1"
+          ],
+          "child_node_keypress_order": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_16",
+            "swb_37"
+          ]
+        },
+        "grp_39_1": {
+          "id": "grp_39_1",
+          "type": "group",
+          "call_action": null,
+          "disabled": false,
+          "group_name": "Jordan Baker 27",
+          "group_id": 1,
+          "ext": "0004",
+          "group_vm_receiver_uuids": [],
+          "childNodeIds": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_16",
+            "swb_37",
+            "swb_39"
+          ]
+        },
+        "swb_38": {
+          "id": "swb_38",
+          "internal_id": 38,
+          "type": "time",
+          "title": "Title 14",
+          "greeting": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dol",
+          "holidays": [],
+          "greeting_type": "generated",
+          "generating_audio": false,
+          "holidays_enabled": false,
+          "greeting_file_name": "d2a1e29a78b36654.mp3",
+          "is_default_time_node": true,
+          "greeting_waveform_data": null,
+          "childNodeIds": [
+            "grp_38_1"
+          ],
+          "child_node_keypress_order": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_16",
+            "swb_37"
+          ]
+        },
+        "grp_38_1": {
+          "id": "grp_38_1",
+          "type": "group",
+          "call_action": "voicemail",
+          "disabled": false,
+          "group_name": "Jordan Baker 27",
+          "group_id": 1,
+          "ext": "0004",
+          "group_vm_receiver_uuids": [],
+          "childNodeIds": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_16",
+            "swb_37",
+            "swb_38"
+          ]
+        },
+        "swb_42": {
+          "id": "swb_42",
+          "internal_id": 42,
+          "key": 2,
+          "type": "ivr",
+          "title": "Title 15",
+          "keyword": "",
+          "disabled": false,
+          "greeting_type": "default",
+          "generating_audio": false,
+          "greeting_file_name": "508cd2532a31538a.mp3",
+          "user_call_handling": "Dakota43",
+          "greeting_waveform_data": null,
+          "noaction_vm_receiver_uuids": null,
+          "noaction_transfer_to_node_id": null,
+          "noaction_vm_receiver_group_id": null,
+          "noaction_transfer_to_parking_lot_uuid": null,
+          "childNodeIds": [
+            "swb_44",
+            "swb_43"
+          ],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_16"
+          ]
+        },
+        "swb_44": {
+          "id": "swb_44",
+          "internal_id": 44,
+          "type": "time",
+          "title": "Title 13",
+          "greeting": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor inci",
+          "holidays": [],
+          "day_ranges": {
+            "1": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "2": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "3": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "4": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "5": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "6": [],
+            "7": []
+          },
+          "greeting_type": "generated",
+          "generating_audio": false,
+          "holidays_enabled": false,
+          "greeting_file_name": "c6e2f13bd438774e.mp3",
+          "greeting_waveform_data": null,
+          "childNodeIds": [
+            "grp_44_1"
+          ],
+          "child_node_keypress_order": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_16",
+            "swb_42"
+          ]
+        },
+        "grp_44_1": {
+          "id": "grp_44_1",
+          "type": "group",
+          "call_action": null,
+          "disabled": false,
+          "group_name": "Jordan Baker 27",
+          "group_id": 1,
+          "ext": "0004",
+          "group_vm_receiver_uuids": [],
+          "childNodeIds": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_16",
+            "swb_42",
+            "swb_44"
+          ]
+        },
+        "swb_43": {
+          "id": "swb_43",
+          "internal_id": 43,
+          "type": "time",
+          "title": "Title 14",
+          "greeting": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore",
+          "holidays": [],
+          "greeting_type": "generated",
+          "generating_audio": false,
+          "holidays_enabled": false,
+          "greeting_file_name": "ba8d4df276bcc295.mp3",
+          "is_default_time_node": true,
+          "greeting_waveform_data": null,
+          "childNodeIds": [
+            "grp_43_1"
+          ],
+          "child_node_keypress_order": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_16",
+            "swb_42"
+          ]
+        },
+        "grp_43_1": {
+          "id": "grp_43_1",
+          "type": "group",
+          "call_action": "voicemail",
+          "disabled": false,
+          "group_name": "Jordan Baker 27",
+          "group_id": 1,
+          "ext": "0004",
+          "group_vm_receiver_uuids": [],
+          "childNodeIds": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_16",
+            "swb_42",
+            "swb_43"
+          ]
+        },
+        "swb_18": {
+          "id": "swb_18",
+          "internal_id": 18,
+          "key": 2,
+          "type": "ivr",
+          "title": "Title 16",
+          "keyword": "",
+          "disabled": false,
+          "greeting_type": "default",
+          "generating_audio": false,
+          "greeting_file_name": "c61a2d0e6924838c.mp3",
+          "user_call_handling": "Dakota43",
+          "greeting_waveform_data": null,
+          "noaction_vm_receiver_uuids": null,
+          "noaction_transfer_to_node_id": null,
+          "noaction_vm_receiver_group_id": null,
+          "noaction_transfer_to_parking_lot_uuid": null,
+          "childNodeIds": [
+            "swb_41",
+            "swb_40"
+          ],
+          "path": [
+            "container",
+            "swb_15"
+          ]
+        },
+        "swb_41": {
+          "id": "swb_41",
+          "internal_id": 41,
+          "type": "time",
+          "title": "Title 13",
+          "greeting": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incidi",
+          "holidays": [],
+          "day_ranges": {
+            "1": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "2": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "3": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "4": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "5": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "6": [],
+            "7": []
+          },
+          "greeting_type": "generated",
+          "generating_audio": false,
+          "holidays_enabled": false,
+          "greeting_file_name": "93ac8c13d0eb76b5.mp3",
+          "greeting_waveform_data": null,
+          "childNodeIds": [
+            "grp_41_1"
+          ],
+          "child_node_keypress_order": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_18"
+          ]
+        },
+        "grp_41_1": {
+          "id": "grp_41_1",
+          "type": "group",
+          "call_action": null,
+          "disabled": false,
+          "group_name": "Jordan Baker 27",
+          "group_id": 1,
+          "ext": "0004",
+          "group_vm_receiver_uuids": [],
+          "childNodeIds": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_18",
+            "swb_41"
+          ]
+        },
+        "swb_40": {
+          "id": "swb_40",
+          "internal_id": 40,
+          "type": "time",
+          "title": "Title 14",
+          "greeting": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolor",
+          "holidays": [],
+          "greeting_type": "generated",
+          "generating_audio": false,
+          "holidays_enabled": false,
+          "greeting_file_name": "8307fdb2c4973b54.mp3",
+          "is_default_time_node": true,
+          "greeting_waveform_data": null,
+          "childNodeIds": [
+            "grp_40_1"
+          ],
+          "child_node_keypress_order": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_18"
+          ]
+        },
+        "grp_40_1": {
+          "id": "grp_40_1",
+          "type": "group",
+          "call_action": "voicemail",
+          "disabled": false,
+          "group_name": "Jordan Baker 27",
+          "group_id": 1,
+          "ext": "0004",
+          "group_vm_receiver_uuids": [],
+          "childNodeIds": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_18",
+            "swb_40"
+          ]
+        },
+        "swb_19": {
+          "id": "swb_19",
+          "internal_id": 19,
+          "key": 3,
+          "type": "ivr",
+          "title": "Title 17",
+          "keyword": "",
+          "disabled": false,
+          "greeting_type": "default",
+          "generating_audio": false,
+          "greeting_file_name": "9ac77ce9e337ac5e.mp3",
+          "user_call_handling": "Dakota43",
+          "greeting_waveform_data": null,
+          "noaction_vm_receiver_uuids": null,
+          "noaction_transfer_to_node_id": null,
+          "noaction_vm_receiver_group_id": null,
+          "noaction_transfer_to_parking_lot_uuid": null,
+          "childNodeIds": [
+            "swb_29",
+            "swb_28"
+          ],
+          "path": [
+            "container",
+            "swb_15"
+          ]
+        },
+        "swb_29": {
+          "id": "swb_29",
+          "internal_id": 29,
+          "type": "time",
+          "title": "Title 13",
+          "greeting": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incidi",
+          "holidays": [],
+          "day_ranges": {
+            "1": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "2": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "3": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "4": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "5": [
+              {
+                "to": 1020,
+                "from": 540
+              }
+            ],
+            "6": [],
+            "7": []
+          },
+          "greeting_type": "generated",
+          "generating_audio": false,
+          "holidays_enabled": false,
+          "greeting_file_name": "e01b6548ec5a1c70.mp3",
+          "greeting_waveform_data": null,
+          "childNodeIds": [
+            "grp_29_1"
+          ],
+          "child_node_keypress_order": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_19"
+          ]
+        },
+        "grp_29_1": {
+          "id": "grp_29_1",
+          "type": "group",
+          "call_action": null,
+          "disabled": false,
+          "group_name": "Jordan Baker 27",
+          "group_id": 1,
+          "ext": "0004",
+          "group_vm_receiver_uuids": [],
+          "childNodeIds": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_19",
+            "swb_29"
+          ]
+        },
+        "swb_28": {
+          "id": "swb_28",
+          "internal_id": 28,
+          "type": "time",
+          "title": "Title 14",
+          "greeting": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dol",
+          "holidays": [],
+          "greeting_type": "generated",
+          "generating_audio": false,
+          "holidays_enabled": false,
+          "greeting_file_name": "1b91b62d3d023b7e.mp3",
+          "is_default_time_node": true,
+          "greeting_waveform_data": null,
+          "childNodeIds": [
+            "grp_28_1"
+          ],
+          "child_node_keypress_order": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_19"
+          ]
+        },
+        "grp_28_1": {
+          "id": "grp_28_1",
+          "type": "group",
+          "call_action": "voicemail",
+          "disabled": false,
+          "group_name": "Jordan Baker 27",
+          "group_id": 1,
+          "ext": "0004",
+          "group_vm_receiver_uuids": [],
+          "childNodeIds": [],
+          "path": [
+            "container",
+            "swb_15",
+            "swb_19",
+            "swb_28"
+          ]
+        },
+        "swb_45": {
+          "id": "swb_45",
+          "internal_id": 45,
+          "ext": "0007",
+          "path": [
+            "container"
+          ],
+          "type": "root",
+          "title": "Title 18",
+          "numbers": [
+            "+441144960042"
+          ],
+          "disabled": false,
+          "greeting": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt u",
+          "voice_type": "voice4",
+          "ext_dialing": {
+            "enabled": false
+          },
+          "vm_receiver": null,
+          "childNodeIds": [
+            "cnt_45_ac7a4901-2722-4e41-9f20-87f95df72cb2"
+          ],
+          "greeting_type": "uploaded",
+          "voice_language": "en-GB",
+          "generating_audio": false,
+          "sa_menu_noaction": "voicemail",
+          "greeting_file_name": "custom_0b4aeaecea60e08e.mp3",
+          "greeting_waveform_data": null,
+          "child_node_keypress_order": [],
+          "noaction_vm_receiver_uuids": [
+            "04be8056-ce9f-48c2-9f3c-3a6e9f1bd766"
+          ],
+          "noaction_transfer_to_node_id": null,
+          "noaction_vm_receiver_group_id": null,
+          "noaction_transfer_to_parking_lot_uuid": null
+        },
+        "cnt_45_ac7a4901-2722-4e41-9f20-87f95df72cb2": {
+          "id": "cnt_45_ac7a4901-2722-4e41-9f20-87f95df72cb2",
+          "type": "contact",
+          "disabled": false,
+          "target_did": null,
+          "first_name": "Morgan9",
+          "last_name": "Nico10",
+          "contact_uuid": "ac7a4901-2722-4e41-9f20-87f95df72cb2",
+          "childNodeIds": [],
+          "path": [
+            "container",
+            "swb_45"
+          ]
+        }
+      },
+      "allIds": [
+        "container",
+        "swb_15",
+        "swb_16",
+        "swb_37",
+        "swb_39",
+        "grp_39_1",
+        "swb_38",
+        "grp_38_1",
+        "swb_42",
+        "swb_44",
+        "grp_44_1",
+        "swb_43",
+        "grp_43_1",
+        "swb_18",
+        "swb_41",
+        "grp_41_1",
+        "swb_40",
+        "grp_40_1",
+        "swb_19",
+        "swb_29",
+        "grp_29_1",
+        "swb_28",
+        "grp_28_1",
+        "swb_45",
+        "cnt_45_ac7a4901-2722-4e41-9f20-87f95df72cb2"
+      ]
+    }
+  }
+}

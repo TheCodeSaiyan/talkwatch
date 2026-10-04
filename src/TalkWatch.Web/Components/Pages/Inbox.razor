@@ -1,0 +1,87 @@
+@page "/alerts/inbox"
+@* The bell's list: the alerts flows sent to this person's browser channel, newest first. Opening the list marks them
+   seen; each opens the alert's own page, to acknowledge or snooze it. *@
+@attribute [Authorize]
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject TalkWatchDbContext Db
+@inject AlertLinks Links
+@inject AlertService Alerting
+@inject TimeProvider Clock
+
+<PageTitle>Alerts · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <h1>Alerts</h1>
+        <div class="sub">What alert flows have sent to you in TalkWatch, newest first. Open one to acknowledge or snooze it.</div>
+    </div>
+    <div class="tools"><a class="btn ghost sm" href="/account" data-enhance-nav="false">Notification settings</a></div>
+</header>
+
+@if (!_on)
+{
+    <div class="plane">
+        <div class="empty" data-kind="unconfigured" style="padding: 24px 16px">
+            <b>Alerts in TalkWatch are off for you.</b>
+            <p class="why">Turn them on from <a href="/account" data-enhance-nav="false">your account</a>, and flows that notify you will show here, with a pop-up on any open page and, if you allow it, on your desktop.</p>
+        </div>
+    </div>
+}
+else if (_alerts.Count == 0)
+{
+    <div class="plane"><div class="empty" data-kind="none" style="padding: 24px 16px" data-inbox-empty><b>Nothing yet.</b><p class="why">When a flow notifies you, it appears here and in the Alerts count in the rail.</p></div></div>
+}
+else
+{
+    <section class="plane" aria-label="Your alerts">
+        <div class="plane-head"><h2>Your alerts</h2><span class="mono muted" style="font-size: 12px">@_alerts.Count(a => a.AcknowledgedAt is null) open</span></div>
+        <ul class="inbox alert-list" style="border: 0; border-radius: 0">
+            @foreach (var alert in _alerts)
+            {
+                var level = alert.AcknowledgedAt is not null ? 0 : alert.Escalation ? 3 : 2;
+                <li data-inbox-alert="@alert.EventId" class="alert-row @(alert.SeenAt is null ? "unread" : "")">
+                    <span class="sevlbl" data-v="@level"><span class="sev" data-v="@level" aria-hidden="true"><b></b><b></b><b></b></span><span class="sr">@(level == 3 ? "Escalated" : level == 2 ? "Open" : "Acknowledged")</span></span>
+                    <a href="/a/@Links.Token(alert.EventId)" class="alert-main" style="text-decoration: none; color: inherit">
+                        <b>@(alert.Escalation ? $"Still not picked up: {alert.Title}" : alert.Title)</b>
+                        <span class="muted">@alert.Message</span>
+                    </a>
+                    <span class="row" style="gap: 8px">
+                        @if (alert.AcknowledgedAt is not null)
+                        {
+                            <span class="tag ok">Acknowledged</span>
+                        }
+                        else if (alert.SeenAt is null)
+                        {
+                            <span class="tag live">New</span>
+                        }
+                        <span class="mono faint" style="font-size: 12px">@TimeZoneInfo.ConvertTime(alert.At, Alerting.Zone).ToString("ddd HH:mm")</span>
+                    </span>
+                </li>
+            }
+        </ul>
+    </section>
+}
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    private bool _on;
+    private List<BrowserAlert> _alerts = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var me = Guid.Parse(HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+        _on = await Db.AlertChannels.AnyAsync(c => c.Kind == ChannelKind.Browser && c.OwnerUserId == me);
+        _alerts = await BrowserAlerts.InboxOf(Db, me).Take(50).ToListAsync();
+
+        // Seen now: the bell's count drops to what has arrived since.
+        var unseen = _alerts.Where(a => a.SeenAt is null).Select(a => a.DeliveryId).ToList();
+        if (unseen.Count > 0)
+        {
+            var now = Clock.GetUtcNow();
+            await Db.AlertDeliveries.Where(d => unseen.Contains(d.Id)).ExecuteUpdateAsync(u => u.SetProperty(d => d.SeenAt, now));
+        }
+    }
+}

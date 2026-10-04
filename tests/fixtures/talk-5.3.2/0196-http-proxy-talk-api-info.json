@@ -1,0 +1,50 @@
+{
+  "version": "5.3.2",
+  "setup_complete": true,
+  "default_country_code": "+44",
+  "default_country": "GB",
+  "controller_region": "England",
+  "controller_region_code": "ENG",
+  "controller_latitude": 0.0,
+  "controller_longitude": 0.0,
+  "install_region": "uk",
+  "ivr_custom_recording_max_mb": 5,
+  "vm_custom_greeting_max_mb": 5,
+  "has_custom_gateways": false,
+  "is_hdd_available": true,
+  "is_ssd_available": false,
+  "call_recordings_available": true,
+  "has_switchboard": true,
+  "has_enabled_gateways": false,
+  "host_device_name": "Emerson22",
+  "host_device_model": "UDMPRO",
+  "host_device_serial": "248be4d2a835",
+  "anonymous_controller_id": "f5d45baf-a6ee-4d60-82bf-2ceff26a4b5e",
+  "owner_sso_id": "498f450d-f4f0-4105-b7a7-d67dbb63d1ce",
+  "uid_adopted": true,
+  "uid": {
+    "keep_users": true,
+    "env": {
+      "name": "Casey57",
+      "api": "https://tatux.ui.com/gw",
+      "admin_portal": "https://tatux.ui.com/cloud",
+      "login_portal": ""
+    }
+  },
+  "update_channel": "release-candidate",
+  "identity_service_status": {
+    "uid": {
+      "enabled": false,
+      "running": false
+    },
+    "talk": {
+      "is_installed": true,
+      "is_configured": true,
+      "running": true,
+      "assigned": false,
+      "updating": false,
+      "enabled": false
+    }
+  },
+  "region_has_talk_service_support": true
+}

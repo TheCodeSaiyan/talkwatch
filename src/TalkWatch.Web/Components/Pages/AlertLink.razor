@@ -1,0 +1,61 @@
+@page "/a/{Token}"
+@using TalkWatch.Web.Services
+@inject AlertLinks Links
+@inject AlertService Alerting
+
+@* Reached from a link in a notification, without signing in: the signed token is the permission, for this one alert. *@
+<PageTitle>Alert · TalkWatch</PageTitle>
+
+<section class="auth alert-link" aria-label="Alert">
+    <div class="auth-brand"><svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6c6 0 8 6 14 6M2 12h14M2 18c6 0 8-6 14-6" fill="none" stroke="var(--live)" stroke-width="1.8" stroke-linecap="round"></path><circle cx="19" cy="12" r="3" fill="var(--fg)"></circle></svg><span>Talk<b>Watch</b></span></div>
+    @if (_alert is null)
+    {
+        <h1>Link not valid</h1>
+        <p class="hint" style="margin: 0">This link has expired or is not a TalkWatch alert link. Links last @((int)AlertLinks.Lifetime.TotalDays) days.</p>
+    }
+    else
+    {
+        <span class="eyebrow">Alert · @TimeZoneInfo.ConvertTime(_alert.At, Alerting.Zone).ToString("ddd d MMM HH:mm")</span>
+        <h1>@_alert.Title</h1>
+        <p style="margin: 0">@_alert.Message</p>
+
+        @if (Done == "ack")
+        {
+            <p class="notice" role="status">Acknowledged. Nothing more will be sent about this.</p>
+        }
+        else if (Done == "snooze")
+        {
+            <p class="notice" role="status">Snoozed until @TimeZoneInfo.ConvertTime(_alert.SnoozedUntil ?? default, Alerting.Zone).ToString("HH:mm").</p>
+        }
+
+        @if (_alert.AcknowledgedAt is { } at)
+        {
+            <p class="hint" data-acknowledged>Acknowledged @TimeZoneInfo.ConvertTime(at, Alerting.Zone).ToString("yyyy-MM-dd HH:mm") @AlertService.AcknowledgedHow(_alert.AcknowledgedBy).</p>
+        }
+        else
+        {
+            <form method="post" action="/a/@Token/ack"><button type="submit" class="btn primary" style="width: 100%">Acknowledge</button></form>
+            <div class="row" style="gap: 8px">
+                <form method="post" action="/a/@Token/snooze?minutes=60" style="flex: 1"><button type="submit" class="btn" style="width: 100%">Snooze 1 hour</button></form>
+                <form method="post" action="/a/@Token/snooze?minutes=240" style="flex: 1"><button type="submit" class="btn" style="width: 100%">Snooze 4 hours</button></form>
+            </div>
+            <p class="hint" style="margin: 0">Acknowledging stops further alerts about this, including escalation. Snoozing holds escalation off.</p>
+        }
+    }
+</section>
+
+@code {
+    [Parameter] public string Token { get; set; } = "";
+
+    [SupplyParameterFromQuery(Name = "done")] private string? Done { get; set; }
+
+    private TalkWatch.Data.AlertEvent? _alert;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Links.Read(Token) is { } id)
+        {
+            _alert = await Alerting.FindAsync(id, CancellationToken.None);
+        }
+    }
+}

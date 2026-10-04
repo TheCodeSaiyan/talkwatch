@@ -1,0 +1,27 @@
+@page "/Error"
+@using System.Diagnostics
+
+<PageTitle>Something went wrong · TalkWatch</PageTitle>
+
+<div class="plane" style="max-width: 600px; margin: 48px auto 0">
+    <div class="empty" data-kind="unavailable" style="padding: 28px 24px">
+        <b>Something went wrong on this page.</b>
+        <p class="why">TalkWatch hit an error putting it together. Nothing you did caused it, and calls are still being copied. Try again in a moment; if it keeps happening, the server's log has the details.</p>
+        @if (ShowRequestId)
+        {
+            <p class="why" style="margin: 0">Quote this if you report it: <code>@RequestId</code></p>
+        }
+        <div class="row" style="gap: 8px"><a class="btn primary sm" href="/live">Go to Now</a></div>
+    </div>
+</div>
+
+@code{
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId { get; set; }
+    private bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+
+    protected override void OnInitialized() =>
+        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}

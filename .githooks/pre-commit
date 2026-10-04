@@ -1,0 +1,20 @@
+#!/bin/sh
+# Refuses a commit that stages anything under tests/fixtures the fixture guard rejects.
+# Enable once per clone with: git config core.hooksPath .githooks
+#
+# The guard reads the staged content, not the working tree, so what is checked is what gets committed.
+
+files=$(git diff --cached --name-only --diff-filter=ACMR -- tests/fixtures)
+[ -z "$files" ] && exit 0
+
+snapshot=$(mktemp -d)
+trap 'rm -rf "$snapshot"' EXIT
+
+# Copy the staged blobs of the fixtures, plus the allow list and audio manifest the guard reads.
+git diff --cached --name-only --diff-filter=ACMR -z -- tests/fixtures \
+    | git checkout-index --prefix="$snapshot/" -z --stdin
+for f in tests/fixtures/.guard-allow tests/fixtures/synthetic-audio.sha256; do
+    [ -e "$snapshot/$f" ] || ! git cat-file -e ":$f" 2>/dev/null || git checkout-index --prefix="$snapshot/" -- "$f"
+done
+
+echo "$files" | tr '\n' '\0' | xargs -0 dotnet run --project tools/TalkWatch.FixtureGuard -v q -- "$snapshot"

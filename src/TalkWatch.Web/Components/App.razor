@@ -1,0 +1,38 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <meta name="color-scheme" content="dark light" />
+    <ResourcePreloader />
+    @* Before the stylesheets: the viewer's theme is set before anything paints. *@
+    <script src="@Assets["tw-theme.js"]"></script>
+    <link rel="stylesheet" href="@Assets["tw.css"]" />
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="stylesheet" href="@Assets["TalkWatch.Web.styles.css"]" />
+    <ImportMap AdditionalAttributes="@ImportMapAttributes" />
+    <HeadOutlet />
+</head>
+
+<body>
+    <Routes />
+    <ReconnectModal />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script src="@Assets["tw-flow.js"]"></script>
+    <script src="@Assets["tw.js"]"></script>
+    <script src="@Assets["tw-signature.js"]"></script>
+    <script src="@Assets["tw-player.js"]"></script>
+    <script src="@Assets["tw-palette.js"]"></script>
+</body>
+
+</html>
+
+@code {
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    // The import map is Blazor's one inline script; the content security policy lets it run by this request's nonce.
+    private Dictionary<string, object>? ImportMapAttributes =>
+        HttpContext?.Items[TalkWatch.Web.Services.Protection.NonceKey] is string nonce ? new() { ["nonce"] = nonce } : null;
+}

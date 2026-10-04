@@ -1,0 +1,68 @@
+@* The Route Trace: the path the call took, as hops — the line, the menu, who it rang, where it ended. Shapes say what
+   each hop is (diamond for a menu, square for a group, circle for a person), so it reads without colour. *@
+@using TalkWatch.Core.Calls
+
+<div class="trace@(Wrap ? " wrap" : "")" role="list" aria-label="Route" data-route>
+    @for (var i = 0; i < _hops.Count; i++)
+    {
+        var hop = _hops[i];
+        if (i > 0)
+        {
+            <span class="link done"></span>
+        }
+        <span class="hop @hop.Css" data-k="@hop.Kind" role="listitem"><span class="nd"></span>@hop.Label</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Chronicle Chronicle { get; set; } = default!;
+
+    /// <summary>The line it came in on, when the chronicle cannot name it.</summary>
+    [Parameter] public string? Line { get; set; }
+
+    /// <summary>Most recent hops only, for a table row; 0 shows the whole route.</summary>
+    [Parameter] public int Last { get; set; }
+
+    [Parameter] public bool Wrap { get; set; }
+
+    private sealed record Hop(string Label, string Kind, string Css);
+
+    private List<Hop> _hops = [];
+
+    protected override void OnParametersSet()
+    {
+        var hops = new List<Hop>();
+        foreach (var step in Chronicle.Steps)
+        {
+            switch (step.Kind)
+            {
+                case StepKind.Started when (step.Subject ?? Line) is { } line:
+                    hops.Add(new(line, "did", "done"));
+                    break;
+                case StepKind.Menu:
+                    hops.Add(new(step.Subject ?? "Menu", "attendant", "done"));
+                    break;
+                case StepKind.Ringing:
+                    hops.Add(new(step.Subject ?? "Rang", "group", "done"));
+                    break;
+                case StepKind.Answered:
+                    // Ringing one person who then answers is one hop, not "Alex — Alex".
+                    if (hops.Count > 0 && hops[^1].Kind == "group" && hops[^1].Label == step.Subject)
+                    {
+                        hops.RemoveAt(hops.Count - 1);
+                    }
+
+                    hops.Add(new(step.Subject ?? "Answered", "user", "answer"));
+                    break;
+                case StepKind.Voicemail when !hops.Any(h => h.Kind == "voicemail"):
+                    hops.Add(new("Voicemail", "voicemail", "done"));
+                    break;
+                case StepKind.Ended when !hops.Any(h => h.Css == "answer") && !hops.Any(h => h.Kind == "voicemail"):
+                    hops.Add(new(step.Text.StartsWith("Caller hung up", StringComparison.Ordinal) ? "Caller gave up" : step.Text, "end", "fail"));
+                    break;
+            }
+        }
+
+        _hops = Last > 0 && hops.Count > Last ? hops[^Last..] : hops;
+    }
+}

@@ -1,0 +1,320 @@
+@page "/admin/alerts"
+@* Admins see and set everything. Managers see only their own channels, flows and alerts (the database filters them),
+   and may send only about their own lines; the settings are for admins. *@
+@attribute [Authorize(Policy = "permission:alerts")]
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Core.Alerts
+@using TalkWatch.Data
+@using TalkWatch.Web.Components.Alerts
+@using TalkWatch.Web.Services
+@inject TalkWatchDbContext Db
+@inject AlertService Alerting
+@inject UserManager<AppUser> UserStore
+
+<PageTitle>Alert channels · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <h1>Alert channels</h1>
+        <div class="sub">Where alerts go, and what was sent. @(_flows.Count == 0 ? "No flows yet, so nothing is sent." : $"{_flows.Count(f => f.Flow.Enabled)} of {_flows.Count} flows on.")</div>
+    </div>
+    <div class="tools"><a class="btn ghost sm" href="/admin/answering-lines">Outside voicemail</a><a class="btn sm" href="/flows">Flows</a></div>
+</header>
+
+@if (!string.IsNullOrEmpty(Msg) && At != "settings")
+{
+    <p class="notice" role="status">@Msg</p>
+}
+
+<section class="plane" aria-label="Channels">
+    <div class="plane-head"><h2>Channels</h2></div>
+    <p class="hint" style="margin: 0; padding: 12px 16px 4px">A channel given to a person only hears of calls on the lines they are granted, and of their own handset;
+        a flow that notifies a person sends to their channels.</p>
+    @if (_channels.Count == 0)
+    {
+        <div class="empty" data-kind="unconfigured" style="padding: 12px 16px 20px"><b>No channels yet.</b><p class="why">Add one below, then send a test to check it arrives.</p></div>
+    }
+    else
+    {
+        <div class="grid-wrap">
+            <table class="dg channels">
+                <thead><tr><th class="first">Name</th><th>Kind</th><th>Address</th><th>For</th><th>Quiet</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var channel in _channels)
+                    {
+                        <tr data-channel="@channel.Id" class="@(channel.Enabled ? "" : "off")">
+                            <td class="first"><b style="font-weight: 500">@channel.Name</b>@if (!channel.Enabled)
+                                {
+                                    <span class="tag" style="margin-left: 6px">Off</span>
+                                }</td>
+                            <td>@channel.Kind</td>
+                            <td class="mono" style="font-size: 12px">@Address(channel)</td>
+                            <td>@(channel.OwnerUserId is { } owner ? _people.GetValueOrDefault(owner, "someone removed") : "Everyone the flows send to it")</td>
+                            <td>@Window(channel.QuietDays, channel.QuietStart, channel.QuietEnd, outside: false, none: "Never")</td>
+                            <td class="r">
+                                <span class="row" style="gap: 4px; justify-content: flex-end">
+                                    <form method="post" action="/admin/alerts/channels/@channel.Id/test"><AntiforgeryToken /><button type="submit" class="btn ghost sm">Send test</button></form>
+                                    <form method="post" action="/admin/alerts/channels/@channel.Id/toggle"><AntiforgeryToken /><button type="submit" class="btn ghost sm">@(channel.Enabled ? "Turn off" : "Turn on")</button></form>
+                                    <form method="post" action="/admin/alerts/channels/@channel.Id/delete"><AntiforgeryToken /><button type="submit" class="btn ghost sm danger">Remove</button></form>
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<div class="split">
+    <section class="plane" aria-label="Add a channel" id="add-channel">
+        <div class="plane-head"><h2>Add a channel</h2></div>
+        <form method="post" action="/admin/alerts/channels" class="add-channel plane-body stack" style="gap: 12px">
+            <AntiforgeryToken />
+            @if (!string.IsNullOrEmpty(Problem))
+            {
+                <p class="notice problem" role="alert" data-channel-problem>Not added: @Problem</p>
+            }
+            <div class="row" style="gap: 12px; flex-wrap: wrap">
+                <label class="field" style="flex: 1; min-width: 12rem"><span class="label">Name</span><input class="input" name="Name" required maxlength="100" value="@NameIn" /></label>
+                <label class="field"><span class="label">Kind</span>
+                    <select class="input" name="Kind">
+                        <option value="Ntfy" selected="@(KindIn == "Ntfy")">ntfy push</option>
+                        <option value="Webhook" selected="@(KindIn == "Webhook")">Webhook</option>
+                        <option value="Email" selected="@(KindIn == "Email")">Email</option>
+                        <option value="Telegram" selected="@(KindIn == "Telegram")">Telegram</option>
+                        <option value="Browser" selected="@(KindIn == "Browser")">In TalkWatch (bell and desktop notifications)</option>
+                    </select>
+                </label>
+            </div>
+            <label class="field"><span class="label">Address</span><input class="input" name="Target" placeholder="ntfy topic URL, webhook URL, email, or Telegram chat id" value="@TargetIn" /></label>
+            <label class="field"><span class="label">Token or signing secret</span><input class="input" name="Secret" type="password" autocomplete="off" /></label>
+            @if (_admin)
+            {
+                <label class="field"><span class="label">For</span>
+                    <select class="input" name="Owner">
+                        <option value="">Everyone the flows send to it</option>
+                        @foreach (var (id, name) in _people.OrderBy(p => p.Value))
+                        {
+                            <option value="@id" selected="@(OwnerIn == id.ToString())">@name</option>
+                        }
+                    </select>
+                </label>
+            }
+            else
+            {
+                <p class="hint" style="margin: 0">Channels you add are yours: they hear only of calls on your lines and of your own handset.</p>
+            }
+            <fieldset class="stack" style="gap: 10px; border: 1px solid var(--line); border-radius: var(--r2); padding: 12px">
+                <legend class="eyebrow" style="padding: 0 6px">Quiet hours: alerts wait until they end (no days, no quiet hours)</legend>
+                <div class="row" style="gap: 10px; flex-wrap: wrap">
+                    @foreach (var day in WeekFromMonday)
+                    {
+                        <label class="row" style="gap: 4px"><input type="checkbox" name="QuietDays" value="@day" checked="@DaysIn.Contains(day.ToString())" /> @day.ToString()[..3]</label>
+                    }
+                </div>
+                <div class="row" style="gap: 10px">
+                    <label class="field"><span class="label">From</span><input class="input" name="QuietStart" type="time" value="@(FromIn ?? "22:00")" style="width: auto" /></label>
+                    <label class="field"><span class="label">to</span><input class="input" name="QuietEnd" type="time" value="@(ToIn ?? "07:00")" style="width: auto" /></label>
+                </div>
+            </fieldset>
+            <div class="row"><button type="submit" class="btn primary sm">Add</button></div>
+        </form>
+    </section>
+
+    <section class="plane" aria-label="How each kind is set up">
+        <div class="plane-head"><h2>How each kind is set up</h2></div>
+        <div class="plane-body stack" style="gap: 10px">
+            <p class="hint" style="margin: 0"><b>Email</b> goes through the mail server in the settings (Smtp__Host, Smtp__From).</p>
+            <p class="hint" style="margin: 0"><b>Telegram:</b> make a bot with @@BotFather and put its token in the secret, add the bot to the chat, and give the chat id
+                (a user's or group's number, or @@channelname). Leave either empty to use the Telegram settings below.</p>
+            <p class="hint" style="margin: 0"><b>ntfy:</b> the secret is an access token sent as a bearer token.</p>
+            <p class="hint" style="margin: 0"><b>Webhook:</b> the secret signs each body: <code>X-TalkWatch-Signature: sha256=&lt;HMAC of the body&gt;</code>.</p>
+            <p class="hint" style="margin: 0">A secret is stored encrypted and never shown again.</p>
+        </div>
+    </section>
+</div>
+
+@if (_admin)
+{
+    <section class="plane" aria-label="Settings" id="settings">
+        <div class="plane-head"><h2>Settings</h2></div>
+        @if (!string.IsNullOrEmpty(Msg) && At == "settings")
+        {
+            <p class="notice" role="status" style="margin: 12px 16px 0">@Msg</p>
+        }
+        <form method="post" action="/admin/alerts/settings" class="alert-settings plane-body stack" style="gap: 14px">
+            <AntiforgeryToken />
+            <p class="hint" style="margin: 0">The mail server and the Telegram defaults. A field left empty uses the matching Smtp__ or Telegram__ setting, shown
+                greyed out when there is one. Passwords and tokens saved here are stored encrypted and never shown again.</p>
+            <div class="split" style="gap: 16px">
+                <fieldset class="stack" style="gap: 10px; border: 1px solid var(--line); border-radius: var(--r2); padding: 12px">
+                    <legend class="eyebrow" style="padding: 0 6px">Email</legend>
+                    <div class="row" style="gap: 10px">
+                        <label class="field" style="flex: 1"><span class="label">Mail server</span><input class="input" name="SmtpHost" value="@_saved?.SmtpHost" placeholder="@Env.SmtpFromSettings.Host" /></label>
+                        <label class="field"><span class="label">Port</span><input class="input minutes" name="SmtpPort" type="number" min="1" max="65535" value="@_saved?.SmtpPort" placeholder="@Env.SmtpFromSettings.Port" /></label>
+                    </div>
+                    <label class="field"><span class="label">From</span><input class="input" name="SmtpFrom" value="@_saved?.SmtpFrom" placeholder="@Env.SmtpFromSettings.From" /></label>
+                    <div class="row" style="gap: 10px">
+                        <label class="field" style="flex: 1"><span class="label">Username</span><input class="input" name="SmtpUsername" value="@_saved?.SmtpUsername" placeholder="@Env.SmtpFromSettings.Username" autocomplete="off" /></label>
+                        <label class="field" style="flex: 1"><span class="label">Password</span><input class="input" name="SmtpPassword" type="password" autocomplete="new-password" placeholder="@SecretState(_saved?.SmtpProtectedPassword, Env.SmtpFromSettings.Password)" /></label>
+                    </div>
+                    @if (_saved?.SmtpProtectedPassword is not null)
+                    {
+                        <label class="row" style="gap: 6px"><input type="checkbox" name="ClearSmtpPassword" value="true" /> Forget the saved password</label>
+                    }
+                    <label class="field"><span class="label">STARTTLS</span>
+                        <select class="input" name="SmtpStartTls">
+                            <option value="" selected="@(_saved?.SmtpStartTls is null)">As in the settings (@(Env.SmtpFromSettings.StartTls ? "yes" : "no"))</option>
+                            <option value="yes" selected="@(_saved?.SmtpStartTls == true)">Yes</option>
+                            <option value="no" selected="@(_saved?.SmtpStartTls == false)">No</option>
+                        </select>
+                    </label>
+                </fieldset>
+                <fieldset class="stack" style="gap: 10px; border: 1px solid var(--line); border-radius: var(--r2); padding: 12px; align-self: start">
+                    <legend class="eyebrow" style="padding: 0 6px">Telegram</legend>
+                    <label class="field"><span class="label">Bot token</span><input class="input" name="TelegramBotToken" type="password" autocomplete="off" placeholder="@SecretState(_saved?.TelegramProtectedBotToken, Env.TelegramFromSettings.BotToken)" /></label>
+                    @if (_saved?.TelegramProtectedBotToken is not null)
+                    {
+                        <label class="row" style="gap: 6px"><input type="checkbox" name="ClearTelegramBotToken" value="true" /> Forget the saved token</label>
+                    }
+                    <label class="field"><span class="label">Chat id</span><input class="input" name="TelegramChatId" value="@_saved?.TelegramChatId" placeholder="@Env.TelegramFromSettings.ChatId" /></label>
+                </fieldset>
+            </div>
+            <div class="row"><button type="submit" class="btn primary sm">Save settings</button></div>
+        </form>
+        <form method="post" action="/admin/alerts/settings/test" class="plane-body row" style="gap: 10px; align-items: flex-end; flex-wrap: wrap; border-top: 1px solid var(--line)" data-test-email>
+            <AntiforgeryToken />
+            <label class="field" style="flex: 1; min-width: 16rem"><span class="label">Send a test email to</span><input class="input" name="To" type="email" placeholder="@(_email ?? "an email address")" /></label>
+            <button type="submit" class="btn sm">Send test email</button>
+            <p class="hint" style="margin: 0; flex-basis: 100%">Uses the saved settings, now, and shows the mail server's answer here. Save any change first. Left empty, it goes to your own address.</p>
+        </form>
+    </section>
+}
+
+<section class="plane" aria-label="Recently sent">
+    <div class="plane-head"><h2>Recently sent</h2></div>
+    @if (_recent.Count == 0)
+    {
+        <p class="empty" style="padding: 12px 16px">Nothing sent yet.</p>
+    }
+    else
+    {
+        <div class="grid-wrap">
+            <table class="dg deliveries">
+                <thead><tr><th class="first">When</th><th>Alert</th><th>Flow</th><th>Channel</th><th>State</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var row in _recent)
+                    {
+                        <tr data-delivery="@row.Delivery.Id">
+                            <td class="first mono">@TimeZoneInfo.ConvertTime(row.Delivery.CreatedAt, Alerting.Zone).ToString("yyyy-MM-dd HH:mm")</td>
+                            <td><b style="font-weight: 500">@row.Event.Title</b>: @row.Event.Message</td>
+                            <td>@(_flows.FirstOrDefault(f => f.Flow.Id == row.Delivery.FlowId).Flow?.Name)@(row.Delivery.Stage > 0 ? $" · stage {row.Delivery.Stage + 1}" : "")</td>
+                            <td>@(_channels.FirstOrDefault(c => c.Id == row.Delivery.ChannelId)?.Name)</td>
+                            <td>@(row.Delivery.Acknowledgement ? "Acknowledgement · " : row.Delivery.Urgent ? "Urgent · " : "")@State(row.Delivery)</td>
+                            <td class="r">
+                                @if (row.Event.AcknowledgedAt is null)
+                                {
+                                    <form method="post" action="/admin/alerts/events/@row.Event.Id/ack"><AntiforgeryToken /><button type="submit" class="btn ghost sm">Acknowledge</button></form>
+                                }
+                                else
+                                {
+                                    <span class="muted" style="font-size: 12px">Acknowledged @AlertService.AcknowledgedHow(row.Event.AcknowledgedBy)</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@code {
+    private static readonly DayOfWeek[] WeekFromMonday =
+        [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday];
+
+    [SupplyParameterFromQuery(Name = "msg")] private string? Msg { get; set; }
+
+    [SupplyParameterFromQuery(Name = "at")] private string? At { get; set; }
+
+    // A channel that was refused: why, and what was typed, to fill the form in again (never the secret).
+    [SupplyParameterFromQuery(Name = "problem")] private string? Problem { get; set; }
+    [SupplyParameterFromQuery(Name = "name")] private string? NameIn { get; set; }
+    [SupplyParameterFromQuery(Name = "kind")] private string? KindIn { get; set; }
+    [SupplyParameterFromQuery(Name = "target")] private string? TargetIn { get; set; }
+    [SupplyParameterFromQuery(Name = "owner")] private string? OwnerIn { get; set; }
+    [SupplyParameterFromQuery(Name = "days")] private string? DaysText { get; set; }
+    [SupplyParameterFromQuery(Name = "from")] private string? FromIn { get; set; }
+    [SupplyParameterFromQuery(Name = "to")] private string? ToIn { get; set; }
+
+    private string[] DaysIn => (DaysText ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+    [Inject] private AlertSettingsStore Env { get; set; } = default!;
+
+    private AlertSettings? _saved;
+
+    // Where a secret comes from, never its value.
+    private static string SecretState(string? saved, string? fromSettings) =>
+        saved is not null ? "Saved here (type a new one to replace it)" : fromSettings is { Length: > 0 } ? "Set in the settings" : "Not set";
+
+    private sealed record Recent(AlertDelivery Delivery, AlertEvent Event);
+
+    private List<AlertChannel> _channels = [];
+    private List<(AlertFlow Flow, FlowDefinition? Definition)> _flows = [];
+    private Dictionary<Guid, string> _people = [];
+    private List<Recent> _recent = [];
+
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    private bool _admin;
+    private string? _email;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _admin = HttpContext.User.Can(Permission.ManageAlerts);
+        _email = _admin ? (await UserStore.GetUserAsync(HttpContext.User))?.Email : null;
+        _saved = await Db.AlertSettings.AsNoTracking().SingleOrDefaultAsync();
+        // Not the channels kept for contacts: those follow Talk, and a flow names the contact instead.
+        _channels = await Db.AlertChannels.AsNoTracking().Where(c => c.ContactUuid == null).OrderBy(c => c.Name).ToListAsync();
+        _flows = [.. (await Db.AlertFlows.AsNoTracking().OrderBy(f => f.Name).ToListAsync()).Select(f => (f, Flows.Read(f.Definition)))];
+        // Everyone for an admin, who can give a channel to anyone; a Manager only needs their own name.
+        var self = HttpContext.User.Identity?.Name;
+        _people = await Db.Users.AsNoTracking().Where(u => _admin || u.UserName == self).ToDictionaryAsync(u => u.Id, u => u.UserName ?? u.Id.ToString());
+        _recent = await (from d in Db.AlertDeliveries.AsNoTracking()
+                         join e in Db.AlertEvents.AsNoTracking() on d.EventId equals e.Id
+                         orderby d.CreatedAt descending
+                         select new Recent(d, e)).Take(50).ToListAsync();
+    }
+
+    private string Address(AlertChannel channel) => channel.Kind switch
+    {
+        ChannelKind.Telegram => $"{(channel.Target is { Length: > 0 } chat ? $"chat {chat}" : "chat from settings")} · {(channel.ProtectedSecret is null ? "bot from settings" : "own bot")}",
+        ChannelKind.Ntfy when channel.ProtectedSecret is not null => $"{channel.Target} · with token",
+        ChannelKind.Webhook when channel.ProtectedSecret is not null => $"{channel.Target} · signed",
+        _ => channel.Target,
+    };
+
+    private static string Window(int? mask, TimeOnly? from, TimeOnly? to, bool outside, string none)
+    {
+        if (mask is not { } bits || from is not { } start || to is not { } end)
+        {
+            return none;
+        }
+
+        var days = TimeWindow.FromMask(bits);
+        var listed = string.Join(" ", WeekFromMonday.Where(days.Contains).Select(d => d.ToString()[..3]));
+        return $"{(outside ? "Outside " : "")}{listed} {start:HH\\:mm}–{end:HH\\:mm}";
+    }
+
+    private static string State(AlertDelivery delivery) => delivery.State switch
+    {
+        DeliveryState.Sent => $"Sent{(delivery.Attempts > 1 ? $" after {delivery.Attempts} tries" : "")}",
+        DeliveryState.Dead => $"Gave up: {delivery.LastError}",
+        DeliveryState.Cancelled when delivery.Acknowledgement => "Not sent: quiet hours",
+        DeliveryState.Cancelled => "Not sent: acknowledged first",
+        _ when delivery.Attempts > 0 => $"Retrying ({delivery.Attempts} tries so far): {delivery.LastError}",
+        _ => "Waiting to send",
+    };
+}

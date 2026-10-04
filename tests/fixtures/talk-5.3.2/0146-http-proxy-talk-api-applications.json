@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Casey51",
+    "version": "10.6.106",
+    "isInstalled": true,
+    "isRunning": true,
+    "isConfigured": true
+  },
+  {
+    "name": "Dakota52",
+    "version": "7.2.105",
+    "isInstalled": true,
+    "isRunning": true,
+    "isConfigured": true
+  },
+  {
+    "name": "Harper53",
+    "version": "5.3.2",
+    "isInstalled": true,
+    "isRunning": true,
+    "isConfigured": true
+  },
+  {
+    "name": "Dakota54",
+    "version": "1.4.1",
+    "isInstalled": true,
+    "isRunning": true,
+    "isConfigured": true
+  }
+]

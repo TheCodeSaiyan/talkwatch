@@ -1,0 +1,247 @@
+@page "/reports/new"
+@page "/reports/{Id:guid}/edit"
+@* A report's contents, schedule and recipients. Each recipient gets a copy built with their own access; an email
+   channel's copy is built with its owner's, or the whole site's for a site channel. *@
+@attribute [Authorize(Policy = "permission:reports")]
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Core.Calls
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject TalkWatchDbContext Db
+@inject ReportBuilder Builder
+
+<PageTitle>@(Id is null ? "New report" : "Edit report") · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <a class="back" href="/reports"><Icon Name="left" Size="s" /> Reports</a>
+        <h1>@(Id is null ? "New report" : _report?.Name ?? "Edit report")</h1>
+        <div class="sub">Each person it goes to gets a copy built with their own access. Times are in @Builder.Zone.Id.</div>
+    </div>
+</header>
+
+@if (!string.IsNullOrEmpty(Msg))
+{
+    <p class="notice problem" role="alert">@Msg</p>
+}
+
+@if (Id is not null && _report is null)
+{
+    <div class="plane"><div class="empty" data-kind="none" style="padding: 24px 16px"><b>That report is not there any more.</b><p class="why"><a href="/reports">Back to reports</a></p></div></div>
+}
+else
+{
+    @if (Id is null)
+    {
+        @* Ready-made reports to start from: the parts, schedule and options filled in, all still to change. *@
+        <section class="plane" aria-label="Start from" data-report-types>
+            <div class="plane-head"><h2>Start from</h2><div class="end"><a class="btn ghost sm" href="/reports/new" aria-current="@(Type is null ? "page" : null)">Blank</a></div></div>
+            <div class="plane-body" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 10px">
+                @foreach (var type in ReportTypes.All)
+                {
+                    <a href="/reports/new?type=@type.Key" class="stack" data-report-type="@type.Key" aria-current="@(Type == type.Key ? "page" : null)"
+                       style="gap: 4px; padding: 10px 12px; border: 1px solid @(Type == type.Key ? "var(--live)" : "var(--line)"); border-radius: var(--r2); text-decoration: none">
+                        <b style="font-weight: 600">@type.Title</b>
+                        <span class="muted" style="font-size: 12px">@type.What</span>
+                    </a>
+                }
+            </div>
+        </section>
+    }
+
+    <form method="post" action="/reports/save" class="report-form stack" style="gap: 16px">
+        <AntiforgeryToken />
+        <input type="hidden" name="Id" value="@Id" />
+        <section class="plane">
+            <div class="plane-head">
+                <label class="flow-name"><span class="eyebrow">Name</span><input class="input" name="Name" required maxlength="100" value="@_report?.Name" placeholder="Weekly calls" /></label>
+                <div class="end"><label class="row" style="gap: 8px"><input type="checkbox" name="Enabled" value="true" checked="@(_report?.Enabled ?? true)" /> On</label></div>
+            </div>
+        </section>
+
+        <div class="split">
+            <div class="stack" style="gap: 16px">
+                <section class="plane" aria-label="Holds">
+                    <div class="plane-head"><h2>Holds</h2></div>
+                    <div class="plane-body choice-list">
+                        @foreach (var (section, text) in Sections)
+                        {
+                            <label><input type="checkbox" name="Sections" value="@section" checked="@((_report?.Sections ?? NewReport).HasFlag(section))" /> @text</label>
+                        }
+                    </div>
+                </section>
+
+                <section class="plane" aria-label="Runs">
+                    <div class="plane-head"><h2>Runs</h2></div>
+                    <div class="plane-body choice-list">
+                        <label><input type="radio" name="Schedule" value="@ReportSchedule.Daily" checked="@(Schedule == ReportSchedule.Daily)" /> Daily, covering the day before</label>
+                        <label><input type="radio" name="Schedule" value="@ReportSchedule.Weekly" checked="@(Schedule == ReportSchedule.Weekly)" /> Weekly on
+                            <select class="input" name="Weekday" style="width: auto; height: 28px">
+                                @foreach (var day in Week)
+                                {
+                                    <option value="@day" selected="@((_report?.Weekday ?? DayOfWeek.Monday) == day)">@day</option>
+                                }
+                            </select>, covering the 7 days before</label>
+                        <label><input type="radio" name="Schedule" value="@ReportSchedule.Monthly" checked="@(Schedule == ReportSchedule.Monthly)" /> Monthly on the 1st, covering the month before</label>
+                        <label class="indent">at <input class="input" type="time" name="At" style="width: auto; height: 28px" value="@((_report?.At ?? new TimeOnly(7, 0)).ToString("HH:mm"))" /></label>
+                        <label><input type="radio" name="Schedule" value="@ReportSchedule.Cron" checked="@(Schedule == ReportSchedule.Cron)" /> Cron
+                            <input class="input mono" name="Cron" value="@_report?.Cron" placeholder="0 8 * * 1-5" style="width: 12rem; height: 28px" /></label>
+                        <label class="indent">covering
+                            <select class="input" name="Period" style="width: auto; height: 28px">
+                                <option value="@ReportPeriod.Day" selected="@(_report?.Period == ReportPeriod.Day)">the day before</option>
+                                <option value="@ReportPeriod.Week" selected="@(_report?.Period == ReportPeriod.Week)">the 7 days before</option>
+                                <option value="@ReportPeriod.Month" selected="@(_report?.Period == ReportPeriod.Month)">the month before</option>
+                                <option value="@ReportPeriod.Days" selected="@(_report?.Period == ReportPeriod.Days)">a number of days before:</option>
+                            </select>
+                            <input class="input minutes" type="number" name="PeriodDays" min="1" max="@ReportTiming.LongestPeriodDays" value="@_report?.PeriodDays" style="height: 28px" />
+                        </label>
+                        <p class="hint" style="margin: 0">Cron is minute, hour, day of the month, month, day of the week: <code>0 8 * * 1-5</code> is 08:00 on weekdays.
+                            Its period is chosen with "covering"; the other schedules have their own.</p>
+                    </div>
+                </section>
+            </div>
+
+            <section class="plane" aria-label="Options">
+                <div class="plane-head"><h2>Options</h2></div>
+                <div class="plane-body choice-list">
+                    <label><input type="checkbox" name="ComparePrevious" value="true" checked="@(_report?.ComparePrevious == true)" /> Compare each figure with the period before</label>
+                    <label><input type="checkbox" name="SplitByNumber" value="true" checked="@(_report?.SplitByNumber == true)" /> Split the figures by number, as well as the total</label>
+                    <label><input type="checkbox" name="HoursOnly" value="true" checked="@(_report?.HoursDays is not null)" data-hours-only /> Count only calls within these hours</label>
+                    <div class="row" style="gap: 10px; flex-wrap: wrap; align-items: center; padding-left: 22px">
+                        @foreach (var day in Week)
+                        {
+                            <label class="row" style="gap: 4px"><input type="checkbox" name="HoursDays" value="@day" checked="@(_report?.HoursDays is { } mask ? (mask & (1 << (int)day)) != 0 : day is not (DayOfWeek.Saturday or DayOfWeek.Sunday))" /> @day.ToString()[..3]</label>
+                        }
+                        <label class="row" style="gap: 6px">from <input class="input mono" name="HoursFrom" type="time" style="width: 7rem" value="@((_report?.HoursFrom ?? new TimeOnly(9, 0)).ToString("HH:mm"))" /></label>
+                        <label class="row" style="gap: 6px">to <input class="input mono" name="HoursTo" type="time" style="width: 7rem" value="@((_report?.HoursTo ?? new TimeOnly(17, 30)).ToString("HH:mm"))" /></label>
+                    </div>
+                    <p class="hint" style="margin: 0">Outside these hours, calls are left out of every part, comparison included: out-of-hours calls don't skew the figures. A window can run overnight, such as 22:00 to 06:00.</p>
+                </div>
+            </section>
+
+            <section class="plane" aria-label="Covers">
+                <div class="plane-head"><h2>Covers</h2></div>
+                <div class="plane-body choice-list" data-report-numbers-picker>
+                    @if (_siteWide)
+                    {
+                        <p class="hint" style="margin: 0 0 4px">Every number, unless you choose some.</p>
+                    }
+                    else
+                    {
+                        <p class="hint" style="margin: 0 0 4px">Choose the numbers it covers, from those you set up reports for.</p>
+                    }
+                    @foreach (var (did, name) in _numbers)
+                    {
+                        <label><input type="checkbox" name="Numbers" value="@did" checked="@(_report?.Numbers.Any(n => n.Did == did) == true)" /> @name@if (name != did)
+                            {
+                                <span class="mono muted" style="font-size: 12px"> @did</span>
+                            }</label>
+                    }
+                    <p class="hint" style="margin: 0">Each copy shows only these numbers' calls, on the number and through its switchboard and ring groups, and never more than its reader may see.</p>
+                </div>
+            </section>
+
+            <section class="plane" aria-label="Goes to">
+                <div class="plane-head"><h2>Goes to</h2></div>
+                <div class="plane-body choice-list">
+                    @if (_people.Count > 0)
+                    {
+                        <span class="eyebrow">People</span>
+                    }
+                    @foreach (var (id, name, email) in _people)
+                    {
+                        <label><input type="checkbox" name="Users" value="@id" checked="@(_report?.Recipients.Any(r => r.UserId == id) == true)" /> @name@(email is null ? " (no email address yet)" : "")@if (_holds.TryGetValue(id, out var held))
+                            {
+                                <span class="muted" style="font-size: 12px"> · on @held</span>
+                            }</label>
+                    }
+                    @if (_channels.Count > 0)
+                    {
+                        <span class="eyebrow" style="margin-top: 8px">Email channels</span>
+                    }
+                    @foreach (var channel in _channels)
+                    {
+                        <label><input type="checkbox" name="Channels" value="@channel.Id" checked="@(_report?.Recipients.Any(r => r.ChannelId == channel.Id) == true)" /> @channel.Name <span class="mono muted" style="font-size: 12px">@channel.Target</span></label>
+                    }
+                    <p class="hint" style="margin: 0">Each person's copy covers only what they can see. With nobody chosen, the report is kept here for those who manage reports.</p>
+                </div>
+            </section>
+        </div>
+
+        <div class="row" style="gap: 8px"><button type="submit" class="btn primary">Save report</button> <a class="btn ghost" href="/reports">Cancel</a></div>
+    </form>
+}
+
+@code {
+    private static readonly (ReportSections, string)[] Sections =
+    [
+        (ReportSections.Figures, "The dashboard's figures"),
+        (ReportSections.CallBacks, "Missed callers still to call back"),
+        (ReportSections.Lines, "Each line's calls"),
+        (ReportSections.Switchboard, "Switchboard greetings and menu options"),
+        (ReportSections.People, "Each person's calls"),
+        (ReportSections.MissedList, "Every missed call and voicemail, listed"),
+        (ReportSections.BusiestTimes, "Busiest times, by day and hour"),
+        (ReportSections.Callers, "Callers: the top ones, repeat and new"),
+        (ReportSections.Sentiment, "How the calls went, positive to negative"),
+        (ReportSections.CallBackTimes, "How quickly missed callers were called back"),
+        (ReportSections.OutsideVoicemail, "Outside voicemail"),
+        (ReportSections.Alerts, "Alerts raised and acknowledged"),
+        (ReportSections.CallList, "Every call, attached as CSV"),
+    ];
+
+    // A new report starts with the parts every report had before there were more to choose from.
+    private const ReportSections NewReport = ReportSections.Figures | ReportSections.CallBacks | ReportSections.Lines | ReportSections.Switchboard;
+
+    private static readonly DayOfWeek[] Week =
+        [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday];
+
+    [Parameter] public Guid? Id { get; set; }
+
+    [SupplyParameterFromQuery(Name = "msg")] private string? Msg { get; set; }
+
+    // A ready-made report to start a new one from (ReportTypes).
+    [SupplyParameterFromQuery(Name = "type")] private string? Type { get; set; }
+
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    private Report? _report;
+    private bool _siteWide;
+    private List<(string Did, string Name)> _numbers = [];
+
+    // Who holds a role on which numbers, so the people a number's report is for are easy to pick.
+    private Dictionary<Guid, string> _holds = [];
+    private List<(Guid Id, string Name, string? Email)> _people = [];
+    private List<AlertChannel> _channels = [];
+
+    private ReportSchedule Schedule => _report?.Schedule ?? ReportSchedule.Weekly;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id is { } id)
+        {
+            _report = await Db.Reports.AsNoTracking().Include(r => r.Recipients).Include(r => r.Numbers).SingleOrDefaultAsync(r => r.Id == id);
+        }
+        else
+        {
+            _report = ReportTypes.Start(Type);
+        }
+
+        var user = HttpContext!.User;
+        _siteWide = user.Can(Permission.ManageReports);
+        Guid? me = Guid.TryParse(user.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier), out var parsedMe) ? parsedMe : null;
+        var mine = !_siteWide && me is { } self ? (await NumberAccess.NumbersWith(Db, self, Permission.ManageReports).ToListAsync()).ToHashSet(StringComparer.Ordinal) : null;
+        var names = await Db.Lines.IgnoreQueryFilters().AsNoTracking().Where(l => l.Kind == LineKind.Did && l.Present).OrderBy(l => l.Key).Select(l => new { l.Key, l.Name }).ToListAsync();
+        _numbers = [.. names.Where(n => mine is null || mine.Contains(n.Key)).Select(n => (n.Key, string.IsNullOrWhiteSpace(n.Name) ? n.Key : n.Name))];
+        var label = _numbers.ToDictionary(n => n.Did, n => n.Name);
+        _holds = (await Db.NumberRoles.AsNoTracking().Select(n => new { n.UserId, n.Did }).ToListAsync())
+            .Where(n => label.ContainsKey(n.Did)).GroupBy(n => n.UserId)
+            .ToDictionary(g => g.Key, g => string.Join(", ", g.Select(n => label[n.Did]).Distinct()));
+
+        _people = [.. (await Db.Users.AsNoTracking().OrderBy(u => u.UserName).Select(u => new { u.Id, u.UserName, u.Email, u.ReportEmail }).ToListAsync())
+            .Select(u => (u.Id, u.UserName ?? "", AppUser.ReportTo(u.ReportEmail, u.Email)))];
+        _channels = await Db.AlertChannels.AsNoTracking().Where(c => c.Kind == ChannelKind.Email && c.ContactUuid == null && (_siteWide || c.OwnerUserId == me))
+            .OrderBy(c => c.Name).ToListAsync();
+    }
+}

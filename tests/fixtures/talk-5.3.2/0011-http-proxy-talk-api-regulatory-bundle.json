@@ -1,0 +1,40 @@
+{
+  "bundle": {
+    "sid": "BUa5e0aa6d9dff3d85f4d04d0c41cf4b99",
+    "status": "twilio-approved",
+    "validUntil": null
+  },
+  "end_user": {
+    "sid": "IT77cb4daba3686082cde29966e49d4584",
+    "attributes": {
+      "birth_date": "2000-01-01",
+      "email": "person3@example.invalid",
+      "first_name": "Sam18",
+      "last_name": "Kit19",
+      "phone_number": "+447700900774"
+    },
+    "type": "individual"
+  },
+  "physical_address": {
+    "street": "1 Example Street",
+    "city": "Exampleton",
+    "region": "Exampleshire",
+    "postalCode": "ZZ99 9ZZ",
+    "isoCountry": "GB",
+    "sid": "ADb6f4ea5d3631059a8c8bcb9766008f1a"
+  },
+  "emergency_address": {
+    "street": "1 Example Street",
+    "city": "Exampleton",
+    "region": "Exampleshire",
+    "postalCode": "ZZ99 9ZZ",
+    "isoCountry": "GB",
+    "sid": "AD978fa4c6424b5ad2b532c657fe82e718"
+  },
+  "documents": {
+    "proof_of_identity_sid": "RD2808297e387cecc76e1a616848e1715d",
+    "proof_of_identity_type": "passport",
+    "proof_of_address_sid": "RD4304499a2a30662f8a0dd30d30af7317",
+    "proof_of_address_type": "utility_bill"
+  }
+}

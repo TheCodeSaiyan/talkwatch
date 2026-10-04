@@ -1,0 +1,139 @@
+name: Release
+
+# A tag such as v1.0.0 releases that commit: the tests and fixture guard again on a hosted runner, the upgrade from the
+# last release, multi-arch images on GHCR, the documentation on GitHub Pages, and a GitHub release with notes. Day-to-day
+# CI stays on the maintainer's Docker (scripts/ci.sh); this runs only for a tag, so nothing here costs minutes until then.
+#
+# Needs, on the repository: Pages set to deploy from GitHub Actions. GITHUB_TOKEN does the rest, so there are no secrets.
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/thecodesaiyan/talkwatch
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - run: dotnet build -c Release
+      - run: dotnet test -c Release --no-build
+      - name: Fixture guard
+        run: dotnet run --project tools/TalkWatch.FixtureGuard -c Release --no-build -- .
+
+  # Built strictly, as local CI does, with the image pinned for the same reason: MkDocs 2.0 is announced as breaking
+  # themes and plugins.
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build the site
+        run: |
+          docker run --rm -v "$PWD:/docs" -u "$(id -u):$(id -g)" squidfunk/mkdocs-material:9.7.7 \
+            build --strict --site-dir /docs/site
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  image:
+    needs: [test, docs]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 1.2.3, 1.2 and latest for a release; a pre-release (v1.2.3-rc.1) gets only its own tag, so nobody following
+      # latest or 1.2 is moved onto it.
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+          flavor: |
+            latest=auto
+          labels: |
+            org.opencontainers.image.title=TalkWatch
+            org.opencontainers.image.description=A self-hosted dashboard and alert router for UniFi Talk
+            org.opencontainers.image.licenses=MIT
+
+      # amd64 alone first, loaded into Docker, so the upgrade check runs the image that's about to be pushed. The
+      # Dockerfile cross-compiles on the runner's own architecture, so arm64 needs no emulation either.
+      - name: Build for the upgrade check
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          tags: talkwatch:release
+          cache-from: type=gha,scope=release
+          cache-to: type=gha,mode=max,scope=release
+
+      # From the last release, as the upgrading page promises for every published image. The first release has
+      # nothing to upgrade from, and the script says so rather than failing.
+      - name: Upgrade from the last release
+        run: scripts/upgrade-check.sh "$IMAGE:latest" talkwatch:release
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=release
+          cache-to: type=gha,mode=max,scope=release
+
+  pages:
+    needs: image
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v5
+
+  release:
+    needs: [image, pages]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          prerelease=""
+          case "$TAG" in *-*) prerelease="--prerelease" ;; esac
+          version="${TAG#v}"
+          gh release create "$TAG" --verify-tag --generate-notes $prerelease --notes "$(cat <<EOF
+          The image is \`$IMAGE:$version\`, for amd64 and arm64. Take a [backup](https://thecodesaiyan.github.io/talkwatch/backup/) before upgrading; [Upgrading](https://thecodesaiyan.github.io/talkwatch/upgrading/) says how.
+          EOF
+          )"

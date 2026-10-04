@@ -1,0 +1,330 @@
+@page "/account"
+@attribute [Authorize]
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject UserManager<AppUser> Users
+@inject Audit Audit
+@inject TalkWatchDbContext Db
+@inject TimeProvider Clock
+@inject Microsoft.Extensions.Options.IOptions<DemoOptions> DemoSettings
+
+<PageTitle>Your account · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <h1 class="row" style="gap: 12px"><span class="avatar">@Initials(HttpContext.User.Identity?.Name)</span>Your account</h1>
+        <div class="sub">@HttpContext.User.Identity?.Name · how you sign in, how alerts reach you here, and tokens for scripts.</div>
+    </div>
+</header>
+
+@if (_message is not null)
+{
+    <p class="notice" role="status">@_message</p>
+}
+
+@if (_recoveryCodes is { } codes)
+{
+    <section class="plane recovery-codes" aria-label="Recovery codes">
+        <div class="plane-head"><h2>Recovery codes</h2><div class="end"><span class="tag warn">Shown once</span></div></div>
+        <div class="plane-body stack" style="gap: 10px">
+            <p style="margin: 0">Keep these somewhere safe, such as a password manager. Each one signs you in once if you lose your phone. They are not shown again.</p>
+            <ul data-recovery-codes class="code-grid">
+                @foreach (var recovery in codes)
+                {
+                    <li><code>@recovery</code></li>
+                }
+            </ul>
+        </div>
+    </section>
+}
+
+<div class="split">
+    <div class="stack" style="gap: 16px">
+        <section class="plane" aria-label="Two-factor sign-in">
+            <div class="plane-head"><h2>Two-factor sign-in</h2>
+                @if (_user is not null)
+                {
+                    <div class="end">@if (_enabled)
+                        {
+                            <span class="tag ok">On</span>
+                        }
+                        else
+                        {
+                            <span class="tag warn">Off</span>
+                        }</div>
+                }
+            </div>
+            <div class="plane-body stack" style="gap: 12px">
+                @if (_user is null)
+                {
+                    <p style="margin: 0">Loading…</p>
+                }
+                else if (_enabled)
+                {
+                    <p style="margin: 0" data-two-factor="on">On. Signing in asks for a code from your authenticator app after your password. @_recoveryLeft recovery codes left.</p>
+
+                    <form method="post" @formname="new-codes" @onsubmit="NewCodesAsync">
+                        <AntiforgeryToken />
+                        <button type="submit" class="btn sm">Make new recovery codes</button>
+                    </form>
+
+                    <form method="post" @formname="turn-off" @onsubmit="TurnOffAsync" class="row" style="gap: 8px; align-items: flex-end">
+                        <AntiforgeryToken />
+                        <label class="field" style="flex: 1"><span class="label">Code from your app</span><input class="input mono" name="Form.Code" value="" inputmode="numeric" autocomplete="one-time-code" required /></label>
+                        <button type="submit" class="btn sm danger">Turn off</button>
+                    </form>
+                }
+                else
+                {
+                    <p style="margin: 0" data-two-factor="off">Off. Turn it on so that a stolen password is not enough to sign in as you.</p>
+                    <ol class="steps-list">
+                        <li>In an authenticator app (1Password, Google Authenticator, Microsoft Authenticator and others), add an account by setup key, or paste the link below if the app accepts one.</li>
+                        <li>Enter the six-digit code it shows.</li>
+                    </ol>
+                    <div class="stack" style="gap: 6px">
+                        <span class="eyebrow">Setup key</span>
+                        <code class="secret-box" data-authenticator-key>@Grouped(_key)</code>
+                        <span class="eyebrow" style="margin-top: 6px">Link</span>
+                        <code class="secret-box" style="font-size: 11px">@_uri</code>
+                    </div>
+
+                    <form method="post" @formname="turn-on" @onsubmit="TurnOnAsync" class="row" style="gap: 8px; align-items: flex-end">
+                        <AntiforgeryToken />
+                        <label class="field" style="flex: 1"><span class="label">Code from your app</span><input class="input mono" name="Form.Code" value="" inputmode="numeric" autocomplete="one-time-code" required /></label>
+                        <button type="submit" class="btn sm primary">Turn on</button>
+                    </form>
+                }
+            </div>
+        </section>
+
+        <section class="plane" aria-label="Alerts in TalkWatch">
+            <div class="plane-head"><h2>Alerts in TalkWatch</h2><div class="end">@if (_browserAlerts)
+                {
+                    <span class="tag ok">On</span>
+                }
+                else
+                {
+                    <span class="tag">Off</span>
+                }</div></div>
+            <div class="plane-body stack" style="gap: 12px">
+                @if (_browserAlerts)
+                {
+                    <p class="hint" style="margin: 0" data-browser-alerts="on">On: alerts that flows send you show under the bell, pop up on any TalkWatch page you have open, and,
+                        in browsers where you allow it, arrive as desktop notifications even with TalkWatch closed.</p>
+                    <p class="row" style="gap: 8px; margin: 0"><button type="button" class="btn sm" data-push-enable>Allow desktop notifications in this browser</button> <span class="hint" data-push-state></span></p>
+                    <script type="module" src="/push.js"></script>
+                }
+                else
+                {
+                    <p class="hint" style="margin: 0" data-browser-alerts="off">Off. Turned on, alerts that flows send you show under a bell on every page, pop up as they arrive,
+                        and can come as desktop notifications. You hear only of what you may see.</p>
+                }
+                <form method="post" action="/account/browser-alerts"><AntiforgeryToken /><button type="submit" class="btn sm @(_browserAlerts ? "ghost" : "primary")">@(_browserAlerts ? "Turn off" : "Turn on alerts in TalkWatch")</button></form>
+            </div>
+        </section>
+    </div>
+
+    <section class="plane" aria-label="API tokens">
+        <div class="plane-head"><h2>API tokens</h2></div>
+        <div class="plane-body stack" style="gap: 12px">
+            <p class="hint" style="margin: 0">A token lets a script or another tool read TalkWatch as you: the calls, lines and figures you can see here, and nothing more. Send it as <code>Authorization: Bearer &lt;token&gt;</code> to <code>/api/v1/calls</code>, <code>/api/v1/calls/&lt;uuid&gt;</code>, <code>/api/v1/lines</code> or <code>/api/v1/stats?from=yyyy-MM-dd&amp;to=yyyy-MM-dd</code>.</p>
+
+            @if (_newToken is not null)
+            {
+                <div class="notice" role="status"><b>Your new token, shown only this once:</b> <code class="secret-box" data-new-token>@_newToken</code></div>
+            }
+        </div>
+
+        @if (_tokens.Count > 0)
+        {
+            <div class="grid-wrap">
+                <table class="dg tokens">
+                    <thead><tr><th class="first">Name</th><th>Made</th><th>Last used</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var token in _tokens)
+                        {
+                            <tr data-token="@token.Id">
+                                <td class="first">@token.Name</td>
+                                <td class="mono">@token.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                                <td class="mono">@(token.LastUsedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "Never")</td>
+                                <td class="r">
+                                    <form method="post" @formname="@($"revoke-{token.Id:N}")" @onsubmit="() => RevokeAsync(token.Id)">
+                                        <AntiforgeryToken />
+                                        <button type="submit" class="btn ghost sm danger">Revoke</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <div class="plane-body" style="border-top: 1px solid var(--line)">
+            @if (HttpContext.User.Can(Permission.ApiTokens))
+            {
+                <form method="post" @formname="new-token" @onsubmit="NewTokenAsync" class="row" style="gap: 8px; align-items: flex-end">
+                    <AntiforgeryToken />
+                    <label class="field" style="flex: 1"><span class="label">Name</span><input class="input" name="Token.Name" value="" maxlength="100" required placeholder="What will use it" /></label>
+                    <button type="submit" class="btn sm primary">Make a token</button>
+                </form>
+            }
+            else
+            {
+                <p class="hint" style="margin: 0" data-no-tokens>Your role does not allow making API tokens.</p>
+            }
+        </div>
+    </section>
+</div>
+
+@code {
+    private bool _browserAlerts;
+
+    private static string Initials(string? name) =>
+        string.Concat((name ?? "?").Split(['.', ' ', '-', '_'], StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpperInvariant(p[0])));
+
+    public sealed class CodeForm
+    {
+        public string? Code { get; set; }
+    }
+
+    public sealed class TokenForm
+    {
+        public string? Name { get; set; }
+    }
+
+    [SupplyParameterFromForm(FormName = "new-token")] private TokenForm? Token { get; set; }
+
+    private List<ApiToken> _tokens = [];
+    private string? _newToken;
+
+    private async Task NewTokenAsync()
+    {
+        if (_user is null || string.IsNullOrWhiteSpace(Token?.Name) || !HttpContext.User.Can(Permission.ApiTokens))
+        {
+            return;
+        }
+
+        var value = ApiTokens.NewToken();
+        var token = new ApiToken
+        {
+            Id = Guid.NewGuid(), SiteId = _user.SiteId, UserId = _user.Id, Name = Token.Name.Trim(), Hash = ApiTokens.Hash(value),
+            CreatedAt = Clock.GetUtcNow(),
+        };
+        Db.ApiTokens.Add(token);
+        await Db.SaveChangesAsync();
+        await Audit.WriteAsync("token.create", "api_token", token.Id, token.Name);
+        _newToken = value;
+        await LoadAsync();
+    }
+
+    private async Task RevokeAsync(Guid id)
+    {
+        // The access scope limits this to the person's own tokens.
+        if (await Db.ApiTokens.SingleOrDefaultAsync(t => t.Id == id && t.UserId == _user!.Id) is { } token)
+        {
+            Db.ApiTokens.Remove(token);
+            await Db.SaveChangesAsync();
+            await Audit.WriteAsync("token.revoke", "api_token", token.Id, token.Name);
+            _message = $"Token '{token.Name}' revoked.";
+        }
+
+        await LoadAsync();
+    }
+
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm] private CodeForm? Form { get; set; }
+
+    private AppUser? _user;
+    private bool _enabled;
+    private int _recoveryLeft;
+    private string? _key;
+    private string? _uri;
+    private string? _message;
+    private IEnumerable<string>? _recoveryCodes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = await Users.GetUserAsync(HttpContext.User);
+        _browserAlerts = _user is not null && await Db.AlertChannels.AnyAsync(c => c.Kind == ChannelKind.Browser && c.OwnerUserId == _user.Id);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        if (_user is null)
+        {
+            return;
+        }
+
+        _tokens = await Db.ApiTokens.AsNoTracking().Where(t => t.UserId == _user.Id).OrderBy(t => t.CreatedAt).ToListAsync();
+        _enabled = await Users.GetTwoFactorEnabledAsync(_user);
+        _recoveryLeft = await Users.CountRecoveryCodesAsync(_user);
+        if (!_enabled)
+        {
+            _key = await Users.GetAuthenticatorKeyAsync(_user);
+            if (string.IsNullOrEmpty(_key))
+            {
+                await Users.ResetAuthenticatorKeyAsync(_user);
+                _key = await Users.GetAuthenticatorKeyAsync(_user);
+            }
+
+            var label = Uri.EscapeDataString($"TalkWatch:{_user.UserName}");
+            _uri = $"otpauth://totp/{label}?secret={_key}&issuer=TalkWatch&digits=6";
+        }
+    }
+
+    private async Task<bool> CodeIsRightAsync() =>
+        _user is not null && await Users.VerifyTwoFactorTokenAsync(_user, Users.Options.Tokens.AuthenticatorTokenProvider, (Form?.Code ?? "").Replace(" ", "", StringComparison.Ordinal));
+
+    private async Task TurnOnAsync()
+    {
+        // The guest is shared: two-factor on it would lock everyone else out.
+        if (DemoSettings.Value.IsGuest(_user?.UserName))
+        {
+            _message = "The demo guest is shared, so it can't turn on two-factor sign-in.";
+            return;
+        }
+
+        if (!await CodeIsRightAsync())
+        {
+            _message = "That code did not match. Check the app shows TalkWatch, and try the newest code.";
+            return;
+        }
+
+        await Users.SetTwoFactorEnabledAsync(_user!, true);
+        _recoveryCodes = await Users.GenerateNewTwoFactorRecoveryCodesAsync(_user!, 10);
+        await Audit.WriteAsync("2fa.enable", "user", _user!.Id, null);
+        _message = "Two-factor sign-in is on.";
+        await LoadAsync();
+    }
+
+    private async Task TurnOffAsync()
+    {
+        if (!await CodeIsRightAsync())
+        {
+            _message = "That code did not match, so two-factor sign-in is still on.";
+            return;
+        }
+
+        await Users.SetTwoFactorEnabledAsync(_user!, false);
+        await Users.ResetAuthenticatorKeyAsync(_user!);
+        await Audit.WriteAsync("2fa.disable", "user", _user!.Id, null);
+        _message = "Two-factor sign-in is off.";
+        await LoadAsync();
+    }
+
+    private async Task NewCodesAsync()
+    {
+        _recoveryCodes = await Users.GenerateNewTwoFactorRecoveryCodesAsync(_user!, 10);
+        await Audit.WriteAsync("2fa.recovery-codes", "user", _user!.Id, null);
+        _message = "New recovery codes made; the old ones no longer work.";
+        await LoadAsync();
+    }
+
+    private static string Grouped(string? key) =>
+        key is null ? "" : string.Join(' ', Enumerable.Range(0, (key.Length + 3) / 4).Select(i => key.Substring(i * 4, Math.Min(4, key.Length - (i * 4)))).Select(g => g.ToLowerInvariant()));
+}

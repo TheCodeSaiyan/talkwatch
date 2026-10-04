@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TalkWatch.Core/TalkWatch.Core.csproj" />
+    <Project Path="src/TalkWatch.Data/TalkWatch.Data.csproj" />
+    <Project Path="src/TalkWatch.Replay/TalkWatch.Replay.csproj" />
+    <Project Path="src/TalkWatch.Web/TalkWatch.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TalkWatch.Capture.Tests/TalkWatch.Capture.Tests.csproj" />
+    <Project Path="tests/TalkWatch.Core.Tests/TalkWatch.Core.Tests.csproj" />
+    <Project Path="tests/TalkWatch.Data.Tests/TalkWatch.Data.Tests.csproj" />
+    <Project Path="tests/TalkWatch.FixtureGuard.Tests/TalkWatch.FixtureGuard.Tests.csproj" />
+    <Project Path="tests/TalkWatch.Web.Tests/TalkWatch.Web.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/TalkWatch.Capture/TalkWatch.Capture.csproj" />
+    <Project Path="tools/TalkWatch.FixtureGuard/TalkWatch.FixtureGuard.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,399 @@
+@page "/calls"
+@attribute [Authorize]
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Core.Calls
+@using TalkWatch.Web.Components.Calls
+@using TalkWatch.Web.Services
+@inject TalkWatch.Data.TalkWatchDbContext Db
+@inject AlertService Alerting
+@inject TimeProvider Clock
+
+<PageTitle>Calls · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <h1>Calls</h1>
+        <div class="sub">Every call Talk has reported that your lines cover, with the route it took.</div>
+    </div>
+    <div class="tools">
+        <details class="menu export-menu">
+            <summary class="btn ghost sm"><Icon Name="download" Size="s" />Export</summary>
+            <div class="menu-panel end" style="padding: 12px; min-width: 300px">
+                <form method="get" action="/calls/export.csv" class="export" style="display: flex; flex-direction: column; gap: 10px">
+                    <label class="field">From <input class="input" type="date" name="from" value="@DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd")" required /></label>
+                    <label class="field">To <input class="input" type="date" name="to" value="@DateTime.Today.ToString("yyyy-MM-dd")" required /></label>
+                    <div class="row"><button class="btn sm" type="submit">Download CSV</button><button class="btn sm" type="submit" formaction="/calls/export.parquet">Download Parquet</button></div>
+                </form>
+            </div>
+        </details>
+    </div>
+</header>
+
+@* The filter grammar: each active filter is a chip that says what it does and comes off with one click. The URL holds
+   them all, so a view can be shared or kept. Every query still goes through the signed-in person's access scope. *@
+<div class="filters" role="search" aria-label="Filters" data-filters>
+    <Icon Name="filter" Size="s" />
+    @foreach (var chip in Chips())
+    {
+        <span class="chip" data-chip="@chip.Key"><span class="k">@chip.Label</span><span class="op">@chip.Op</span><span class="v">@chip.Value</span><a class="x" href="@chip.Remove" aria-label="Remove the @chip.Label.ToLowerInvariant() filter"><Icon Name="x" Size="s" /></a></span>
+    }
+    <form method="get" action="/calls" class="filter-add" style="display: flex; gap: 6px; align-items: center; flex: 1; min-width: 260px">
+        @if (Outcome is not null) { <input type="hidden" name="outcome" value="@Outcome" /> }
+        @if (Dir is not null) { <input type="hidden" name="dir" value="@Dir" /> }
+        @if (Period is not null) { <input type="hidden" name="period" value="@Period" /> }
+        @if (Line is not null) { <input type="hidden" name="line" value="@Line" /> }
+        <label class="sr" for="calls-q">Search transcripts</label>
+        <input id="calls-q" class="filter-input" type="search" name="q" value="@Q" placeholder="Search what was said, or Talk's summary" />
+        <button class="btn ghost sm" type="submit"><Icon Name="search" Size="s" />Search</button>
+    </form>
+    @if (Chips().Any())
+    {
+        <a class="btn ghost sm" href="/calls">Clear all</a>
+    }
+</div>
+
+<nav class="row wrap" aria-label="Quick filters" style="gap: 6px" data-quick-filters>
+    <span class="eyebrow" style="margin-right: 4px">Show</span>
+    <span class="seg" role="group">
+        @foreach (var (value, label) in OutcomeChoices)
+        {
+            <a aria-pressed="@(Outcome == value ? "true" : "false")" href="@With(outcome: Outcome == value ? "" : value)">@label</a>
+        }
+    </span>
+    <span class="seg" role="group">
+        @foreach (var (value, label) in PeriodChoices)
+        {
+            <a aria-pressed="@(Period == value ? "true" : "false")" href="@With(period: Period == value ? "" : value)">@label</a>
+        }
+    </span>
+    <span class="seg" role="group">
+        @foreach (var (value, label) in DirChoices)
+        {
+            <a aria-pressed="@(Dir == value ? "true" : "false")" href="@With(dir: Dir == value ? "" : value)">@label</a>
+        }
+    </span>
+</nav>
+
+@if (_calls is null)
+{
+    <div class="plane"><p class="empty" style="padding: 16px">Loading calls…</p></div>
+}
+else if (_calls.Count == 0)
+{
+    <div class="plane">
+        <div class="empty" data-kind="@(Chips().Any() ? "filtered" : "none")" style="padding: 24px 16px">
+            @if (Chips().Any())
+            {
+                <b>@(string.IsNullOrWhiteSpace(Q) ? $"No {Describe()} matched these filters." : "No transcript you can read says that.")</b>
+                <p class="why">Take a filter off to widen the search.</p>
+                <div class="row wrap">
+                    @foreach (var chip in Chips())
+                    {
+                        <a class="btn sm" href="@chip.Remove">Clear @chip.Label.ToLowerInvariant()</a>
+                    }
+                </div>
+            }
+            else
+            {
+                <b>No calls to show.</b>
+                <p class="why">@(_total == 0 ? "Either none have been copied from the console yet, or no lines have been granted to you." : "")</p>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <section class="plane" aria-label="Calls">
+        <div class="plane-head">
+            <h2>@_total.ToString("N0") @(_total == 1 ? "call" : "calls")</h2>
+            <span class="muted" style="font-size: var(--t-sm)" data-summary>@_summary</span>
+        </div>
+        <div class="grid-wrap">
+            <table class="dg calls">
+                <thead>
+                    <tr><th class="first">Caller</th><th>Line</th><th class="hide-sm">Route</th><th>Result</th><th class="hide-sm">Answer · talk</th><th class="r">Time</th><th><span class="sr">Audio and transcript</span></th></tr>
+                </thead>
+                <tbody>
+                    @{ string? day = null; }
+                    @foreach (var call in _calls)
+                    {
+                        var local = TimeZoneInfo.ConvertTime(call.Time, Alerting.Zone);
+                        var thisDay = DayLabel(local);
+                        if (thisDay != day)
+                        {
+                            day = thisDay;
+                            <tr class="day"><td colspan="7" class="first">@thisDay</td></tr>
+                        }
+                        var chronicle = _chronicles.GetValueOrDefault(call.Id);
+                        <tr data-call="@call.TalkUuid">
+                            <td class="first">
+                                <a href="/calls/@call.TalkUuid" class="row" style="gap: 10px; text-decoration: none; color: inherit">
+                                    <span class="dir" data-d="@CallMarks.DirectionKey(call.Direction)" title="@CallMarks.Direction(call.Direction)"><Icon Name="@CallMarks.DirectionKey(call.Direction)" /><span class="sr">@CallMarks.Direction(call.Direction)</span></span>
+                                    <span class="who"><b>@Party(call)</b><span class="n">@Number(call)</span></span>
+                                </a>
+                            </td>
+                            <td><span class="who"><b style="font-weight: 500">@LineName(call)</b>@if (call.Direction != "out" && LineName(call) != call.ToRaw)
+                                {
+                                    <span class="n">@call.ToRaw</span>
+                                }</span></td>
+                            <td class="hide-sm">@if (chronicle is not null)
+                                {
+                                    <RouteTrace Chronicle="chronicle" Last="3" />
+                                }</td>
+                            <td title="Talk's status: @call.Status" data-outcome="@call.Outcome"><span class="oc" data-o="@CallMarks.Key(call.Outcome)"><Icon Name="@CallMarks.Icon(call.Outcome)" />@CallMarks.Words(call.Outcome)</span></td>
+                            <td class="hide-sm">
+                                <span class="dur-bar num" style="font-size: var(--t-sm)">
+                                    @if (chronicle?.Band.FirstOrDefault(b => b.Kind == SegmentKind.Ringing) is { } ring)
+                                    {
+                                        <span class="b ring" style="width: @Bar(ring.Length)px"></span>
+                                        @Core.Calls.Chronicle.Seconds(ring.Length)
+                                    }
+                                    @if (call.Outcome == CallOutcome.Answered || call.Direction == "out")
+                                    {
+                                        <span class="b" style="width: @Bar(TimeSpan.FromSeconds(call.DurationSeconds))px"></span>
+                                        @CallMarks.Duration(TimeSpan.FromSeconds(call.DurationSeconds))
+                                    }
+                                </span>
+                            </td>
+                            <td class="r num"><a href="/calls/@call.TalkUuid" style="color: inherit">@local.ToString("HH:mm")</a></td>
+                            <td>
+                                <span class="row" style="gap: 8px; justify-content: flex-end">
+                                    @foreach (var audio in _audio.Where(a => a.CallId == call.Id).OrderBy(a => a.Kind))
+                                    {
+                                        <span class="audio">
+                                            <span class="sr">@(audio.Kind == TalkWatch.Data.AudioKind.Voicemail ? "Voicemail" : "Recording")</span>
+                                            <audio controls preload="none" src="/audio/@audio.Id" data-audio="@audio.Id" data-kind="@audio.Kind" data-label="@(audio.Kind == TalkWatch.Data.AudioKind.Voicemail ? "Voicemail from" : "Call with") @Party(call)" data-call-url="/calls/@call.TalkUuid"></audio>
+                                        </span>
+                                    }
+                                    @if (_transcribed.Contains(call.Id))
+                                    {
+                                        <a href="/calls/@call.TalkUuid" data-has-transcript title="Read the transcript" aria-label="Read the transcript" class="muted"><Icon Name="transcript" /></a>
+                                    }
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <nav class="pages row" style="gap: 12px; justify-content: space-between" aria-label="Pages">
+        @if (Page > 0)
+        {
+            <a class="btn sm" href="@With(page: Page - 1)"><Icon Name="left" Size="s" />Newer</a>
+        }
+        else
+        {
+            <span></span>
+        }
+        <span class="mono muted" style="font-size: var(--t-sm)">@(Page * PageSize + 1)–@(Page * PageSize + _calls.Count) of @_total</span>
+        @if ((Page + 1) * PageSize < _total)
+        {
+            <a class="btn sm" href="@With(page: Page + 1)">Older<Icon Name="right" Size="s" /></a>
+        }
+        else
+        {
+            <span></span>
+        }
+    </nav>
+}
+
+@code {
+    private const int PageSize = 50;
+
+    private static readonly (string Value, string Label)[] OutcomeChoices =
+        [("answered", "Answered"), ("missed", "Missed"), ("voicemail", "Voicemail"), ("unanswered", "Not answered"), ("menu", "Hung up in the menu")];
+
+    private static readonly (string Value, string Label)[] PeriodChoices = [("today", "Today"), ("7d", "Last 7 days"), ("30d", "Last 30 days")];
+
+    private static readonly (string Value, string Label)[] DirChoices = [("in", "Inbound"), ("out", "Outbound"), ("internal", "Internal")];
+
+    private sealed record Chip(string Key, string Label, string Op, string Value, string Remove);
+
+    private List<TalkWatch.Data.CallRow>? _calls;
+    private IReadOnlyDictionary<Guid, Chronicle> _chronicles = new Dictionary<Guid, Chronicle>();
+    private ChronicleNames _lineNames = ChronicleNames.None;
+    private string _summary = "";
+
+    // Recordings and voicemail this person may hear. The same access scope filters them, grant flags included.
+    private List<(Guid Id, Guid CallId, TalkWatch.Data.AudioKind Kind)> _audio = [];
+    private int _total;
+
+    [SupplyParameterFromQuery] private int Page { get; set; }
+
+    [SupplyParameterFromQuery(Name = "q")] private string? Q { get; set; }
+
+    [SupplyParameterFromQuery(Name = "outcome")] private string? Outcome { get; set; }
+
+    [SupplyParameterFromQuery(Name = "dir")] private string? Dir { get; set; }
+
+    [SupplyParameterFromQuery(Name = "period")] private string? Period { get; set; }
+
+    /// <summary>A line the call touched, as Kind:Key ("Did:+441144960042"): a number, a person, a group or a menu.</summary>
+    [SupplyParameterFromQuery(Name = "line")] private string? Line { get; set; }
+
+    private string? _lineName;
+
+    // Calls with a transcript this person may read: the transcripts' own access filter decides.
+    private HashSet<Guid> _transcribed = [];
+
+    // Names from Talk's contacts, for callers whose call did not carry one.
+    private IReadOnlyDictionary<string, string> _names = new Dictionary<string, string>();
+
+    /// <summary>This page's URL with one filter changed; "" removes it. Changing a filter goes back to the first page.</summary>
+    private string With(string? outcome = null, string? dir = null, string? period = null, string? q = null, int? page = null, string? line = null)
+    {
+        var parts = new List<string>();
+        void Add(string key, string? value)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                parts.Add($"{key}={Uri.EscapeDataString(value)}");
+            }
+        }
+
+        Add("outcome", outcome ?? Outcome);
+        Add("dir", dir ?? Dir);
+        Add("period", period ?? Period);
+        Add("q", q ?? Q);
+        Add("line", line ?? Line);
+        if (page is > 0)
+        {
+            parts.Add($"page={page}");
+        }
+
+        return parts.Count == 0 ? "/calls" : "/calls?" + string.Join("&", parts);
+    }
+
+    private IEnumerable<Chip> Chips()
+    {
+        if (OutcomeChoices.FirstOrDefault(c => c.Value == Outcome) is { Label: { } o })
+        {
+            yield return new("outcome", "Result", "is", o, With(outcome: ""));
+        }
+
+        if (PeriodChoices.FirstOrDefault(c => c.Value == Period) is { Label: { } p })
+        {
+            yield return new("period", "Date", "is", p, With(period: ""));
+        }
+
+        if (DirChoices.FirstOrDefault(c => c.Value == Dir) is { Label: { } d })
+        {
+            yield return new("dir", "Direction", "is", d, With(dir: ""));
+        }
+
+        if (!string.IsNullOrWhiteSpace(Q))
+        {
+            yield return new("q", "Said", "contains", $"“{Q.Trim()}”", With(q: ""));
+        }
+
+        if (Line is not null)
+        {
+            yield return new("line", "Line", "is", _lineName ?? Line, With(line: ""));
+        }
+    }
+
+    // "missed calls today", for the empty state
+    private string Describe()
+    {
+        var what = OutcomeChoices.FirstOrDefault(c => c.Value == Outcome).Label?.ToLowerInvariant();
+        var on = Line is null ? null : "on " + (_lineName ?? "that line");
+        var dir = DirChoices.FirstOrDefault(c => c.Value == Dir).Label?.ToLowerInvariant();
+        var when = PeriodChoices.FirstOrDefault(c => c.Value == Period).Label?.ToLowerInvariant();
+        return string.Join(" ", new[] { what, dir, "calls", on, when is null ? null : (when == "today" ? "today" : "in the " + when) }.Where(s => s is not null));
+    }
+
+    private string DayLabel(DateTimeOffset local)
+    {
+        var today = TimeZoneInfo.ConvertTime(Clock.GetUtcNow(), Alerting.Zone).Date;
+        return local.Date == today ? "Today" : local.Date == today.AddDays(-1) ? "Yesterday" : local.ToString("dddd d MMMM");
+    }
+
+    private string Party(TalkWatch.Data.CallRow call) => call.Direction == "out"
+        ? TalkWatch.Data.CallerNames.Who(null, call.ToRaw, call.ToE164, _names)
+        : TalkWatch.Data.CallerNames.Who(call.CallerName, call.FromRaw, call.FromE164, _names);
+
+    // The number under the name, unless the name is the number already
+    private string? Number(TalkWatch.Data.CallRow call)
+    {
+        var raw = call.Direction == "out" ? call.ToRaw : call.FromRaw;
+        return raw == Party(call) ? "Not in contacts" : raw;
+    }
+
+    private string LineName(TalkWatch.Data.CallRow call)
+    {
+        var e164 = call.Direction == "out" ? null : call.ToE164;
+        return (e164 is null ? null : _lineNames.Number(e164)) ?? (call.Direction == "out" ? "Outbound" : call.ToRaw ?? "—");
+    }
+
+    // Duration bars on a square-root scale, so a 20-minute call doesn't flatten the 30-second ones.
+    private static string Bar(TimeSpan t) => Math.Clamp(Math.Sqrt(t.TotalSeconds) * 3, 2, 64).ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+
+    protected override async Task OnInitializedAsync()
+    {
+        Page = Math.Max(0, Page);
+        var calls = Db.Calls.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(Q))
+        {
+            // Words as typed, matched anywhere, any case: % and _ in them are literal.
+            var pattern = "%" + Q.Trim().Replace(@"\", @"\\", StringComparison.Ordinal).Replace("%", @"\%", StringComparison.Ordinal).Replace("_", @"\_", StringComparison.Ordinal) + "%";
+            calls = calls.Where(c => Db.CallTranscripts.Any(t => t.CallId == c.Id
+                && (EF.Functions.ILike(t.Text, pattern, @"\") || (t.Summary != null && EF.Functions.ILike(t.Summary, pattern, @"\")))));
+        }
+
+        calls = Outcome switch
+        {
+            "answered" => calls.Where(c => c.Outcome == CallOutcome.Answered),
+            "missed" => calls.Where(c => CallOutcomes.MissedKinds.Contains(c.Outcome)),
+            "voicemail" => calls.Where(c => CallOutcomes.VoicemailKinds.Contains(c.Outcome)),
+            "unanswered" => calls.Where(c => c.Direction == "in" && (CallOutcomes.UnansweredKinds.Contains(c.Outcome) || c.Outcome == CallOutcome.HungUpAtSwitchboard)),
+            "menu" => calls.Where(c => c.Outcome == CallOutcome.HungUpAtSwitchboard),
+            _ => calls,
+        };
+        calls = Dir switch
+        {
+            "in" => calls.Where(c => c.Direction == "in"),
+            "out" => calls.Where(c => c.Direction == "out"),
+            "internal" => calls.Where(c => c.Direction != "in" && c.Direction != "out"),
+            _ => calls,
+        };
+        if (Line?.Split(':', 2) is [var kindText, var key] && Enum.TryParse<LineKind>(kindText, out var kind))
+        {
+            // Through the line table's own access filter: a line this person is not granted matches no calls.
+            calls = calls.Where(c => c.Lines.Any(l => l.Kind == kind && l.Key == key));
+            _lineName = await Db.Lines.AsNoTracking().Where(l => l.Kind == kind && l.Key == key).Select(l => l.Name).FirstOrDefaultAsync();
+        }
+
+        if (Period is "today" or "7d" or "30d")
+        {
+            // Whole days in the site's zone, as the dashboard counts them.
+            var today = TimeZoneInfo.ConvertTime(Clock.GetUtcNow(), Alerting.Zone).Date;
+            var first = Period switch { "today" => today, "7d" => today.AddDays(-6), _ => today.AddDays(-29) };
+            var since = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(first, Alerting.Zone), TimeSpan.Zero);
+            calls = calls.Where(c => c.Time >= since);
+        }
+
+        _total = await calls.CountAsync();
+        var inbound = await calls.CountAsync(c => c.Direction == "in");
+        var answered = await calls.CountAsync(c => c.Direction == "in" && c.Outcome == CallOutcome.Answered);
+        var missed = await calls.CountAsync(c => CallOutcomes.MissedKinds.Contains(c.Outcome));
+        _summary = inbound == 0 ? "" : $"{Math.Round(100.0 * answered / inbound)}% of inbound answered · {missed} missed";
+
+        _calls = await calls
+            .OrderByDescending(c => c.Time)
+            .Skip(Page * PageSize)
+            .Take(PageSize)
+            .ToListAsync();
+
+        var ids = _calls.Select(c => c.Id).ToList();
+        _names = await TalkWatch.Data.CallerNames.ForAsync(Db, _calls.Select(c => c.Direction == "out" ? c.ToE164 : c.FromE164));
+        _lineNames = await ChronicleLoader.NamesAsync(Db, _calls.SelectMany(c => new[] { c.FromE164, c.ToE164, c.AnsweredByE164 }));
+        _chronicles = await ChronicleLoader.ForAsync(Db, _calls, _lineNames);
+        _transcribed = [.. await Db.CallTranscripts.AsNoTracking().Where(t => ids.Contains(t.CallId)).Select(t => t.CallId).ToListAsync()];
+        _audio = [.. (await Db.AudioFiles.AsNoTracking()
+            .Where(a => ids.Contains(a.CallId) && a.State == TalkWatch.Data.AudioState.Copied)
+            .Select(a => new { a.Id, a.CallId, a.Kind })
+            .ToListAsync()).Select(a => (a.Id, a.CallId, a.Kind))];
+    }
+}

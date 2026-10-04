@@ -1,0 +1,10 @@
+**/bin/
+**/obj/
+.git/
+.github/
+.githooks/
+tests/
+# Except the pseudonymised fixtures demo mode replays.
+!tests/fixtures/talk-5.3.2/
+!tests/fixtures/talk-5.3.2-voicemail/
+tools/

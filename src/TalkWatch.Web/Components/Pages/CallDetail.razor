@@ -1,0 +1,296 @@
+@page "/calls/{Uuid}"
+@attribute [Authorize]
+@* One call, told as what happened: the Call Chronicle. Each part goes through the person's access scope: the call
+   through their lines, audio and the transcript through grants that allow them. Reading a transcript is audited, as
+   playing a recording is. *@
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Core.Calls
+@using TalkWatch.Core.Talk
+@using TalkWatch.Data
+@using TalkWatch.Web.Components.Calls
+@using TalkWatch.Web.Services
+@inject TalkWatchDbContext Db
+@inject AlertService Alerting
+@inject Audit Audit
+@inject LineDirectorySync Directory
+
+<PageTitle>@(_call is null ? "Call" : Who) · TalkWatch</PageTitle>
+
+@if (_call is null)
+{
+    <header class="head"><div class="title"><nav class="crumbs" aria-label="Breadcrumb"><a href="/calls">Calls</a></nav><h1>Call</h1></div></header>
+    <p class="empty">No such call, or not one you can see.</p>
+}
+else
+{
+    <header class="head">
+        <div class="title">
+            <nav class="crumbs" aria-label="Breadcrumb"><a href="/calls">Calls</a><span class="faint">/</span><span>@TimeZoneInfo.ConvertTime(_call.Time, Alerting.Zone).ToString("ddd d MMM, HH:mm")</span></nav>
+            <div class="row" style="gap: 12px">
+                <span class="dir" data-d="@CallMarks.DirectionKey(_call.Direction)" title="@CallMarks.Direction(_call.Direction)"><Icon Name="@CallMarks.DirectionKey(_call.Direction)" /><span class="sr">@CallMarks.Direction(_call.Direction)</span></span>
+                <h1>@(_call.Direction == "out" ? "Call to" : "Call from") @Who</h1>
+            </div>
+            <div class="sub">
+                <span class="mono">@(_call.Direction == "out" ? _call.ToRaw : _call.FromRaw)</span>
+                @if (_call.Direction != "out" && _call.ToRaw is { Length: > 0 })
+                {
+                    <text> to @(_lineName ?? _call.ToRaw)</text>
+                }
+            </div>
+        </div>
+        <div class="tools">
+            <span class="oc" data-o="@CallMarks.Key(_call.Outcome)" data-outcome="@_call.Outcome" title="Talk's status: @_call.Status"><Icon Name="@CallMarks.Icon(_call.Outcome)" />@CallMarks.Words(_call.Outcome)</span>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Msg))
+    {
+        <p class="notice" role="status">@Msg</p>
+    }
+
+    <div class="metrics" data-call-facts>
+        <div class="metric"><span class="l">When</span><span class="v" style="font-size: var(--t-lg)">@TimeZoneInfo.ConvertTime(_call.Time, Alerting.Zone).ToString("HH:mm:ss")</span><span class="c">@TimeZoneInfo.ConvertTime(_call.Time, Alerting.Zone).ToString("dddd d MMMM yyyy")</span></div>
+        <div class="metric"><span class="l">Length</span><span class="v" style="font-size: var(--t-lg)">@CallMarks.Duration(TimeSpan.FromSeconds(_call.DurationSeconds))</span><span class="c">@(_chronicle?.Total is { } total ? $"{CallMarks.Duration(total)} from first ring to hang-up" : "as Talk counts it")</span></div>
+        <div class="metric"><span class="l">Answered after</span><span class="v" style="font-size: var(--t-lg)">@(_chronicle?.TimeToAnswer is { } wait ? Core.Calls.Chronicle.Seconds(wait) : "—")</span><span class="c">@(_call.AnsweredByRaw is { Length: > 0 } by ? "by " + (_answeredBy ?? by) : "Not answered")</span></div>
+        @if (_call.ReturnedAt is { } returned)
+        {
+            <div class="metric"><span class="l">Got back to</span><span class="v" style="font-size: var(--t-lg)">@TimeZoneInfo.ConvertTime(returned, Alerting.Zone).ToString("HH:mm")</span><span class="c">@Returned(_call.ReturnedHow) @TimeZoneInfo.ConvertTime(returned, Alerting.Zone).ToString("ddd d MMM")</span></div>
+        }
+        else if (_call.Direction == "in" && _call.Outcome.IsUnanswered())
+        {
+            <a class="metric" href="/callbacks" style="text-decoration: none"><span class="l">Call-back</span><span class="v" style="font-size: var(--t-lg); color: var(--warn)">Waiting</span><span class="c">Nobody has rung them back yet</span></a>
+        }
+        @if (_call.QualityScore is { } quality)
+        {
+            <div class="metric"><span class="l">Call quality</span><span class="v" style="font-size: var(--t-lg)">@quality</span><span class="c">Talk's score</span></div>
+        }
+    </div>
+
+    @if (_contact is not null && !_answeringLine && _finding is null && _canSetUp)
+    {
+        @* A forward an outside number took, not set up to be checked: where to set it up, for those who may. *@
+        <p class="notice" data-outside-unchecked><Icon Name="info" Size="s" /> @_contactName, an outside number, answered this forwarded call. If its voicemail can take
+            calls, <a href="/admin/answering-lines?open=@_contact#contact-@_contact">set it up under Outside voicemail</a>, and calls like this become voicemail
+            when its greeting is in the transcript.</p>
+    }
+
+    @if (_contact is not null && (_answeringLine || _finding is not null))
+    {
+        @* A forward an outside answering line took: what its transcript showed, and a person's correction. *@
+        <section class="plane" aria-label="Answering line" data-answering="@(_finding?.Finding.ToString() ?? (_hasTranscript ? "unmatched" : "unchecked"))">
+            <div class="plane-head"><h2>@_contactName, an answering line</h2>
+                <div class="end">@if (_finding?.ByHand == true)
+                    {
+                        <span class="cap" data-c="stored">Set by @_finding.DecidedBy</span>
+                    }
+                    else
+                    {
+                        <span class="cap" data-c="derived">From the transcript</span>
+                    }</div>
+            </div>
+            <div class="plane-body stack" style="gap: 10px">
+                <p style="margin: 0">@AnsweringWords()</p>
+                <form method="post" action="/calls/@Uuid/answering" class="row" style="gap: 8px; flex-wrap: wrap; align-items: center">
+                    <AntiforgeryToken />
+                    <span class="muted" style="font-size: 12px">Not right? It was</span>
+                    <button type="submit" name="Finding" value="person" class="btn ghost sm" disabled="@(_finding?.Finding == OutsideFinding.Person)">answered by a person</button>
+                    <button type="submit" name="Finding" value="message" class="btn ghost sm" disabled="@(_finding?.Finding == OutsideFinding.MessageLeft)">a message left</button>
+                    <button type="submit" name="Finding" value="hungup" class="btn ghost sm" disabled="@(_finding?.Finding == OutsideFinding.HungUpAtGreeting)">hung up at the greeting</button>
+                </form>
+            </div>
+        </section>
+    }
+
+    @if (_chronicle is not null)
+    {
+        <section class="stack" style="gap: 8px" aria-label="Route">
+            <RouteTrace Chronicle="_chronicle" Line="@(_lineName ?? _call.ToRaw)" Wrap="true" />
+            <CallBand Chronicle="_chronicle" />
+        </section>
+    }
+
+    <div class="split">
+        <section class="plane" aria-label="What happened">
+            <div class="plane-head"><h2>What happened</h2><div class="end"><span class="cap" data-c="talk">From Talk's routing events</span></div></div>
+            <div class="plane-body">
+                @if (_chronicle is not null)
+                {
+                    <ChronicleView Chronicle="_chronicle" Zone="Alerting.Zone" />
+                }
+            </div>
+        </section>
+
+        <div class="stack" style="gap: 16px">
+            @if (_audio.Count > 0)
+            {
+                <section class="plane" aria-label="Audio">
+                    <div class="plane-head"><h2>@(_audio.Count == 1 ? (_audio[0].Kind == AudioKind.Voicemail ? "Voicemail" : "Recording") : "Audio")</h2></div>
+                    <div class="plane-body stack">
+                        @foreach (var audio in _audio)
+                        {
+                            <div class="audio">
+                                <span class="@(_audio.Count == 1 ? "sr" : "eyebrow")">@(audio.Kind == AudioKind.Voicemail ? "Voicemail" : "Recording")</span>
+                                <audio controls preload="none" src="/audio/@audio.Id" data-audio="@audio.Id" data-kind="@audio.Kind" data-label="@(audio.Kind == AudioKind.Voicemail ? "Voicemail from" : "Call with") @Who" data-call-url="/calls/@_call.TalkUuid"></audio>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (_transcript is not null)
+            {
+                <section class="plane transcript" data-transcript aria-label="Transcript">
+                    <div class="plane-head"><h2>Transcript</h2><div class="end"><span class="cap" data-c="talk">Talk AI</span></div></div>
+                    <div class="plane-body stack">
+                        @if (_transcript.Summary is { Length: > 0 } summary)
+                        {
+                            <p class="summary"><b>Summary</b> @summary</p>
+                        }
+                        @if (_transcript.SentimentClass is { } sentiment)
+                        {
+                            <p class="hint" data-sentiment="@sentiment">Talk rated the call @sentiment.</p>
+                        }
+                        <ol class="transcript transcript-lines" style="list-style: none; padding: 0; margin: 0">
+                            @foreach (var line in _lines)
+                            {
+                                <li class="seg-t" data-at="@line.Start"><span class="ts">@(line.Start is { } s ? TimeSpan.FromSeconds(s).ToString(@"m\:ss") : "")</span><span><span class="sp">@line.Speaker</span>@line.Text</span></li>
+                            }
+                        </ol>
+                    </div>
+                </section>
+            }
+
+            @if (_history is not null)
+            {
+                <section class="plane history" data-history aria-label="With this number">
+                    <div class="plane-head"><h2>With this number</h2></div>
+                    <div class="plane-body stack">
+                        @if (_history.Count == 0)
+                        {
+                            <p class="empty">No other calls with this number that you can see.</p>
+                        }
+                        else
+                        {
+                            <p class="hint" data-history-summary>@_rang rang in (@_answered answered, @_missed missed or voicemail), @_rangOut called out.</p>
+                            <ul class="history-calls" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px">
+                                @foreach (var other in _history)
+                                {
+                                    <li data-history-call="@other.TalkUuid" class="row" style="gap: 10px">
+                                        <span class="oc" data-o="@CallMarks.Key(other.Outcome)"><Icon Name="@CallMarks.Icon(other.Outcome)" Size="s" /></span>
+                                        <a href="/calls/@other.TalkUuid" class="mono" style="font-size: var(--t-sm)">@TimeZoneInfo.ConvertTime(other.Time, Alerting.Zone).ToString("ddd d MMM yyyy, HH:mm")</a>
+                                        <span class="muted" style="font-size: var(--t-sm)">@(other.Direction == "out" ? "called out" : other.Outcome.ToString().ToLowerInvariant())</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </section>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string Uuid { get; set; } = "";
+
+    private CallRow? _call;
+
+    [SupplyParameterFromQuery] public string? Msg { get; set; }
+
+    // The outside Contact that answered, whether it is ticked as an answering line, and what its call turned out to be.
+    private string? _contact;
+    private string _contactName = "";
+    private bool _answeringLine;
+    private CallFinding? _finding;
+    private bool _hasTranscript;
+    private bool _canSetUp;
+
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    private string AnsweringWords() => _finding switch
+    {
+        { Finding: OutsideFinding.MessageLeft } f => $"It went to {_contactName}'s voicemail, and the caller left a message.{Matched(f)}",
+        { Finding: OutsideFinding.HungUpAtGreeting } f => $"It reached {_contactName}'s voicemail greeting, and the caller hung up without leaving a message.{Matched(f)}",
+        { Finding: OutsideFinding.Person, ByHand: true } => $"{_contactName} answered it in person.",
+        { Finding: OutsideFinding.Person } => $"{_contactName} answered it in person: none of its greeting phrases is in the transcript.",
+        _ when _hasTranscript => "Not matched: the transcript is too short to tell, so it is left answered.",
+        _ => "Not checked: there is no transcript, so it is left answered. It is checked if one arrives.",
+    };
+
+    private static string Matched(CallFinding finding) => finding.ByHand || finding.Phrase is null ? "" : $" Matched \u201c{finding.Phrase}\u201d.";
+    private Chronicle? _chronicle;
+    private string? _lineName;
+    private string? _answeredBy;
+    private CallTranscript? _transcript;
+    private IReadOnlyList<TranscriptLine> _lines = [];
+    private List<(Guid Id, AudioKind Kind)> _audio = [];
+    private IReadOnlyDictionary<string, string> _names = new Dictionary<string, string>();
+
+    // Other calls with the same outside number, newest first, through the person's access scope.
+    private List<CallRow>? _history;
+    private int _rang, _answered, _missed, _rangOut;
+    private const int HistoryShown = 20;
+
+    private string Who => _call is null ? "" : _call.Direction == "out"
+        ? CallerNames.Who(null, _call.ToRaw, _call.ToE164, _names)
+        : CallerNames.Who(_call.CallerName, _call.FromRaw, _call.FromE164, _names);
+
+    private static string Returned(CallBackHow? how) => how switch
+    {
+        CallBackHow.CalledBack => "Called back",
+        CallBackHow.GotThrough => "They rang again and got through",
+        CallBackHow.MarkedDone => "Marked done",
+        _ => "",
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _call = await Db.Calls.AsNoTracking().SingleOrDefaultAsync(c => c.TalkUuid == Uuid);
+        if (_call is null)
+        {
+            return;
+        }
+
+        _audio = [.. (await Db.AudioFiles.AsNoTracking().Where(a => a.CallId == _call.Id && a.State == AudioState.Copied)
+            .Select(a => new { a.Id, a.Kind }).ToListAsync()).Select(a => (a.Id, a.Kind))];
+        _names = await CallerNames.ForAsync(Db, [_call.FromE164, _call.ToE164]);
+
+        var callId = _call.Id;
+        _contact = AnsweringLineCheck.AnsweredBy(await Db.CallLines.Where(l => l.CallId == callId && l.Kind == LineKind.Contact).Select(l => l.Key).ToListAsync());
+        if (_contact is not null)
+        {
+            var contact = _contact;
+            _contactName = Directory.Current.Contacts.FirstOrDefault(c => c.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) == contact)?.DisplayName ?? $"Contact {contact}";
+            _answeringLine = await Db.AnsweringLines.AnyAsync(a => a.ContactId == contact);
+            _canSetUp = HttpContext?.User.Can(Permission.ManageAlerts) == true;
+            _finding = await Db.CallFindings.AsNoTracking().SingleOrDefaultAsync(f => f.CallId == callId);
+            // Only whether there is one: reading it stays with those allowed to.
+            _hasTranscript = await Db.CallTranscripts.IgnoreQueryFilters().AnyAsync(t => t.CallId == callId);
+        }
+
+        // The call's own routing events, told as steps, with the names the directory knows.
+        var chronicleNames = await ChronicleLoader.NamesAsync(Db, [_call.FromE164, _call.ToE164, _call.AnsweredByE164]);
+        _chronicle = (await ChronicleLoader.ForAsync(Db, [_call], chronicleNames))[_call.Id];
+        _lineName = _call.ToE164 is { } to ? chronicleNames.Number(to) : null;
+        _answeredBy = _call.AnsweredByE164 is { } answered ? chronicleNames.Number(answered) : null;
+
+        if ((_call.Direction == "out" ? _call.ToE164 : _call.FromE164) is { } number)
+        {
+            var id = _call.Id;
+            var withNumber = Db.Calls.AsNoTracking().Where(c => c.Id != id && ((c.Direction == "in" && c.FromE164 == number) || (c.Direction == "out" && c.ToE164 == number)));
+            var counts = await withNumber.GroupBy(c => new { c.Direction, c.Outcome }).Select(g => new { g.Key.Direction, g.Key.Outcome, Count = g.Count() }).ToListAsync();
+            _rang = counts.Where(c => c.Direction == "in").Sum(c => c.Count);
+            _answered = counts.Where(c => c.Direction == "in" && c.Outcome == CallOutcome.Answered).Sum(c => c.Count);
+            _missed = counts.Where(c => c.Direction == "in" && c.Outcome.IsUnanswered()).Sum(c => c.Count);
+            _rangOut = counts.Where(c => c.Direction == "out").Sum(c => c.Count);
+            _history = await withNumber.OrderByDescending(c => c.Time).Take(HistoryShown).ToListAsync();
+        }
+
+        _transcript = await Db.CallTranscripts.AsNoTracking().SingleOrDefaultAsync(t => t.CallId == _call.Id);
+        if (_transcript is not null)
+        {
+            _lines = TranscriptStore.LinesOf(_transcript);
+            await Audit.WriteAsync("transcript.read", "call", _call.Id, null);
+        }
+    }
+}

@@ -1,0 +1,255 @@
+@* A list of steps being built, drawn as the diagram it will run: each step can be moved, removed or changed, and a +
+   on the line between steps puts a new one exactly there. A branch holds two lists of its own, so this component draws
+   itself inside a branch, down to the deepest a flow may go. *@
+@using TalkWatch.Core.Alerts
+
+<ol class="flowchain editing">
+    @for (var i = 0; i < Steps.Count; i++)
+    {
+        var index = i;
+        var step = Steps[index];
+        @Insert(index)
+        <li class="@($"flow-step {step.Kind}{(step.Kind == EditStep.NotifyKind && step.Urgent ? " urgent" : "")}")" data-step="@step.Kind">
+            <span class="node-ic"><Icon Name="@(step.Kind switch { EditStep.WaitKind => "clock", EditStep.BranchKind => "branch", EditStep.AssignKind => "callbacks", EditStep.BundleKind => "transcript", _ => "phone" })" Size="s" /></span>
+            @switch (step.Kind)
+            {
+                case EditStep.WaitKind:
+                    <b>Wait</b>
+                    <input type="number" min="1" max="@Flows.MaxWaitMinutes" aria-label="Minutes" class="minutes" @bind="step.Minutes" />
+                    <span>minutes for someone to acknowledge@(CallAlert ? " or call back" : "")</span>
+                    break;
+
+                case EditStep.BundleKind:
+                    <b>Bundle</b>
+                    <span>from here, gather what goes to each channel for</span>
+                    <input type="number" min="1" max="@BundleStep.MaxMinutes" aria-label="Minutes" class="minutes" @bind="step.Minutes" />
+                    <span>minutes and send it as one message</span>
+                    break;
+
+                case EditStep.AssignKind:
+                    <b>Assign</b>
+                    <span>the call-back to</span>
+                    <select aria-label="Who gets the call-back" @bind="step.Person">
+                        <option value="">Choose who…</option>
+                        @foreach (var (id, name) in Names.People.OrderBy(p => p.Value))
+                        {
+                            <option value="@id">@name</option>
+                        }
+                    </select>
+                    <span class="muted" style="font-size: 12px">it shows on their call-backs; the step tells nobody by itself</span>
+                    break;
+
+                case EditStep.BranchKind:
+                    <b>Branch</b>
+                    <span>on</span>
+                    <select aria-label="Branch on" value="@step.If.Kind" @onchange="e => step.If = EditCondition.New(e.Value?.ToString() ?? EditCondition.TimeKind)">
+                        <option value="@EditCondition.TimeKind">time</option>
+                        <option value="@EditCondition.LineKind">line</option>
+                        <option value="@EditCondition.RangKind">who it rang</option>
+                        @if (CallAlert)
+                        {
+                            <option value="@EditCondition.CallerKind">caller</option>
+                            <option value="@EditCondition.RepeatKind">repeat caller</option>
+                            <option value="@EditCondition.CallerMissedKind">caller unanswered</option>
+                            <option value="@EditCondition.NumberMissedKind">number unanswered</option>
+                            <option value="@EditCondition.WaitingKind">callers waiting</option>
+                            <option value="@EditCondition.AnswerRateKind">answer rate</option>
+                            <option value="@EditCondition.RangLongerKind">how long it rang</option>
+                            <option value="@EditCondition.KnownKind">known caller</option>
+                            <option value="@EditCondition.ForwardedKind">put through outside</option>
+                            <option value="@EditCondition.AbroadKind">where they rang from</option>
+                            <option value="@EditCondition.QualityKind">call quality</option>
+                            <option value="@EditCondition.MenuKind">menu option</option>
+                        }
+                        @if (Transcribed)
+                        {
+                            <option value="@EditCondition.WordsKind">what it says</option>
+                        }
+                    </select>
+                    <ConditionEditor Condition="step.If" Names="Names" />
+                    <div class="flow-paths">
+                        <div class="lane yes">
+                            <span class="path">If so</span>
+                            <FlowStepsEditor Steps="step.Then" Names="Names" Depth="Depth + 1" CallAlert="CallAlert" Transcribed="Transcribed" />
+                        </div>
+                        <div class="lane no">
+                            <span class="path">Otherwise</span>
+                            <FlowStepsEditor Steps="step.Otherwise" Names="Names" Depth="Depth + 1" CallAlert="CallAlert" Transcribed="Transcribed" />
+                        </div>
+                    </div>
+                    break;
+
+                default:
+                    <b>Notify</b>
+                    @foreach (var key in step.To.ToList())
+                    {
+                        var to = EditStep.Recipient(key);
+                        <span class="chip@(FlowText.Unreachable(to, Names) ? " warn" : "")" title="@FlowText.UnreachableWhy(to, Names)">@FlowText.Recipient(to, Names)@FlowText.UnreachableNote(to, Names) <button type="button" class="remove" aria-label="Remove @FlowText.Recipient(to, Names)" @onclick="() => step.To.Remove(key)">×</button></span>
+                    }
+                    @* Keyed on the count, so after each pick the browser gets a fresh select showing its prompt: it would otherwise keep
+                       the old selected index on the changed list, and seem to show someone chosen who is not. *@
+                    <select @key="step.To.Count" aria-label="Add someone to notify" value="" @onchange="e => Add(step, e)">
+                        <option value="">@(step.To.Count == 0 ? "Choose who…" : "and…")</option>
+                        @if (Names.People.Count > 0)
+                        {
+                            <optgroup label="People (on their own channels)">
+                                @foreach (var (id, name) in Names.People.Where(p => !step.To.Contains($"person:{p.Key}")).OrderBy(p => p.Value))
+                                {
+                                    <option value="person:@id">@name@(Names.ReachablePeople.Contains(id) ? "" : " (no channel yet)")</option>
+                                }
+                            </optgroup>
+                        }
+                        @if (Names.Groups.Count > 0 && CallAlert && !step.To.Contains("rang:"))
+                        {
+                            @* Shown to admins only, as the groups are: it reaches other people. *@
+                            <optgroup label="On the call">
+                                <option value="rang:">Whoever it rang (the person whose line it was, or the group's members)</option>
+                            </optgroup>
+                        }
+                        @if (Names.OutsideOffered && CallAlert)
+                        {
+                            @* Shown to admins only: it reaches people about calls they may not see, if only the caller and the line. *@
+                            <optgroup label="Behind outside phones (at once, not by email)">
+                                @if (!step.To.Contains($"outside:{OutsideScope.ThisCall}"))
+                                {
+                                    <option value="outside:@OutsideScope.ThisCall">Whoever it was put through to outside@(Names.OutsideReachable ? "" : " (nobody linked yet)")</option>
+                                }
+                                @if (!step.To.Contains($"outside:{OutsideScope.AnyLinked}"))
+                                {
+                                    <option value="outside:@OutsideScope.AnyLinked">Everyone who carries an outside phone, whatever the call</option>
+                                }
+                            </optgroup>
+                        }
+                        @if (Names.Groups.Count > 0)
+                        {
+                            <optgroup label="Whoever is free in (everyone in it, if nobody is)">
+                                @foreach (var (id, name) in Names.Groups.Where(g => !step.To.Contains($"free:{g.Key}")).OrderBy(g => g.Value))
+                                {
+                                    <option value="free:@id">@name@(Names.ReachableGroups.Contains(id) ? "" : " (nobody linked yet)")</option>
+                                }
+                            </optgroup>
+                        }
+                        @if (Names.Contacts.Count > 0)
+                        {
+                            @* Outside people, reached at what Talk holds for them: an email for now; a number alone cannot be texted yet. *@
+                            <optgroup label="Contacts (by email)">
+                                @foreach (var (id, contact) in Names.Contacts.Where(c => !step.To.Contains($"contact:{c.Key}")).OrderBy(c => c.Value.Name))
+                                {
+                                    <option value="contact:@id" disabled="@(contact.Email is null)">@contact.Name · @(contact.Email ?? $"{contact.Number}, no email: texts are not set up yet")</option>
+                                }
+                            </optgroup>
+                        }
+                        @if (Names.Channels.Count > 0)
+                        {
+                            <optgroup label="Channels">
+                                @foreach (var (id, name) in Names.Channels.Where(c => !step.To.Contains($"channel:{c.Key}")).OrderBy(c => c.Value))
+                                {
+                                    <option value="channel:@id">@name</option>
+                                }
+                            </optgroup>
+                        }
+                    </select>
+                    <label class="urgent-toggle"><input type="checkbox" @bind="step.Urgent" /> urgent</label>
+                    @if (CallAlert)
+                    {
+                        @* About the call, sent with the alert: each only to someone who may read or hear it themselves. *@
+                        <span class="includes" title="Each goes only to channels whose owner may read or hear it, once there is one">
+                            <span class="muted">with</span>
+                            @foreach (var (flag, label) in Includes)
+                            {
+                                <label class="urgent-toggle"><input type="checkbox" checked="@step.Include.HasFlag(flag)" @onchange="e => step.Include = e.Value is true ? step.Include | flag : step.Include & ~flag" /> @label</label>
+                            }
+                        </span>
+                    }
+                    break;
+            }
+            <span class="step-controls">
+                <button type="button" aria-label="Move up" disabled="@(index == 0)" @onclick="() => Move(index, -1)">↑</button>
+                <button type="button" aria-label="Move down" disabled="@(index == Steps.Count - 1)" @onclick="() => Move(index, 1)">↓</button>
+                <button type="button" class="remove" aria-label="Remove this step" @onclick="() => Steps.RemoveAt(index)">×</button>
+            </span>
+        </li>
+    }
+    @Insert(Steps.Count)
+</ol>
+
+@code {
+    [Parameter, EditorRequired] public List<EditStep> Steps { get; set; } = [];
+
+    [Parameter] public FlowNames Names { get; set; } = FlowNames.None;
+
+    /// <summary>1 for a flow's own steps, one more inside each branch.</summary>
+    [Parameter] public int Depth { get; set; } = 1;
+
+    /// <summary>Whether the flow is about calls, so a branch can test the caller.</summary>
+    [Parameter] public bool CallAlert { get; set; }
+
+    private static readonly (NotifyIncludes Flag, string Label)[] Includes =
+        [(NotifyIncludes.Summary, "summary"), (NotifyIncludes.Transcript, "what was said"), (NotifyIncludes.Voicemail, "voicemail")];
+
+    /// <summary>
+    /// The flow starts on a transcribed voicemail and the person may test what it says: a branch can then go one way or
+    /// the other on the words in it, as a flow's own condition can.
+    /// </summary>
+    [Parameter] public bool Transcribed { get; set; }
+
+    // Which + is showing its choices, if any: only one at a time, so the diagram stays readable.
+    private int _openAt = -1;
+
+    // The line into a step (or onto the end), with a + that offers the kinds of step that can go there.
+    private RenderFragment Insert(int at) => __builder =>
+    {
+        var last = at == Steps.Count;
+        var css = "flow-insert" + (_openAt == at ? " open" : "") + (last ? " last" : "");
+        <li class="@css">
+            <button type="button" class="plus" aria-expanded="@(_openAt == at ? "true" : "false")"
+                    aria-label="@(last ? (Steps.Count == 0 ? "Add the first step" : "Add a step at the end") : $"Add a step before step {at + 1}")"
+                    @onclick="() => _openAt = _openAt == at ? -1 : at">+</button>
+            @if (_openAt == at)
+            {
+                <span class="insert-menu">
+                    <button type="button" @onclick="() => Put(at, EditStep.NotifyKind)"><Icon Name="phone" Size="s" /> Notify</button>
+                    <button type="button" @onclick="() => Put(at, EditStep.WaitKind)"><Icon Name="clock" Size="s" /> Wait</button>
+                    <button type="button" @onclick="() => Put(at, EditStep.BundleKind)"><Icon Name="transcript" Size="s" /> Bundle</button>
+                    @if (CallAlert)
+                    {
+                        <button type="button" @onclick="() => Put(at, EditStep.AssignKind)"><Icon Name="callbacks" Size="s" /> Assign</button>
+                    }
+                    @if (Depth < Flows.MaxDepth)
+                    {
+                        <button type="button" @onclick="() => Put(at, EditStep.BranchKind)"><Icon Name="branch" Size="s" /> Branch</button>
+                    }
+                </span>
+            }
+            else if (last && Steps.Count == 0)
+            {
+                <span class="insert-hint">Add a step</span>
+            }
+        </li>
+    };
+
+    private void Put(int at, string kind)
+    {
+        Steps.Insert(at, EditStep.New(kind));
+        _openAt = -1;
+    }
+
+    private void Move(int index, int by)
+    {
+        var to = index + by;
+        if (to < 0 || to >= Steps.Count)
+        {
+            return;
+        }
+
+        (Steps[index], Steps[to]) = (Steps[to], Steps[index]);
+    }
+
+    private static void Add(EditStep step, ChangeEventArgs e)
+    {
+        if (e.Value?.ToString() is { Length: > 0 } key && !step.To.Contains(key))
+        {
+            step.To.Add(key);
+        }
+    }
+}

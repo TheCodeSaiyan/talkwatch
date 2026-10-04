@@ -1,0 +1,74 @@
+@using TalkWatch.Core.Alerts
+
+@foreach (var step in Steps)
+{
+    @switch (step)
+    {
+        case NotifyStep notify:
+            <li class="@(notify.Urgent ? "flow-step notify urgent" : "flow-step notify")">
+                <span class="node-ic"><Icon Name="phone" Size="s" /></span>
+                <b>Notify</b>
+                @foreach (var to in notify.To)
+                {
+                    <span class="chip@(FlowText.Unreachable(to, Names) ? " warn" : "")" title="@FlowText.UnreachableWhy(to, Names)">@FlowText.Recipient(to, Names)@FlowText.UnreachableNote(to, Names)</span>
+                }
+                @if (notify.Urgent)
+                {
+                    <em class="tag warn">urgent</em>
+                }
+                @if (notify.Include != NotifyIncludes.None)
+                {
+                    <em class="tag" data-includes="@((int)notify.Include)">with @FlowText.Includes(notify.Include)</em>
+                }
+            </li>
+            break;
+        case BundleStep bundle:
+            <li class="flow-step bundle"><span class="node-ic"><Icon Name="transcript" Size="s" /></span><b>Bundle</b> <span>from here, what goes to each channel is gathered for @FlowText.Minutes(bundle.Minutes) and sent as one message</span></li>
+            break;
+        case AssignStep assign:
+            <li class="flow-step assign"><span class="node-ic"><Icon Name="callbacks" Size="s" /></span><b>Assign</b> <span>the call-back to</span> <span class="chip">@Names.People.GetValueOrDefault(assign.Person, "someone removed")</span></li>
+            break;
+        case WaitStep wait:
+            <li class="flow-step wait"><span class="node-ic"><Icon Name="clock" Size="s" /></span><b>Wait</b> <span>@FlowText.Minutes(wait.Minutes) for someone to acknowledge@(CallAlert ? " or call back" : "")</span></li>
+            break;
+        case BranchStep branch:
+            <li class="flow-step branch">
+                <span class="node-ic"><Icon Name="branch" Size="s" /></span>
+                <b>Branch</b> <span>on @FlowText.Condition(branch.If, Names)</span>
+                <div class="flow-paths">
+                    <div class="lane yes">
+                        <span class="path">If so</span>
+                        @if (branch.Then.Count == 0)
+                        {
+                            <p class="lane-empty">Nothing more.</p>
+                        }
+                        else
+                        {
+                            <ol class="flowchain"><FlowStepsView Steps="branch.Then" Names="Names" CallAlert="CallAlert" /></ol>
+                        }
+                    </div>
+                    <div class="lane no">
+                        <span class="path">Otherwise</span>
+                        @if (branch.Otherwise.Count == 0)
+                        {
+                            <p class="lane-empty">Nothing more.</p>
+                        }
+                        else
+                        {
+                            <ol class="flowchain"><FlowStepsView Steps="branch.Otherwise" Names="Names" CallAlert="CallAlert" /></ol>
+                        }
+                    </div>
+                </div>
+            </li>
+            break;
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<FlowStep> Steps { get; set; } = [];
+
+    [Parameter] public FlowNames Names { get; set; } = FlowNames.None;
+
+    /// <summary>Whether the flow is about calls: calling back acknowledges those, so a wait says so.</summary>
+    [Parameter] public bool CallAlert { get; set; }
+}

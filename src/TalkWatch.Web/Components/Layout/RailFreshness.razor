@@ -1,0 +1,38 @@
+@* How fresh the picture is, at the right end of the Signal Rail: live while Talk's feed is connected, and otherwise
+   how old the data is. Problems that need someone appear in the attention strip under the rail, not here. *@
+@implements IDisposable
+@using TalkWatch.Web.Services
+@inject LiveStatus Live
+@inject IngestionStatus Ingestion
+@inject Microsoft.Extensions.Options.IOptions<DemoOptions> Demo
+
+<span class="fresh" data-state="@State" data-fresh title="@Title"><span class="dot"></span><span class="txt">@Text</span></span>
+
+@code {
+    private Timer? _timer;
+
+    private string State => Demo.Value.Enabled ? "live" : Live.Connected ? "live" : Ingestion.LastError is null && Ingestion.LastSuccess is not null ? "reconnecting" : "offline";
+
+    private string Text => Demo.Value.Enabled ? "Demo" : Live.Connected
+        ? "Live"
+        : Ingestion.LastSuccess is { } last ? $"Polled {last.ToLocalTime():HH:mm}" : "Not connected";
+
+    private string Title => Demo.Value.Enabled ? "A demo: a replayed console, with a new call every few minutes. Nothing here is real." :
+        (Live.Connected ? "Connected to Talk's live feed" + (Live.LastEventAt is { } at ? $"; last event {at.ToLocalTime():HH:mm:ss}" : "") : "Not connected to Talk's live feed")
+        + (Ingestion.LastSuccess is { } polled ? $". Call log up to date as of {polled.ToLocalTime():HH:mm}." : ".");
+
+    protected override void OnInitialized()
+    {
+        Live.Changed += OnChanged;
+        // The poll has no event of its own; a quarter-minute is often enough for "polled 10:42" to stay true.
+        _timer = new Timer(_ => OnChanged(), null, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(15));
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Live.Changed -= OnChanged;
+        _timer?.Dispose();
+    }
+}

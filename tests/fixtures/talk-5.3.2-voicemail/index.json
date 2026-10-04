@@ -1,0 +1,29 @@
+[
+  {
+    "kind": "http",
+    "method": "GET",
+    "path": "/proxy/talk/api/voicemail/data/ce248ac4-a417-4b2b-8d8f-4013b1518a61",
+    "status": 200,
+    "contentType": "application/json",
+    "at": "2026-09-30T17:22:07.2060000\u002B00:00",
+    "file": "0001-http-talk-api-voicemail-data-ce248ac4-a417-4b2b-8d8f-4013b1518a61.json"
+  },
+  {
+    "kind": "req",
+    "method": "POST",
+    "path": "/proxy/talk/api/voicemail/recording",
+    "status": 0,
+    "contentType": "application/json",
+    "at": "2026-09-30T17:22:07.3950000\u002B00:00",
+    "file": "0002-req-proxy-talk-api-voicemail-recording.json"
+  },
+  {
+    "kind": "http",
+    "method": "POST",
+    "path": "/proxy/talk/api/voicemail/recording",
+    "status": 200,
+    "contentType": "audio/mpeg",
+    "at": "2026-09-30T17:22:07.3950000\u002B00:00",
+    "file": "audio/0003.mp3"
+  }
+]

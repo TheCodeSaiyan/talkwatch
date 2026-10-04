@@ -1,0 +1,40 @@
+[
+  {
+    "time": "2026-09-17T11:04:05.450Z",
+    "event": "call_started",
+    "event_data": {
+      "to": "+441144960042",
+      "from": "+443069990520",
+      "to_smart_attendant_id": 45
+    },
+    "event_uuid": "52b99b3d-6189-4080-a10f-0e9151214bac"
+  },
+  {
+    "time": "2026-09-17T11:04:29.668Z",
+    "event": "seq_call_trying_endpoints",
+    "event_data": {
+      "contact_uuids": [
+        "ac7a4901-2722-4e41-9f20-87f95df72cb2"
+      ]
+    },
+    "event_uuid": "f97db8d4-1f81-4815-815c-9796146a3ebc"
+  },
+  {
+    "time": "2026-09-17T11:04:40.337Z",
+    "event": "call_accepted",
+    "event_data": {
+      "accepted_by": "+447700900210",
+      "accepted_by_contact_id": 3,
+      "accepted_by_contact_uuid": "ac7a4901-2722-4e41-9f20-87f95df72cb2"
+    },
+    "event_uuid": "0f8e51d1-2781-4b75-86f7-78e913251ec0"
+  },
+  {
+    "time": "2026-09-17T11:04:55.535Z",
+    "event": "call_hangup",
+    "event_data": {
+      "hangup_cause": "normal_end"
+    },
+    "event_uuid": "07037567-062f-4f00-ab29-f159ec2e3e17"
+  }
+]

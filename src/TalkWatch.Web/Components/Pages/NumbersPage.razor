@@ -1,0 +1,134 @@
+@page "/numbers"
+@* Who holds which role on each number this person manages. A role on a number opens that number's calls, those on the
+   DID and those through what it routes to, and its per-number permissions apply to those calls only. *@
+@attribute [Authorize]
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Core.Calls
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject TalkWatchDbContext Db
+@inject RoleManager<IdentityRole<Guid>> RoleStore
+@inject UserManager<AppUser> UserStore
+@inject CurrentSite Site
+
+<PageTitle>Numbers · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <h1>Numbers</h1>
+        <div class="sub">Who holds which role on each number. A role on a number shows its calls, and those through its switchboard and ring groups, and what the role allows applies to those calls only.</div>
+    </div>
+</header>
+
+@if (!string.IsNullOrEmpty(Msg))
+{
+    <p class="notice" role="status">@Msg</p>
+}
+
+@if (_numbers.Count == 0)
+{
+    <p class="empty">There are no numbers here for you to manage.</p>
+}
+
+@foreach (var number in _numbers)
+{
+    <section class="plane number-people" data-number="@number.Did" aria-label="@number.Name">
+        <div class="plane-head">
+            <div class="row" style="gap: 10px"><h2>@number.Name</h2>@if (number.Name != number.Did)
+                {
+                    <span class="mono muted" style="font-size: 12px">@number.Did</span>
+                }</div>
+            <div class="end"><span class="mono faint" style="font-size: 11px">@number.People.Count @(number.People.Count == 1 ? "person" : "people")</span></div>
+        </div>
+        @if (number.People.Count == 0)
+        {
+            <p class="empty" style="padding: 0 16px 8px">Nobody holds a role on this number yet.</p>
+        }
+        else
+        {
+            <ul class="stack" style="gap: 0; list-style: none; margin: 0; padding: 0">
+                @foreach (var held in number.People)
+                {
+                    <li class="row" data-held="@held.Id" style="padding: 9px 16px; border-bottom: 1px solid var(--line); gap: 10px">
+                        <b style="flex: 1">@held.Person</b>
+                        <span class="tag">@held.Role</span>
+                        @if (held.CanChange)
+                        {
+                            <form method="post" action="/numbers/people/remove"><AntiforgeryToken /><input type="hidden" name="Id" value="@held.Id" /><button type="submit" class="btn ghost sm danger">Remove</button></form>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+        <form method="post" action="/numbers/people" class="plane-body row" style="gap: 10px; align-items: flex-end; flex-wrap: wrap">
+            <AntiforgeryToken />
+            <input type="hidden" name="Did" value="@number.Did" />
+            <label class="field"><span class="label">Person</span>
+                <select class="input" name="PersonId">
+                    @foreach (var person in _people)
+                    {
+                        <option value="@person.Id">@person.UserName</option>
+                    }
+                </select>
+            </label>
+            <label class="field"><span class="label">Role on this number</span>
+                <select class="input" name="RoleId">
+                    @foreach (var role in number.Roles)
+                    {
+                        <option value="@role.Id">@role.Name</option>
+                    }
+                </select>
+            </label>
+            <button type="submit" class="btn sm">Give the role</button>
+        </form>
+    </section>
+}
+
+@code {
+    [SupplyParameterFromQuery] public string? Msg { get; set; }
+
+    [CascadingParameter] private Task<AuthenticationState>? Auth { get; set; }
+
+    private sealed record Held(Guid Id, string Person, string Role, bool CanChange);
+
+    private sealed record Number(string Did, string Name, List<Held> People, List<IdentityRole<Guid>> Roles);
+
+    private List<Number> _numbers = [];
+    private List<AppUser> _people = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await Auth!).User;
+        var managed = await NumberPeople.ManagedAsync(Db, Site, user);
+        if (managed.Count == 0)
+        {
+            return;
+        }
+
+        var allRoles = await RoleStore.Roles.OrderBy(r => r.Name).ToListAsync();
+        var rolePermissions = new Dictionary<Guid, Permission>();
+        foreach (var role in allRoles)
+        {
+            rolePermissions[role.Id] = await RolePermissions.GetAsync(RoleStore, role);
+        }
+
+        var names = await Db.Lines.IgnoreQueryFilters().Where(l => l.SiteId == Site.Id && l.Kind == LineKind.Did && managed.Contains(l.Key))
+            .ToDictionaryAsync(l => l.Key, l => l.Name);
+        var held = await Db.NumberRoles.Where(n => managed.Contains(n.Did)).ToListAsync();
+        _people = await UserStore.Users.Where(u => u.SiteId == Site.Id).OrderBy(u => u.UserName).ToListAsync();
+        var byId = _people.ToDictionary(u => u.Id, u => u.UserName ?? "");
+        var roleNames = allRoles.ToDictionary(r => r.Id, r => r.Name ?? "");
+
+        foreach (var did in managed)
+        {
+            var authority = await NumberPeople.AuthorityAsync(Db, RoleStore, user, did) ?? Permission.None;
+            _numbers.Add(new Number(did, names.GetValueOrDefault(did) is { Length: > 0 } name ? name : did,
+                [.. held.Where(h => h.Did == did).OrderBy(h => byId.GetValueOrDefault(h.UserId))
+                    .Select(h => new Held(h.Id, byId.GetValueOrDefault(h.UserId, "someone"), roleNames.GetValueOrDefault(h.RoleId, "?"),
+                        NumberPeople.Within(rolePermissions.GetValueOrDefault(h.RoleId), authority)))],
+                [.. allRoles.Where(r => NumberPeople.Within(rolePermissions[r.Id], authority))]));
+        }
+    }
+}

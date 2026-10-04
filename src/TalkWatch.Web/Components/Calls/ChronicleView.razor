@@ -1,0 +1,41 @@
+@* The Call Chronicle: what happened, in order, with the time between steps shown as information in itself — "24s in
+   the menu", "7s ringing". *@
+@using TalkWatch.Core.Calls
+
+@if (Chronicle.Steps.Count == 0)
+{
+    <p class="empty">Talk sent no routing events for this call, so there is no step-by-step account of it.</p>
+}
+else
+{
+    <div class="chron" role="list" data-chronicle>
+        @for (var i = 0; i < Chronicle.Steps.Count; i++)
+        {
+            var step = Chronicle.Steps[i];
+            if (i > 0)
+            {
+                var previous = Chronicle.Steps[i - 1];
+                var gap = step.Time - previous.Time;
+                if (gap.TotalSeconds >= 3)
+                {
+                    <div class="gap" aria-hidden="true">
+                        <span></span><span class="cg"></span>
+                        <span class="gl"><span class="gb" style="width: @(Math.Min(160, 6 + Math.Sqrt(gap.TotalSeconds) * 9).ToString("0", System.Globalization.CultureInfo.InvariantCulture))px"></span>@CallMarks.Duration(gap)@(Core.Calls.Chronicle.Doing(previous.Kind) is { } doing ? " " + doing : "")</span>
+                    </div>
+                }
+            }
+            <div class="ct" role="presentation">@TimeZoneInfo.ConvertTime(step.Time, Zone).ToString("HH:mm:ss")</div>
+            <div class="cg" data-k="@CallMarks.StepKey(step.Kind)"><span class="m"></span></div>
+            <div class="cb" role="listitem" data-step-kind="@step.Kind"><b>@step.Text</b>@if (step.Detail is { } detail)
+                {
+                    <div class="s">@detail</div>
+                }</div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Chronicle Chronicle { get; set; } = default!;
+
+    [Parameter, EditorRequired] public TimeZoneInfo Zone { get; set; } = TimeZoneInfo.Utc;
+}

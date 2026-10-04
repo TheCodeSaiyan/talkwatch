@@ -1,0 +1,6 @@
+{
+  "event": "USERS_ON_ACTIVE_CALLS",
+  "data": {
+    "user_ids": []
+  }
+}

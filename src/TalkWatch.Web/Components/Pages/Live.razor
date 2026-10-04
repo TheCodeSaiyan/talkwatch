@@ -1,0 +1,360 @@
+@page "/live"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@implements IDisposable
+@* Now: what is happening with the phone system right now. Calls in progress come from Talk's live call log, stored as
+   they arrive, and are read again the moment one is; people and handsets come from the live feed. Everything goes
+   through the viewer's access scope, in a database scope of its own for each read, because this page stays open. *@
+@using System.Text.Json
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Core.Calls
+@using TalkWatch.Web.Components.Calls
+@using TalkWatch.Web.Services
+@using TalkWatch.Data
+@inject LiveStatus Status
+@inject IngestionStatus Ingestion
+@inject IServiceScopeFactory Scopes
+@inject TimeProvider Clock
+@inject Microsoft.Extensions.Options.IOptions<SiteOptions> Site
+
+<PageTitle>Now · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <h1>Now</h1>
+        <div class="sub live-state @(Status.Connected ? "ok" : "warn")">
+            @TimeZoneInfo.ConvertTime(Clock.GetUtcNow(), _zone).ToString("dddd d MMMM")
+            ·
+            @if (_demo)
+            {
+                <text>Demo: replaying a capture, so there is no live feed</text>
+            }
+            else if (Status.Connected)
+            {
+                <text>Connected to the console@(Status.LastEventAt is { } at ? $"; last update {at.ToLocalTime():HH:mm:ss}" : "")</text>
+            }
+            else
+            {
+                <text>Not connected to the console live feed. @Status.LastError</text>
+            }
+        </div>
+    </div>
+    <div class="tools"><a class="btn ghost sm" href="/dashboard">Today in detail</a><a class="btn sm" href="/calls">Call log</a></div>
+</header>
+
+<div>
+    <div class="flow" style="height: 280px; border-bottom-left-radius: 0; border-bottom-right-radius: 0" data-current="@_current" data-still="@(Status.Connected || _demo ? null : "true")" role="img" aria-label="Where calls went in the last two hours"></div>
+    <div class="metrics" style="border-top-left-radius: 0; border-top-right-radius: 0; border-top: 0" data-today>
+        <div class="metric"><span class="l">Calls in progress</span><span class="v">@_live.Count(c => c.Live)</span><span class="c">@(_live.Count(c => c.State == "ringing")) ringing · @(_live.Count(c => c.State == "menu")) in the menu</span></div>
+        <a class="metric" href="/calls?period=today&amp;dir=in" style="text-decoration: none"><span class="l">Inbound today</span><span class="v">@_today.Inbound</span><span class="c">@(_today.Inbound == 0 ? "None yet" : $"{Math.Round(100.0 * _today.Answered / _today.Inbound)}% answered")</span></a>
+        <a class="metric" href="/calls?period=today&amp;outcome=unanswered" style="text-decoration: none"><span class="l">Not answered today</span><span class="v">@(_today.Missed + _today.Voicemail + _today.Menu)</span><span class="c">@_today.Missed missed · @_today.Voicemail voicemail · @_today.Menu in the menu</span></a>
+        <div class="metric"><span class="l">People on calls</span><span class="v">@_users.Count(u => u.OnCall)<small>/ @_users.Count</small></span><span class="c">from Talk's live feed</span></div>
+    </div>
+</div>
+
+<div class="split">
+    <section class="plane" aria-label="Live calls">
+        <div class="plane-head">
+            <div class="row" style="gap: 10px"><h2>Live calls</h2><span class="mono muted" style="font-size: 12px">@_live.Count(c => c.Live) in progress</span></div>
+            <div class="end"><span class="cap" data-c="derived">Live from Talk's call log</span></div>
+        </div>
+        <div class="calls-live" role="list" aria-live="polite" aria-relevant="additions" data-live-calls>
+            @if (_live.Count == 0)
+            {
+                <div class="empty" data-kind="none" style="padding: 24px 16px">
+                    <b>No calls right now</b>
+                    <p class="why">@(_demo ? "The demo replays a capture, so it has nothing live to show. A real console's calls appear here as they ring." : "New calls appear here the moment Talk reports them, with their route as it happens.")</p>
+                </div>
+            }
+            @foreach (var c in _live)
+            {
+                <LiveCallRow Call="c" Now="Clock.GetUtcNow()" @key="c.Call.TalkUuid" />
+            }
+        </div>
+    </section>
+
+    <div class="stack" style="gap: 16px">
+        <section class="plane" aria-label="Recent activity">
+            <div class="plane-head"><h2>Recent activity</h2><div class="end"><a class="btn ghost sm" href="/calls">Call log</a></div></div>
+            <div class="stream" role="feed">
+                @if (_recent.Count == 0)
+                {
+                    <p class="empty" style="padding: 16px">No calls today yet.</p>
+                }
+                @foreach (var r in _recent)
+                {
+                    <a class="ev" href="/calls/@r.TalkUuid" style="text-decoration: none; color: inherit">
+                        <span class="t">@TimeZoneInfo.ConvertTime(r.Time, _zone).ToString("HH:mm")</span>
+                        <span class="g oc" data-o="@CallMarks.Key(r.Outcome)"><Icon Name="@CallMarks.Icon(r.Outcome)" /></span>
+                        <span class="b"><div>@r.Text</div><div class="s">@r.Sub</div></span>
+                    </a>
+                }
+            </div>
+        </section>
+
+        @* Everyone sees only the people, and their handsets, that their grants cover; admins see the whole site. *@
+        <section class="plane" aria-label="People">
+            <div class="plane-head"><h2>People</h2><div class="end"><span class="cap" data-c="talk">Talk's live feed</span></div></div>
+            @if (_users.Count == 0)
+            {
+                <p class="empty" style="padding: 16px">No one to show. Nobody's line has been granted to you, or the directory has not loaded yet.</p>
+            }
+            else
+            {
+                <div class="pfield live-users" style="border: 0; border-radius: 0">
+                    @foreach (var user in _users)
+                    {
+                        <div class="pcell @(user.OnCall ? "on-call" : "")" data-user="@user.Uuid" data-p="@Presence(user)" @key="user.Uuid">
+                            <span class="avatar">@Initials(user.Name)</span>
+                            <span class="who"><b>@user.Name</b><span class="x">@(user.Ext is null ? "" : "Ext " + user.Ext)</span></span>
+                            <span class="row" style="gap: 6px" title="@PresenceWords(user)"><span class="pr" data-p="@Presence(user)" aria-hidden="true"></span><span class="state">@PresenceWords(user)</span></span>
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+
+        <section class="plane" aria-label="Handsets">
+            <div class="plane-head"><h2>Handsets</h2><span class="muted" style="font-size: 12px">@_devices.Count(d => d.Status == "online") of @_devices.Count online</span></div>
+            @if (_devices.Count == 0)
+            {
+                <p class="empty" style="padding: 16px">No handsets to show.</p>
+            }
+            else
+            {
+                <ul class="live-devices" style="list-style: none; margin: 0; padding: 0">
+                    @foreach (var device in _devices)
+                    {
+                        <li data-device="@device.Mac" class="row @(device.Status == "online" ? "online" : "offline")" style="padding: 8px 16px; border-bottom: 1px solid var(--line); gap: 10px" @key="device.Mac">
+                            <span class="pr" data-p="@(device.Status == "online" ? "available" : "offline")" aria-hidden="true"></span>
+                            <span class="who" style="flex: 1"><b>@(device.Name ?? device.Model)</b><span class="n">@(device.Ext is null ? "" : "Ext " + device.Ext) @device.Model</span></span>
+                            <span class="muted" style="font-size: 12px">@(device.Status == "online" ? (device.Registered == false ? "Online, not registered" : "Online") : "Offline" + (device.LastSeen is { } seen ? " since " + seen.ToLocalTime().ToString("HH:mm") : ""))</span>
+                            @if (device.UpdateAvailable == true)
+                            {
+                                <span class="tag warn">Update available</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private sealed record Recent(string TalkUuid, DateTimeOffset Time, CallOutcome Outcome, string Text, string Sub);
+
+    private sealed record Today(int Inbound, int Answered, int Missed, int Voicemail, int Menu);
+
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+    private bool _admin;
+    private bool _demo;
+    private TimeZoneInfo _zone = TimeZoneInfo.Utc;
+    private HashSet<string> _allowedUsers = [];
+    private IReadOnlyList<LiveUser> _users = [];
+    private IReadOnlyList<LiveDevice> _devices = [];
+    private List<LiveCall> _live = [];
+    private List<Recent> _recent = [];
+    private Today _today = new(0, 0, 0, 0, 0);
+    private string _current = "{}";
+    private CancellationTokenSource? _pending;
+    private Timer? _timer;
+
+    [Inject] private Microsoft.Extensions.Options.IOptions<DemoOptions> Demo { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = (await AuthenticationState!).User;
+        _admin = _user.Can(Permission.AllCalls);
+        _demo = Demo.Value.Enabled;
+        _zone = TimeZoneInfo.FindSystemTimeZoneById(Site.Value.TimeZone);
+
+        await ReadCallsAsync();
+        Refresh();
+        Status.Changed += OnChanged;
+        Ingestion.CallsStored += OnCallsStored;
+        // Ended calls leave the board after a short while even when nothing new arrives.
+        _timer = new Timer(_ => OnCallsStored(), null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    /// <summary>Calls in progress and those that ended in the last few minutes, today's figures and the flow.</summary>
+    private async Task ReadCallsAsync()
+    {
+        using var scope = Scopes.CreateScope();
+        scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UsePrincipal(_user);
+        var db = scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>();
+
+        // A grant on a user covers that person and the handsets assigned to them. Grants are read through the access
+        // scope, so this is only ever this person's own.
+        if (!_admin)
+        {
+            _allowedUsers = (await db.Grants.AsNoTracking().Where(g => g.Kind == LineKind.User).Select(g => g.Key).ToListAsync()).ToHashSet(StringComparer.Ordinal);
+        }
+
+        var now = Clock.GetUtcNow();
+        var window = now - TimeSpan.FromHours(2);
+        var today = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(TimeZoneInfo.ConvertTime(now, _zone).Date, _zone), TimeSpan.Zero);
+
+        // In progress for at most a few hours: a call whose hang-up never arrived is settled by the poller a day later.
+        var current = await db.Calls.AsNoTracking().Current(now).OrderBy(c => c.Time).Take(40).ToListAsync();
+        var recent = await db.Calls.AsNoTracking().Where(c => c.Time >= today && c.Outcome != CallOutcome.InProgress)
+            .OrderByDescending(c => c.Time).Take(12).ToListAsync();
+        var flowCalls = await db.Calls.AsNoTracking().Where(c => c.Direction == "in" && c.Time >= window).Take(400).ToListAsync();
+
+        var all = current.Concat(recent).Concat(flowCalls).DistinctBy(c => c.Id).ToList();
+        var names = await ChronicleLoader.NamesAsync(db, all.SelectMany(c => new[] { c.FromE164, c.ToE164, c.AnsweredByE164 }));
+        var chronicles = await ChronicleLoader.ForAsync(db, all, names);
+
+        string Party(CallRow c) => c.Direction == "out" ? names.Number(c.ToE164 ?? "") ?? c.ToRaw ?? "Someone" : c.CallerName ?? names.Number(c.FromE164 ?? "") ?? c.FromRaw ?? "Withheld number";
+        string Line(CallRow c) => names.Number(c.ToE164 ?? "") ?? c.ToRaw ?? "";
+
+        _live = [.. current.Select(c => LiveCalls.Of(c, chronicles[c.Id], names))];
+
+        _recent = [.. recent.Select(c => new Recent(c.TalkUuid, c.Time, c.Outcome, c.Outcome switch
+        {
+            CallOutcome.Answered => $"{chronicles[c.Id].Steps.FirstOrDefault(s => s.Kind == StepKind.Answered)?.Subject ?? "Someone"} answered {Party(c)}",
+            CallOutcome.Missed => $"Missed call from {Party(c)}",
+            CallOutcome.Voicemail => $"Voicemail from {Party(c)}",
+            CallOutcome.HungUpAtSwitchboard => $"{Party(c)} hung up in the menu",
+            CallOutcome.Outbound => $"Call to {Party(c)}",
+            _ => $"Call with {Party(c)}",
+        }, (Line(c) is { Length: > 0 } l && c.Direction == "in" ? l + " · " : "") + CallMarks.Duration(TimeSpan.FromSeconds(c.DurationSeconds))))];
+
+        var todayCounts = await db.Calls.AsNoTracking().Where(c => c.Direction == "in" && c.Time >= today)
+            .GroupBy(c => c.Outcome).Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
+        int Count(CallOutcome o) => todayCounts.Where(x => x.Key == o).Sum(x => x.Count);
+        _today = new Today(todayCounts.Sum(x => x.Count), Count(CallOutcome.Answered), CallOutcomes.MissedKinds.Sum(Count), CallOutcomes.VoicemailKinds.Sum(Count), Count(CallOutcome.HungUpAtSwitchboard));
+
+        _current = CurrentJson(flowCalls, chronicles, names, current.Where(c => c.Outcome == CallOutcome.InProgress).Select(c => c.Id).ToHashSet());
+    }
+
+    /// <summary>
+    /// The Data Current's shape: callers flow into the lines they rang, through the menu where there is one, to how the
+    /// call ended. A call in progress weighs three times one that has finished, so what is happening now is loudest.
+    /// </summary>
+    private static string CurrentJson(List<CallRow> calls, IReadOnlyDictionary<Guid, Chronicle> chronicles, ChronicleNames names, HashSet<Guid> live)
+    {
+        var lines = calls.GroupBy(c => c.ToE164 ?? c.ToRaw ?? "?").OrderByDescending(g => g.Count()).Take(4).ToList();
+        var anyMenu = calls.Any(c => chronicles[c.Id].Steps.Any(s => s.Kind == StepKind.Menu));
+        var nodes = new List<object> { new { id = "callers", x = 0.05, y = 0.5, label = "Callers", meta = (calls.Count == 1 ? "1 call" : $"{calls.Count} calls") + " in 2 hours" } };
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var name = names.Number(lines[i].Key) ?? lines[i].Key;
+            nodes.Add(new { id = "line" + i, x = 0.3, y = lines.Count == 1 ? 0.5 : 0.18 + i * (0.64 / (lines.Count - 1)), label = name, meta = lines[i].Count() == 1 ? "1 call" : $"{lines[i].Count()} calls" });
+        }
+
+        if (anyMenu)
+        {
+            nodes.Add(new { id = "menu", x = 0.56, y = 0.3, label = "Menu", meta = $"{calls.Count(c => chronicles[c.Id].Steps.Any(s => s.Kind == StepKind.Menu))} heard it" });
+        }
+
+        var ends = new (string Id, string Label, Func<CallRow, bool> Match, double Y, string Tone)[]
+        {
+            ("answered", "Answered", c => c.Outcome == CallOutcome.Answered || (live.Contains(c.Id) && chronicles[c.Id].Steps.Any(s => s.Kind == StepKind.Answered)), 0.22, "c"),
+            ("voicemail", "Voicemail", c => c.Outcome.IsVoicemail(), 0.5, "b"),
+            ("unanswered", "Not answered", c => c.Outcome.IsMissed() || c.Outcome == CallOutcome.HungUpAtSwitchboard, 0.78, "b"),
+        };
+        foreach (var e in ends)
+        {
+            nodes.Add(new { id = e.Id, x = 0.9, y = e.Y, label = e.Label, meta = $"{calls.Count(e.Match)}" });
+        }
+
+        var streams = new Dictionary<(string, string), (double Value, string Tone)>();
+        void Flow(string from, string to, double weight, string tone)
+        {
+            var key = (from, to);
+            streams[key] = (streams.GetValueOrDefault(key).Value + weight, tone);
+        }
+
+        foreach (var c in calls)
+        {
+            var w = live.Contains(c.Id) ? 3.0 : 1.0;
+            var li = lines.FindIndex(g => g.Key == (c.ToE164 ?? c.ToRaw ?? "?"));
+            if (li < 0)
+            {
+                continue;
+            }
+
+            var line = "line" + li;
+            Flow("callers", line, w, "a");
+            var via = line;
+            if (anyMenu && chronicles[c.Id].Steps.Any(s => s.Kind == StepKind.Menu))
+            {
+                Flow(line, "menu", w, "b");
+                via = "menu";
+            }
+
+            foreach (var e in ends.Where(e => e.Match(c)))
+            {
+                Flow(via, e.Id, w, e.Tone);
+            }
+        }
+
+        return JsonSerializer.Serialize(new { nodes, streams = streams.Select(s => new { from = s.Key.Item1, to = s.Key.Item2, value = s.Value.Value, tone = s.Value.Tone }) });
+    }
+
+    private void Refresh()
+    {
+        var (users, devices) = Status.Snapshot();
+        _users = _admin ? users : [.. users.Where(u => _allowedUsers.Contains(u.Uuid))];
+        _devices = _admin ? devices : [.. devices.Where(d => d.UserUuid is { } owner && _allowedUsers.Contains(owner))];
+    }
+
+    private void OnChanged() => InvokeAsync(() =>
+    {
+        Refresh();
+        StateHasChanged();
+    });
+
+    // Calls arrive in bursts (one message per step); a quarter-second gathers a burst into one read.
+    private void OnCallsStored()
+    {
+        _pending?.Cancel();
+        _pending = new CancellationTokenSource();
+        var token = _pending.Token;
+        _ = InvokeAsync(async () =>
+        {
+            try
+            {
+                await Task.Delay(250, token);
+                await ReadCallsAsync();
+                StateHasChanged();
+            }
+            catch (TaskCanceledException)
+            {
+            }
+        });
+    }
+
+    private static string Presence(LiveUser u) => u.OnCall ? "busy" : u.Presence?.ToLowerInvariant() switch
+    {
+        "dnd" or "do_not_disturb" or "busy" => "dnd",
+        "offline" or "unavailable" => "offline",
+        _ => "available",
+    };
+
+    private static string PresenceWords(LiveUser u) => Presence(u) switch
+    {
+        "busy" => "On a call",
+        "dnd" => "Do not disturb",
+        "offline" => "Offline",
+        _ => u.Presence is { Length: > 0 } p ? char.ToUpperInvariant(p[0]) + p[1..].Replace('_', ' ') : "Available",
+    };
+
+    private static string Initials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length switch { 0 => "?", 1 => parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant(), _ => string.Concat(parts[0][0], parts[^1][0]).ToUpperInvariant() };
+    }
+
+    public void Dispose()
+    {
+        Status.Changed -= OnChanged;
+        Ingestion.CallsStored -= OnCallsStored;
+        _timer?.Dispose();
+        _pending?.Cancel();
+        _pending?.Dispose();
+    }
+}

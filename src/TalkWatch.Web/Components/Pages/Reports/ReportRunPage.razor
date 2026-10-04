@@ -1,0 +1,101 @@
+@page "/reports/runs/{Id:guid}"
+@* One copy of a report, as it was when it ran. Its own filter decides who may read it: the person it was built for, or
+   someone who manages reports. The HTML is TalkWatch's own rendering, every value in it encoded when it was made, and
+   carries the email's own styles, so it is shown on paper as it was sent. *@
+@attribute [Authorize]
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject TalkWatchDbContext Db
+@inject ReportBuilder Builder
+@inject TimeProvider Clock
+
+<PageTitle>@(_run?.ReportName ?? "Report") · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <a class="back" href="/reports"><Icon Name="left" Size="s" /> Reports</a>
+        <h1>@(_run?.ReportName ?? "Report")</h1>
+    </div>
+    @if (_run?.Csv is not null)
+    {
+        <div class="tools"><a class="btn sm" href="/reports/runs/@Id/calls.csv" data-call-list><Icon Name="download" Size="s" /> Call list (CSV)</a></div>
+    }
+</header>
+
+@if (_run is null)
+{
+    <div class="plane"><div class="empty" data-kind="denied" style="padding: 24px 16px"><b>No such report, or not one you can read.</b><p class="why">A copy is for the person it was built for, and for those who manage reports.</p></div></div>
+}
+else
+{
+    <div class="@(_deliveries.Count > 0 ? "split" : "")">
+        <section class="plane" aria-label="The report">
+            <div class="plane-body"><div class="report-paper">@((MarkupString)_run.Html)</div></div>
+        </section>
+
+        @if (_deliveries.Count > 0)
+        {
+            <section class="plane" aria-label="Who it went to">
+                <div class="plane-head"><h2>Who it went to</h2></div>
+                <ul class="report-deliveries">
+                    @foreach (var delivery in _deliveries)
+                    {
+                        var (tone, icon) = delivery.State switch
+                        {
+                            DeliveryState.Sent => ("ok", "check"),
+                            DeliveryState.Dead => ("bad", "warning"),
+                            _ => ("warn", "clock"),
+                        };
+                        <li data-delivery-state="@delivery.State" data-tone="@tone">
+                            <span class="dot-ic"><Icon Name="@icon" Size="s" /></span>
+                            <span class="stack" style="gap: 2px; min-width: 0">
+                                <b>@delivery.Recipient</b>
+                                @if (delivery.Address.Length > 0)
+                                {
+                                    <span class="mono muted" style="font-size: 12px">@delivery.Address</span>
+                                }
+                                <span class="muted" style="font-size: 12px">@(delivery.State switch
+                                {
+                                    DeliveryState.Sent => "emailed",
+                                    DeliveryState.Dead => $"not sent: {delivery.LastError}",
+                                    _ when delivery.Attempts > 0 => $"tried {delivery.Attempts} of {ReportMailer.MaxAttempts} times; {NextTry(delivery.NextAttemptAt)}: {delivery.LastError}",
+                                    _ => "waiting to send",
+                                })</span>
+                            </span>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private ReportRun? _run;
+    private List<ReportDelivery> _deliveries = [];
+
+    // When the next try is, in the site's zone: today's as a time, a later day's with its day.
+    private string NextTry(DateTimeOffset at)
+    {
+        var now = Clock.GetUtcNow();
+        if (at <= now)
+        {
+            return "trying again now";
+        }
+
+        var (local, today) = (TimeZoneInfo.ConvertTime(at, Builder.Zone), TimeZoneInfo.ConvertTime(now, Builder.Zone));
+        return local.Date == today.Date ? $"tries again at {local:HH:mm}" : $"tries again {local:ddd HH:mm}";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _run = await Db.ReportRuns.AsNoTracking().SingleOrDefaultAsync(r => r.Id == Id);
+        if (_run is not null)
+        {
+            _deliveries = await Db.ReportDeliveries.AsNoTracking().Where(d => d.RunId == Id).OrderBy(d => d.Recipient).ToListAsync();
+        }
+    }
+}

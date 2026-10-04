@@ -1,0 +1,32 @@
+{
+  "event": "AI_TRANSCRIBE_TASK_CREATE",
+  "data": {
+    "id": "fc89d3a3fce24ec6ad0d193d6fc2c85e",
+    "type": "analytics",
+    "source": "call",
+    "status": "PENDING",
+    "context": {
+      "call_date": "2026-09-30T00:06:48.720Z",
+      "call_uuid": "a289ee94-5403-4f99-9dc6-852fcc3d8eac",
+      "caller_name": "Nico Archer 20",
+      "dialed_name": "Nico Archer 20",
+      "call_country": "GB",
+      "call_duration": 44,
+      "caller_number": "0002",
+      "dialed_number": "+447700900774",
+      "call_direction": "out",
+      "call_timestamp": 1790726808720,
+      "answered_by_name": "Nico Archer 20",
+      "caller_entity_id": "user_abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+      "dialed_entity_id": "contact_1",
+      "answered_by_number": "+447700900774",
+      "answered_by_entity_id": "contact_1"
+    },
+    "analytics": null,
+    "document": null,
+    "vector": "",
+    "sum_vector": "",
+    "updated_at": "2026-09-30T00:07:34.981Z",
+    "created_at": "2026-09-30T00:07:34.981Z"
+  }
+}

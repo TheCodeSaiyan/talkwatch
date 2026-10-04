@@ -1,0 +1,9 @@
+{
+  "uuid": "ce09f9d8-011c-4e5d-97ce-c47f01ea8e7c",
+  "received_at": "1790726920",
+  "read_at": "1790727001",
+  "file_path": "/srv/unifi-talk/voicemail/talk.com/0002/20260930_010841_447700900774_441174960404_ce09f9.mp3",
+  "duration": "5",
+  "vm_left_for_ext": "0002",
+  "vm_receiver_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+}

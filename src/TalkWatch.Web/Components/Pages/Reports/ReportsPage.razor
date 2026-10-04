@@ -1,0 +1,145 @@
+@page "/reports"
+@* Copies of reports this person may read: their own, or every one for someone who manages reports, who also sees and
+   changes the reports themselves. The newest copy is shown as it was emailed, on paper, since its styles are the
+   email's own. *@
+@attribute [Authorize]
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject TalkWatchDbContext Db
+@inject ReportBuilder Builder
+
+<PageTitle>Reports · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <h1>Reports</h1>
+        <div class="sub">@(_manage ? $"{_reports.Count} {(_reports.Count == 1 ? "report" : "reports")}, {_reports.Count(r => r.Enabled)} on. " : "")Each person's copy is built with their own access, so it covers only the lines they can see.</div>
+    </div>
+    @if (_manage)
+    {
+        <div class="tools"><a class="btn primary sm" href="/reports/new">New report</a></div>
+    }
+</header>
+
+@if (!string.IsNullOrEmpty(Msg))
+{
+    <p class="notice" role="status">@Msg</p>
+}
+
+<div class="@(_manage ? "split-r" : "")">
+    @if (_manage)
+    {
+        <section class="plane" aria-label="Reports">
+            <div class="plane-head"><h2>Scheduled</h2></div>
+            @if (_reports.Count == 0)
+            {
+                <div class="empty" data-kind="unconfigured" style="padding: 20px 16px"><b>No reports yet.</b><p class="why">A report runs on a schedule and goes to the people you choose, each with only what they can see.</p><a class="btn sm primary" href="/reports/new">New report</a></div>
+            }
+            @foreach (var report in _reports)
+            {
+                <div class="rep-row@(report.Enabled ? "" : " off")" data-report="@report.Id">
+                    <div class="row" style="gap: 8px"><a class="rep-name" href="/reports/@report.Id/edit">@report.Name</a>
+                        @if (report.Enabled)
+                        {
+                            <span class="tag ok">On</span>
+                        }
+                        else
+                        {
+                            <span class="tag">Off</span>
+                        }
+                    </div>
+                    <div class="muted" style="font-size: 12px">@ReportTiming.Describe(report) · @(report.Recipients.Count == 0 ? "kept here only" : $"{report.Recipients.Count} recipient{(report.Recipients.Count == 1 ? "" : "s")}")</div>
+                    <div class="row" style="gap: 6px; font-size: 12px">
+                        <span class="mono muted">@(report.NextRunAt is { } next && report.Enabled ? $"Next {TimeZoneInfo.ConvertTime(next, Builder.Zone):ddd d MMM HH:mm}" : "Not scheduled")</span>
+                        <span class="spacer" style="flex: 1"></span>
+                        <form method="post" action="/reports/@report.Id/run"><AntiforgeryToken /><button type="submit" class="btn ghost sm">Run now</button></form>
+                        <form method="post" action="/reports/@report.Id/delete"><AntiforgeryToken /><button type="submit" class="btn ghost sm danger">Remove</button></form>
+                    </div>
+                </div>
+            }
+        </section>
+    }
+
+    <section class="plane" aria-label="Latest copy">
+        @if (_latest is null)
+        {
+            <div class="plane-head"><h2>Latest copy</h2></div>
+            <div class="empty" data-kind="none" style="padding: 20px 16px"><b>No copies yet.</b><p class="why">@(_manage ? "A copy is kept each time a report runs. Run one now to see it here." : "When a report is sent to you, a copy is kept here.")</p></div>
+        }
+        else
+        {
+            <div class="plane-head">
+                <div class="stack" style="gap: 2px"><h2>@_latest.ReportName</h2><span class="muted" style="font-size: 12px">@Day(_latest.From) to @Day(_latest.To.AddTicks(-1)) · @For(_latest) · made @TimeZoneInfo.ConvertTime(_latest.CreatedAt, Builder.Zone).ToString("ddd d MMM HH:mm")</span></div>
+                <div class="end"><a class="btn ghost sm" href="/reports/runs/@_latest.Id">Open</a></div>
+            </div>
+            <div class="plane-body"><div class="report-paper">@((MarkupString)_latest.Html)</div></div>
+        }
+    </section>
+</div>
+
+<section class="plane" aria-label="@(_manage ? "Recent copies" : "Your reports")">
+    <div class="plane-head"><h2>@(_manage ? "Recent copies" : "Your reports")</h2></div>
+    @if (_runs.Count == 0)
+    {
+        <p class="empty">None yet.</p>
+    }
+    else
+    {
+        <div class="grid-wrap">
+            <table class="dg report-runs">
+                <thead><tr><th class="first">Report</th><th>Covers</th><th>For</th><th class="r">Made</th></tr></thead>
+                <tbody>
+                    @foreach (var run in _runs)
+                    {
+                        <tr data-run="@run.Id">
+                            <td class="first"><a href="/reports/runs/@run.Id">@run.ReportName</a></td>
+                            <td class="mono">@Day(run.From) – @Day(run.To.AddTicks(-1))</td>
+                            <td>@(run.AudienceUserId is { } who ? _people.GetValueOrDefault(who, "someone removed") : "the whole site")</td>
+                            <td class="r mono">@TimeZoneInfo.ConvertTime(run.CreatedAt, Builder.Zone).ToString("ddd d MMM HH:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@code {
+    [SupplyParameterFromQuery(Name = "msg")] private string? Msg { get; set; }
+
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    private bool _manage;
+    private List<Report> _reports = [];
+    private List<ReportRun> _runs = [];
+    private ReportRun? _latest;
+    private Dictionary<Guid, string> _people = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _manage = HttpContext.User.Can(Permission.ManageReports)
+            || (Guid.TryParse(HttpContext.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier), out var me) && await NumberAccess.AnywhereAsync(Db, me, Permission.ManageReports));
+        if (_manage)
+        {
+            _reports = await Db.Reports.AsNoTracking().Include(r => r.Recipients).OrderBy(r => r.Name).ToListAsync();
+        }
+
+        // Without the HTML: the list only needs the names and dates. The newest copy is read whole, to show it.
+        _runs = await Db.ReportRuns.AsNoTracking().OrderByDescending(r => r.CreatedAt).Take(50)
+            .Select(r => new ReportRun { Id = r.Id, ReportId = r.ReportId, ReportName = r.ReportName, AudienceUserId = r.AudienceUserId, From = r.From, To = r.To, CreatedAt = r.CreatedAt, Html = "" })
+            .ToListAsync();
+        if (_runs.Count > 0)
+        {
+            _latest = await Db.ReportRuns.AsNoTracking().SingleOrDefaultAsync(r => r.Id == _runs[0].Id);
+        }
+
+        var ids = _runs.Select(r => r.AudienceUserId).OfType<Guid>().Distinct().ToList();
+        _people = await Db.Users.AsNoTracking().Where(u => ids.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.UserName ?? "");
+    }
+
+    private string Day(DateTimeOffset at) => TimeZoneInfo.ConvertTime(at, Builder.Zone).ToString("d MMM yyyy");
+
+    private string For(ReportRun run) => run.AudienceUserId is { } who ? $"for {_people.GetValueOrDefault(who, "someone removed")}" : "the whole site";
+}

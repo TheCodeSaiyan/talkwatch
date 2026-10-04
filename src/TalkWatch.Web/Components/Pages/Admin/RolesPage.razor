@@ -1,0 +1,100 @@
+@page "/admin/roles"
+@* What each role allows beyond the lines a person is granted. Admin holds everything and cannot be changed, so there is
+   always a way back in; Manager and Viewer start as they always were; admins can add roles of their own. *@
+@attribute [Authorize(Policy = "permission:ManagePeople")]
+@using Microsoft.AspNetCore.Identity
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject RoleManager<IdentityRole<Guid>> RoleStore
+@inject UserManager<AppUser> Users
+
+<PageTitle>Roles · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <a class="back" href="/admin/users"><Icon Name="left" Size="s" /> People</a>
+        <h1>Roles</h1>
+        <div class="sub">What someone may do and see beyond the lines granted on their own page. Changes reach people already signed in within a minute.</div>
+    </div>
+</header>
+
+@if (!string.IsNullOrEmpty(Msg))
+{
+    <p class="notice" role="status">@Msg</p>
+}
+
+<div class="role-grid">
+    @foreach (var role in _roles)
+    {
+        <section class="plane role" data-role="@role.Name" aria-label="@role.Name">
+            <div class="plane-head">
+                <div class="row" style="gap: 10px"><h2>@role.Name</h2><span class="muted" style="font-size: 12px">@role.Members @(role.Members == 1 ? "person" : "people")</span></div>
+                @if (role.Fixed)
+                {
+                    <div class="end"><span class="tag">Fixed</span></div>
+                }
+            </div>
+            <form method="post" action="/admin/roles/@role.Id/permissions" class="plane-body stack" style="gap: 10px">
+                <AntiforgeryToken />
+                <ul class="permissions choice-list" style="list-style: none; margin: 0; padding: 0">
+                    @foreach (var permission in Permissions.Each)
+                    {
+                        <li>
+                            <label class="row" style="gap: 8px; align-items: flex-start">
+                                <input type="checkbox" name="Permissions" value="@permission" checked="@((role.Permissions & permission) == permission)" disabled="@role.Fixed" style="margin-top: 3px" />
+                                <span>@Permissions.Describe(permission)@if ((Permissions.PerNumber & permission) == permission)
+                                    {
+                                        <span class="tag" title="Held on a number, this applies to that number's calls only" style="margin-left: 6px">also on a number</span>
+                                    }</span>
+                            </label>
+                        </li>
+                    }
+                </ul>
+                @if (role.Fixed)
+                {
+                    <p class="hint" style="margin: 0">Admin holds every permission and cannot be changed, so there is always someone who can put things right.</p>
+                }
+                else
+                {
+                    <div class="row" style="gap: 8px"><button type="submit" class="btn sm">Save @role.Name</button></div>
+                }
+            </form>
+            @if (!Roles.BuiltIn.Contains(role.Name))
+            {
+                <div class="plane-body" style="border-top: 1px solid var(--line); padding-top: 10px">
+                    <form method="post" action="/admin/roles/@role.Id/delete"><AntiforgeryToken /><button type="submit" class="btn ghost sm danger">Remove @role.Name</button></form>
+                </div>
+            }
+        </section>
+    }
+
+    <section class="plane" aria-label="Add a role">
+        <div class="plane-head"><h2>Add a role</h2></div>
+        <form method="post" action="/admin/roles" class="add-role plane-body stack" style="gap: 10px">
+            <AntiforgeryToken />
+            <label class="field"><span class="label">Name</span><input class="input" name="Name" required maxlength="50" placeholder="Supervisor" /></label>
+            <div class="row"><button type="submit" class="btn sm primary">Add</button></div>
+            <p class="hint" style="margin: 0">A new role allows nothing until you tick what it may do.</p>
+        </form>
+    </section>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "msg")] private string? Msg { get; set; }
+
+    private sealed record Row(Guid Id, string Name, Permission Permissions, int Members, bool Fixed);
+
+    private List<Row> _roles = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var rows = new List<Row>();
+        foreach (var role in RoleStore.Roles.ToList())
+        {
+            rows.Add(new Row(role.Id, role.Name!, await RolePermissions.GetAsync(RoleStore, role), (await Users.GetUsersInRoleAsync(role.Name!)).Count, role.Name == Roles.Admin));
+        }
+
+        // Built-in first, in their order; then the site's own, by name.
+        _roles = [.. rows.OrderBy(r => Array.IndexOf(Roles.BuiltIn, r.Name) is var i && i >= 0 ? i : int.MaxValue).ThenBy(r => r.Name, StringComparer.Ordinal)];
+    }
+}

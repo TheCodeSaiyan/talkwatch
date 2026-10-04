@@ -1,0 +1,33 @@
+name: Something's wrong
+description: TalkWatch did something it shouldn't, or didn't do something it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to make it happen again
+  - type: input
+    id: version
+    attributes:
+      label: TalkWatch version or image digest
+    validations:
+      required: true
+  - type: input
+    id: console
+    attributes:
+      label: UniFi OS and Talk versions, and their release channels
+      description: The header banner shows them when they differ from the tested ones.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log lines
+      description: Remove phone numbers, names and anything secret first. Logs never contain passwords, but can contain callers' numbers.
+      render: text

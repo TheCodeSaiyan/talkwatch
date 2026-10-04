@@ -1,0 +1,49 @@
+# TalkWatch with its own PostgreSQL. Copy .env.example to .env, fill it in, then: docker compose up -d
+#
+# The web port is published on the host for a first run on the LAN. Put a reverse proxy with TLS in front before
+# anyone reaches it from outside; TalkWatch itself serves plain HTTP on 8080.
+
+name: talkwatch
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: talkwatch
+      POSTGRES_USER: talkwatch
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U talkwatch -d talkwatch"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  talkwatch:
+    image: ${TALKWATCH_IMAGE:-ghcr.io/thecodesaiyan/talkwatch:latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${TALKWATCH_PORT:-8080}:8080"
+    environment:
+      ConnectionStrings__TalkWatch: Host=db;Database=talkwatch;Username=talkwatch;Password=${DB_PASSWORD}
+      Site__Name: ${SITE_NAME:-TalkWatch}
+      Site__Region: ${SITE_REGION:-GB}
+      Talk__ConsoleUrl: ${TALK_CONSOLE_URL:-}
+      Talk__Username: ${TALK_USERNAME:-}
+      Talk__Password: ${TALK_PASSWORD:-}
+      Talk__CertificateSha256: ${TALK_CERTIFICATE_SHA256:-}
+      Talk__PollSeconds: ${TALK_POLL_SECONDS:-60}
+      Bootstrap__AdminUsername: ${BOOTSTRAP_ADMIN_USERNAME:-}
+      Bootstrap__AdminPassword: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+    volumes:
+      # Copied recordings and voicemail. Back this up together with the database: each file is indexed there.
+      - audio:/data/audio
+
+volumes:
+  db:
+  audio:

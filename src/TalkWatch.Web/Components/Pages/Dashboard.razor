@@ -1,0 +1,232 @@
+@page "/dashboard"
+@attribute [Authorize]
+@using Microsoft.Extensions.Options
+@using TalkWatch.Core.Calls
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject TalkWatchDbContext Db
+@inject IOptions<SiteOptions> Site
+@inject TimeProvider Clock
+
+<PageTitle>Analytics · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <h1>Analytics</h1>
+        <div class="sub">When calls come, who answers and how fast, counted only over the lines your grants cover.</div>
+    </div>
+    <div class="tools">
+
+@* Every figure is counted through the signed-in person's access scope: only calls and lines their grants cover. *@
+<nav class="seg" aria-label="Period">
+    @foreach (var days in PeriodChoices)
+    {
+        <a href="/dashboard?days=@days" aria-pressed="@(days == _days && From is null ? "true" : "false")" class="@(days == _days && From is null ? "current" : "")">Last @days days</a>
+    }
+</nav>
+    </div>
+</header>
+
+@if (_error is not null)
+{
+    <p class="notice" role="alert">@_error</p>
+}
+else if (_stats is { } s)
+{
+    <p class="lede" data-summary><b>@_start.ToString("d MMM") to @_end.AddDays(-1).ToString("d MMM yyyy"):</b>
+        @s.Inbound inbound @(s.Inbound == 1 ? "call" : "calls")@(s.AnswerRate is { } r ? $", {r:P0} answered" : "")@(s.Speed.MedianRing is { } mr ? $", a median of {Math.Round(mr.TotalSeconds):0} seconds to answer" : "")@(s.InboundByHour.Max() > 0 ? $". The busiest hour was {Array.IndexOf(s.InboundByHour.ToArray(), s.InboundByHour.Max()):00}:00" : "").
+        <span class="muted">Times in @_zone.Id.</span></p>
+
+    <section class="figures">
+        <div data-figure="inbound"><strong>@s.Inbound</strong> inbound calls</div>
+        <div data-figure="answered"><strong>@s.Count(CallOutcome.Answered)</strong> answered</div>
+        <div data-figure="answer-rate"><strong>@(s.AnswerRate is { } rate ? rate.ToString("P0") : "–")</strong> answer rate</div>
+        <div data-figure="missed"><strong>@s.CountMissed</strong> missed</div>
+        <div data-figure="voicemail"><strong>@s.CountVoicemail</strong> voicemail</div>
+        <div data-figure="hung-up"><strong>@s.Count(CallOutcome.HungUpAtSwitchboard)</strong> hung up at the switchboard</div>
+        <div data-figure="outbound"><strong>@s.Count(CallOutcome.Outbound)</strong> outbound calls</div>
+        <div data-figure="average-answered"><strong>@s.AverageAnswered.ToString(@"m\:ss")</strong> average answered call</div>
+        <div data-figure="called-back"><strong>@s.CallBacks.Returned of @s.CallBacks.Returnable</strong> missed calls got back to</div>
+        <div data-figure="call-back-time"><strong>@(s.CallBacks.MedianCallBack is { } wait ? (wait.TotalHours >= 48 ? $"{(int)wait.TotalDays} days" : wait.TotalMinutes >= 60 ? $"{(int)wait.TotalHours} h {wait.Minutes} min" : $"{(int)wait.TotalMinutes} min") : "–")</strong> median time to call back</div>
+        <div data-figure="to-call-back"><strong><a href="/callbacks">@s.CallBacks.Open</a></strong> still to call back</div>
+    </section>
+    <p class="hint">The answer rate counts callers who tried to reach someone: answered, missed and voicemail. A caller who hung up at the switchboard never rang anyone.</p>
+
+    <section class="plane"><div class="plane-head"><h2>How fast are calls answered?</h2></div><div class="plane-body stack">
+    <section class="figures">
+        <div data-figure="median-ring"><strong>@Seconds(s.Speed.MedianRing)</strong> median ring before an answer</div>
+        <div data-figure="slowest-ring"><strong>@Seconds(s.Speed.SlowestTenthRing)</strong> the slowest tenth rang this long or more</div>
+        <div data-figure="median-give-up"><strong>@Seconds(s.Speed.MedianGiveUp)</strong> median wait before a missed caller gave up</div>
+    </section>
+    @if (s.Speed is { MedianRing: { } ring, MedianGiveUp: { } giveUp } && giveUp - ring < TimeSpan.FromSeconds(20))
+    {
+        @if (giveUp > ring)
+        {
+            <p class="hint" data-close-call>Callers who were missed gave up only @Seconds(giveUp - ring) after the time it usually takes to answer: answering sooner, or ringing more phones, would reach some of them.</p>
+        }
+        else
+        {
+            <p class="hint" data-close-call>Callers who were missed gave up sooner than calls are usually answered (@Seconds(giveUp) against @Seconds(ring)): answering sooner, or ringing more phones, would reach some of them.</p>
+        }
+    }
+
+    </div></section>
+
+    <section class="plane"><div class="plane-head"><h2>When are calls missed?</h2></div><div class="plane-body stack">
+    <p class="hint">Inbound calls by weekday and hour; the darker the cell, the larger the share nobody picked up (missed or sent to voicemail).</p>
+    <table class="heat-table" role="img" aria-label="Missed calls by weekday and hour">
+        <thead><tr><th></th>@for (var hour = 0; hour < 24; hour++) { <th>@(hour % 3 == 0 ? hour.ToString("00") : "")</th> }</tr></thead>
+        <tbody>
+            @for (var day = 0; day < 7; day++)
+            {
+                <tr>
+                    <th>@TalkWatch.Data.CallStatistics.Week[day].ToString()[..3]</th>
+                    @for (var hour = 0; hour < 24; hour++)
+                    {
+                        var (inbound, missed) = s.MissedByWeekdayAndHour[day][hour];
+                        <td data-cell="@($"{day}:{hour}")" data-inbound="@inbound" data-missed="@missed"
+                            title="@($"{TalkWatch.Data.CallStatistics.Week[day]} {hour:00}:00 – {inbound} calls, {missed} not picked up")"
+                            style="@(inbound == 0 ? "" : $"background: color-mix(in srgb, var(--bad) {Math.Round(Math.Max(0.08, (double)missed / inbound) * 85 + 6).ToString("0", System.Globalization.CultureInfo.InvariantCulture)}%, var(--s3))")">@(inbound == 0 ? "" : $"{missed}/{inbound}")</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    </div></section>
+
+    <section class="plane"><div class="plane-head"><h2>How good was the audio?</h2></div><div class="plane-body stack">
+    <section class="figures">
+        <div data-figure="quality-median"><strong>@(s.Quality.Median?.ToString() ?? "–")</strong> median quality score (of 100)</div>
+        <div data-figure="quality-poor"><strong>@s.Quality.Poor of @s.Quality.Scored</strong> scored calls under @TalkWatch.Data.QualityStatistics.PoorBelow</div>
+    </section>
+    @if (s.Quality.Worst.Count > 0)
+    {
+        <p class="hint">Talk scores a call's audio quality; a low score usually means a poor network path, a busy connection or a failing handset. The worst:</p>
+        <ul class="poor-calls">
+            @foreach (var call in s.Quality.Worst)
+            {
+                <li data-poor-call="@call.TalkUuid"><a href="/calls/@call.TalkUuid">@call.Time.ToLocalTime().ToString("ddd d MMM HH:mm")</a> scored @call.Score</li>
+            }
+        </ul>
+    }
+
+    </div></section>
+
+    <div class="grid cols-2">
+    <section class="plane"><div class="plane-head"><h2>When do calls come in?</h2></div><div class="plane-body">
+    <div class="bars hours" role="img" aria-label="Inbound calls by hour of the day">
+        @for (var hour = 0; hour < 24; hour++)
+        {
+            var count = s.InboundByHour[hour];
+            <div class="bar" title="@($"{hour:00}:00 – {count} calls")" data-hour="@hour" data-count="@count">
+                <span style="height: @Percent(count, s.InboundByHour.Max())%"></span>
+                <small>@(hour % 3 == 0 ? hour.ToString("00") : "")</small>
+            </div>
+        }
+    </div>
+
+    </div></section>
+
+    <section class="plane"><div class="plane-head"><h2>How many calls a day?</h2></div><div class="plane-body">
+    @if (s.ByDay.Count == 0)
+    {
+        <p class="empty">No inbound calls in this period.</p>
+    }
+    else
+    {
+        var most = s.ByDay.Max(d => d.Inbound);
+        <div class="bars days" role="img" aria-label="Inbound calls per day">
+            @foreach (var day in s.ByDay)
+            {
+                <div class="bar" title="@($"{day.Day:ddd d MMM}: {day.Inbound} calls, {day.Answered} answered, {day.Missed} missed")" data-day="@day.Day.ToString("yyyy-MM-dd")" data-count="@day.Inbound">
+                    <span style="height: @Percent(day.Inbound, most)%"></span>
+                </div>
+            }
+        </div>
+    }
+
+    </div></section>
+    </div>
+
+    <section class="plane"><div class="plane-head"><h2>Which lines get them?</h2></div>
+    @if (s.ByLine.Count == 0)
+    {
+        <p class="empty" style="padding: 16px">No inbound calls on your lines in this period.</p>
+    }
+    else
+    {
+        <div class="grid-wrap"><table class="dg lines">
+            <thead><tr><th class="first">Line</th><th>Kind</th><th>Inbound</th><th>Answered</th><th>Missed</th><th>Voicemail</th><th>Hung up</th></tr></thead>
+            <tbody>
+                @foreach (var line in s.ByLine)
+                {
+                    <tr data-line="@($"{line.Kind}:{line.Key}")">
+                        <td class="first"><b style="font-weight: 600">@line.Name</b></td>
+                        <td class="muted">@line.Kind</td>
+                        <td class="num">@line.Inbound</td>
+                        <td class="num">@line.Answered</td>
+                        <td class="num">@line.Missed</td>
+                        <td class="num">@line.Voicemail</td>
+                        <td class="num">@line.HungUpAtSwitchboard</td>
+                    </tr>
+                }
+            </tbody>
+        </table></div>
+    }
+    </section>
+}
+
+@code {
+    private static readonly int[] PeriodChoices = [7, 30, 90];
+
+    private static string Seconds(TimeSpan? span) => span is { } s ? $"{Math.Round(s.TotalSeconds):0} s" : "–";
+
+    [SupplyParameterFromQuery(Name = "days")] private int? Days { get; set; }
+
+    /// <summary>An explicit period instead: first and last day, inclusive, as yyyy-MM-dd in the site's time zone.</summary>
+    [SupplyParameterFromQuery(Name = "from")] private string? From { get; set; }
+
+    [SupplyParameterFromQuery(Name = "to")] private string? To { get; set; }
+
+    private CallStatistics? _stats;
+    private string? _error;
+    private int _days;
+    private DateTime _start;
+    private DateTime _end;
+    private TimeZoneInfo _zone = TimeZoneInfo.Utc;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _zone = TimeZoneInfo.FindSystemTimeZoneById(Site.Value.TimeZone);
+        _days = Days is { } d && PeriodChoices.Contains(d) ? d : 7;
+
+        // Whole days in the site's zone: the period ends at the start of tomorrow, so today counts.
+        var today = TimeZoneInfo.ConvertTime(Clock.GetUtcNow(), _zone).Date;
+        (_start, _end) = (today.AddDays(1 - _days), today.AddDays(1));
+        if (From is not null || To is not null)
+        {
+            if (!DateOnly.TryParseExact(From, "yyyy-MM-dd", out var first) || !DateOnly.TryParseExact(To, "yyyy-MM-dd", out var last) || last < first)
+            {
+                _error = "Give the period as from=yyyy-MM-dd and to=yyyy-MM-dd, with to on or after from.";
+                return;
+            }
+
+            (_start, _end) = (first.ToDateTime(TimeOnly.MinValue), last.ToDateTime(TimeOnly.MinValue).AddDays(1));
+        }
+
+        try
+        {
+            _stats = await CallStatistics.ComputeAsync(Db, Instant(_start), Instant(_end), _zone, CancellationToken.None);
+        }
+        catch (ArgumentException)
+        {
+            _error = $"A period can be at most {CallStatistics.LongestPeriodDays} days.";
+        }
+    }
+
+    // A local midnight in the site's zone, as the instant it was.
+    private DateTimeOffset Instant(DateTime local) => new(local, _zone.GetUtcOffset(local));
+
+    private static int Percent(int value, int most) => most == 0 ? 0 : (int)Math.Round(100.0 * value / most);
+}

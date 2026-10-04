@@ -1,0 +1,19 @@
+@* A flow drawn as the diagram it runs: what starts it, what it is limited to, then each step down one line, a branch
+   splitting into its two paths side by side, and where it ends. *@
+@using TalkWatch.Core.Alerts
+
+<ol class="flowchain" data-flow-view>
+    <li class="flow-step when"><span class="node-ic"><Icon Name="bell" Size="s" /></span><b>When</b> <span>@FlowText.EventName(Flow.Trigger)</span></li>
+    @foreach (var condition in Flow.Conditions)
+    {
+        <li class="flow-step if"><span class="node-ic"><Icon Name="@FlowText.Icon(condition)" Size="s" /></span><b>If</b> <span>@FlowText.Condition(condition, Names)</span></li>
+    }
+    <FlowStepsView Steps="Flow.Steps" Names="Names" CallAlert="Flows.IsCallAlert(Flow.Trigger)" />
+    <li class="flow-step end"><span class="node-ic"><Icon Name="check" Size="s" /></span><b>End</b> <span>nobody else is told</span></li>
+</ol>
+
+@code {
+    [Parameter, EditorRequired] public FlowDefinition Flow { get; set; } = default!;
+
+    [Parameter] public FlowNames Names { get; set; } = FlowNames.None;
+}

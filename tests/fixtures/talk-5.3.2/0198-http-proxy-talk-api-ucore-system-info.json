@@ -1,0 +1,1488 @@
+{
+  "isSetup": true,
+  "location": {
+    "lat": 0.0,
+    "long": 0.0,
+    "radius": 200,
+    "text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit,"
+  },
+  "name": "Emerson22",
+  "timezone": "Europe/London",
+  "sendDiagnostics": "anonymous",
+  "autoBackupEnabled": true,
+  "internetRequired": true,
+  "lcmSettings": {
+    "enabled": true,
+    "color": "0139FF",
+    "brightness": 80
+  },
+  "ledSettings": {
+    "enabled": true
+  },
+  "ustorage": {
+    "disks": [
+      {
+        "slot": 1,
+        "action": "none",
+        "state": "normal",
+        "healthy": "good",
+        "ata": "SATA 3.1",
+        "firmware": "TN04",
+        "model": "ST4000NE001-2MA101",
+        "node": "sda",
+        "sata": "SATA 3.1",
+        "serial": "WSF76D93",
+        "size": 4000787030016,
+        "type": "HDD",
+        "bad_sector": 0,
+        "poweronhrs": 13613,
+        "temperature": 49,
+        "rpm": 7200,
+        "estimate": null,
+        "progress": null,
+        "reason": []
+      }
+    ],
+    "space": [
+      {
+        "action": "none",
+        "device": "md3",
+        "error_count": 0,
+        "estimate": 0,
+        "expansion_limit_bytes": 441614960039,
+        "health": "health",
+        "progress": 0,
+        "raid": {
+          "expected": 2,
+          "had_most": 1,
+          "members": [
+            "sda5"
+          ],
+          "member_size": 3992057806848
+        },
+        "reasons": [],
+        "resv_bytes": 13245550125,
+        "space_type": "primary",
+        "total_bytes": 3959417290752,
+        "used_bytes": 3901553385472
+      },
+      {
+        "action": "none",
+        "device": "md0",
+        "error_count": 0,
+        "estimate": 0,
+        "health": "health",
+        "progress": 0,
+        "raid": {
+          "expected": 2,
+          "had_most": 1,
+          "members": [
+            "sda2"
+          ],
+          "member_size": 2009071616
+        },
+        "reasons": [],
+        "resv_bytes": 0,
+        "space_type": "swap",
+        "total_bytes": 0,
+        "used_bytes": 0
+      },
+      {
+        "action": "none",
+        "device": "overlayfs-root",
+        "error_count": 0,
+        "estimate": null,
+        "health": "health",
+        "progress": null,
+        "raid": null,
+        "reasons": [],
+        "resv_bytes": 441154960591,
+        "space_type": "root",
+        "total_bytes": 13165550139,
+        "used_bytes": 3962912768
+      }
+    ],
+    "sdcards": []
+  },
+  "setup_device_id": "38487e1e-d15d-47eb-9195-2373e15f764a",
+  "anonymous_device_id": "82c9c979-4b85-48c1-8510-f53b0b7da587",
+  "anonymous_network_application_id": "a74409de-dc4c-4c4b-a7f9-4caedac86a25",
+  "setupType": "android",
+  "setupDuration": null,
+  "country": 826,
+  "isInternalUser": false,
+  "ssh": true,
+  "nightMode": {
+    "onMinute": 1260,
+    "offMinute": 540
+  },
+  "emailServiceProvider": "ui",
+  "deviceId": "F492BF9B5FEC00442079460604D01214960491DF02896496185F9BE7E8:01632960523",
+  "features": {
+    "adoptDevices": true,
+    "autoDetectPreviousSubnet": true,
+    "cloudBackup": true,
+    "cpuInfo": true,
+    "hasFirewall": true,
+    "hasGateway": true,
+    "hasLCM": true,
+    "hasUdapi": true,
+    "setupConfigUFN": true,
+    "sharedTokens": true,
+    "speedTest": true,
+    "ssh": true,
+    "storage": {
+      "canFormat": true,
+      "canSetHotspare": false,
+      "hasRemovableStorage": true
+    },
+    "systoolAnonId": true,
+    "systoolSupportDump": true,
+    "UFNSetsHostname": true,
+    "uidService": true,
+    "waitForUFN": true,
+    "coLocated": {
+      "shadow": true,
+      "primary": true
+    },
+    "ups": {
+      "canBePaired": true,
+      "pairing": true
+    }
+  },
+  "firmwareDownload": {
+    "progress": 100,
+    "state": "done"
+  },
+  "hardware": {
+    "debianCodename": "Rowan58",
+    "sysid": 59925,
+    "name": "Kit Fletcher 59",
+    "shortname": "Jordan42",
+    "subtype": "",
+    "reboot": "30",
+    "upgrade": "310",
+    "cpu.id": "411fd07700900156",
+    "uuid": "7194cd2c-b67e-5478-9ca2-820f681ba4ad",
+    "bom": "9505550169",
+    "hwrev": 185098,
+    "mac": "F492BF9B5FEC",
+    "serialno": "248be4d2a835",
+    "qrid": "YJ7aiM",
+    "firmwareVersion": "5.1.33"
+  },
+  "hostname": "udm-se",
+  "ip": "203.0.113.2",
+  "latestUpdate": null,
+  "latestUpdateCheck": 1790724194263,
+  "ledStatus": null,
+  "mac": "F492BF9B5FEC",
+  "memory": {
+    "free": 85836,
+    "total": 4040828,
+    "available": 610060
+  },
+  "network": {
+    "interfaces": {
+      "eth9": [
+        {
+          "address": "203.0.113.2",
+          "netmask": "255.255.240.0",
+          "family": "IPv4",
+          "mac": "02:c1:26:ec:70:91",
+          "internal": false,
+          "cidr": "203.0.113.2/20"
+        },
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff5",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c1:26:ec:70:91",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff5/64",
+          "scopeid": 3
+        }
+      ],
+      "br0": [
+        {
+          "address": "192.168.1.1",
+          "netmask": "255.255.255.0",
+          "family": "IPv4",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "192.168.1.1/24"
+        },
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 43
+        }
+      ],
+      "br2": [
+        {
+          "address": "192.168.2.1",
+          "netmask": "255.255.255.0",
+          "family": "IPv4",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "192.168.2.1/24"
+        },
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 44
+        }
+      ],
+      "br3": [
+        {
+          "address": "10.10.10.1",
+          "netmask": "255.255.254.0",
+          "family": "IPv4",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "10.10.10.1/23"
+        },
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 45
+        }
+      ],
+      "br4": [
+        {
+          "address": "10.20.70.1",
+          "netmask": "255.255.254.0",
+          "family": "IPv4",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "10.20.70.1/23"
+        },
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 46
+        }
+      ],
+      "br4040": [
+        {
+          "address": "10.255.253.1",
+          "netmask": "255.255.255.0",
+          "family": "IPv4",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "10.255.253.1/24"
+        },
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 47
+        }
+      ],
+      "br5": [
+        {
+          "address": "192.168.3.1",
+          "netmask": "255.255.255.0",
+          "family": "IPv4",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "192.168.3.1/24"
+        },
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 48
+        }
+      ],
+      "br50": [
+        {
+          "address": "10.20.80.1",
+          "netmask": "255.255.254.0",
+          "family": "IPv4",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "10.20.80.1/23"
+        },
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 49
+        }
+      ],
+      "br6": [
+        {
+          "address": "192.168.0.1",
+          "netmask": "255.255.255.0",
+          "family": "IPv4",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "192.168.0.1/24"
+        },
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 50
+        }
+      ],
+      "br7": [
+        {
+          "address": "192.168.4.1",
+          "netmask": "255.255.255.0",
+          "family": "IPv4",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "192.168.4.1/24"
+        },
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 51
+        }
+      ],
+      "br8": [
+        {
+          "address": "10.50.50.1",
+          "netmask": "255.255.255.192",
+          "family": "IPv4",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "10.50.50.1/26"
+        },
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 52
+        }
+      ],
+      "wgclt1": [
+        {
+          "address": "10.130.166.60",
+          "netmask": "255.255.255.255",
+          "family": "IPv4",
+          "mac": "02:e1:d1:bf:bc:af",
+          "internal": false,
+          "cidr": "10.130.166.60/32"
+        }
+      ],
+      "uid-wg": [
+        {
+          "address": "10.10.90.1",
+          "netmask": "255.255.255.0",
+          "family": "IPv4",
+          "mac": "02:e1:d1:bf:bc:af",
+          "internal": false,
+          "cidr": "10.10.90.1/24"
+        },
+        {
+          "address": "fe80::1405:1853:5398:8c53",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:e1:d1:bf:bc:af",
+          "internal": false,
+          "cidr": "fe80::1405:1853:5398:8c53/64",
+          "scopeid": 58
+        }
+      ],
+      "honeypot50": [
+        {
+          "address": "10.20.80.2",
+          "netmask": "255.255.255.255",
+          "family": "IPv4",
+          "mac": "02:c8:a2:e3:ac:77",
+          "internal": false,
+          "cidr": "10.20.80.2/32"
+        },
+        {
+          "address": "fe80::285e:f6ff:fe08:b62",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c8:a2:e3:ac:77",
+          "internal": false,
+          "cidr": "fe80::285e:f6ff:fe08:b62/64",
+          "scopeid": 59
+        }
+      ],
+      "eth10": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 5
+        }
+      ],
+      "switch0": [
+        {
+          "address": "fe80::f492:bfff:fe9b:5fed",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:cd:cf:c7:34:d8",
+          "internal": false,
+          "cidr": "fe80::f492:bfff:fe9b:5fed/64",
+          "scopeid": 6
+        }
+      ],
+      "eth0": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5fec",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:b2:5b:51:a7:fd",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5fec/64",
+          "scopeid": 16
+        }
+      ],
+      "eth1": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5fed",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:fa:9e:c5:0d:bd",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5fed/64",
+          "scopeid": 17
+        }
+      ],
+      "eth2": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5fee",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:6e:37:75:24:be",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5fee/64",
+          "scopeid": 18
+        }
+      ],
+      "eth3": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5fef",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:77:13:f3:97:15",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5fef/64",
+          "scopeid": 19
+        }
+      ],
+      "eth4": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff0",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:ba:0d:94:d5:9d",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff0/64",
+          "scopeid": 20
+        }
+      ],
+      "eth5": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff1",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:d2:83:a0:64:e8",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff1/64",
+          "scopeid": 21
+        }
+      ],
+      "eth6": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff2",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:7c:75:ae:72:6b",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff2/64",
+          "scopeid": 22
+        }
+      ],
+      "eth7": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff3",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:8b:26:ff:9e:5f",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff3/64",
+          "scopeid": 23
+        }
+      ],
+      "eth10.2": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 24
+        }
+      ],
+      "eth10.3": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 25
+        }
+      ],
+      "eth10.4": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 26
+        }
+      ],
+      "eth10.4040": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 27
+        }
+      ],
+      "eth10.5": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 28
+        }
+      ],
+      "eth10.50": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 29
+        }
+      ],
+      "eth10.6": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 30
+        }
+      ],
+      "eth10.7": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 31
+        }
+      ],
+      "eth10.8": [
+        {
+          "address": "fe80::f692:bfff:fe9b:5ff6",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:c6:fd:bc:85:d6",
+          "internal": false,
+          "cidr": "fe80::f692:bfff:fe9b:5ff6/64",
+          "scopeid": 32
+        }
+      ],
+      "switch0.1": [
+        {
+          "address": "fe80::f492:bfff:fe9b:5fed",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:cd:cf:c7:34:d8",
+          "internal": false,
+          "cidr": "fe80::f492:bfff:fe9b:5fed/64",
+          "scopeid": 33
+        }
+      ],
+      "switch0.2": [
+        {
+          "address": "fe80::f492:bfff:fe9b:5fed",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:cd:cf:c7:34:d8",
+          "internal": false,
+          "cidr": "fe80::f492:bfff:fe9b:5fed/64",
+          "scopeid": 34
+        }
+      ],
+      "switch0.3": [
+        {
+          "address": "fe80::f492:bfff:fe9b:5fed",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:cd:cf:c7:34:d8",
+          "internal": false,
+          "cidr": "fe80::f492:bfff:fe9b:5fed/64",
+          "scopeid": 35
+        }
+      ],
+      "switch0.4": [
+        {
+          "address": "fe80::f492:bfff:fe9b:5fed",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:cd:cf:c7:34:d8",
+          "internal": false,
+          "cidr": "fe80::f492:bfff:fe9b:5fed/64",
+          "scopeid": 36
+        }
+      ],
+      "switch0.4040": [
+        {
+          "address": "fe80::f492:bfff:fe9b:5fed",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:cd:cf:c7:34:d8",
+          "internal": false,
+          "cidr": "fe80::f492:bfff:fe9b:5fed/64",
+          "scopeid": 37
+        }
+      ],
+      "switch0.5": [
+        {
+          "address": "fe80::f492:bfff:fe9b:5fed",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:cd:cf:c7:34:d8",
+          "internal": false,
+          "cidr": "fe80::f492:bfff:fe9b:5fed/64",
+          "scopeid": 38
+        }
+      ],
+      "switch0.50": [
+        {
+          "address": "fe80::f492:bfff:fe9b:5fed",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:cd:cf:c7:34:d8",
+          "internal": false,
+          "cidr": "fe80::f492:bfff:fe9b:5fed/64",
+          "scopeid": 39
+        }
+      ],
+      "switch0.6": [
+        {
+          "address": "fe80::f492:bfff:fe9b:5fed",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:cd:cf:c7:34:d8",
+          "internal": false,
+          "cidr": "fe80::f492:bfff:fe9b:5fed/64",
+          "scopeid": 40
+        }
+      ],
+      "switch0.7": [
+        {
+          "address": "fe80::f492:bfff:fe9b:5fed",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:cd:cf:c7:34:d8",
+          "internal": false,
+          "cidr": "fe80::f492:bfff:fe9b:5fed/64",
+          "scopeid": 41
+        }
+      ],
+      "switch0.8": [
+        {
+          "address": "fe80::f492:bfff:fe9b:5fed",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:cd:cf:c7:34:d8",
+          "internal": false,
+          "cidr": "fe80::f492:bfff:fe9b:5fed/64",
+          "scopeid": 42
+        }
+      ],
+      "ifbeth8": [
+        {
+          "address": "fe80::bc50:edff:fe38:c411",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:07:ab:bd:3c:d4",
+          "internal": false,
+          "cidr": "fe80::bc50:edff:fe38:c411/64",
+          "scopeid": 54
+        }
+      ],
+      "ifbeth9": [
+        {
+          "address": "fe80::349f:24ff:fedc:34bd",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:53:9f:c3:df:3f",
+          "internal": false,
+          "cidr": "fe80::349f:24ff:fedc:34bd/64",
+          "scopeid": 55
+        }
+      ],
+      "dummy0": [
+        {
+          "address": "2001:db8:1000::fa",
+          "netmask": "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+          "family": "IPv6",
+          "mac": "02:ab:6e:70:39:e5",
+          "internal": false,
+          "cidr": "2001:db8:1000::fa/128",
+          "scopeid": 0
+        },
+        {
+          "address": "fe80::88e5:c2ff:fe1e:b2b0",
+          "netmask": "ffff:ffff:ffff:ffff::",
+          "family": "IPv6",
+          "mac": "02:ab:6e:70:39:e5",
+          "internal": false,
+          "cidr": "fe80::88e5:c2ff:fe1e:b2b0/64",
+          "scopeid": 60
+        }
+      ]
+    },
+    "associatedInterfaces": {
+      "eth10": "eth10.8",
+      "switch0": "switch0.8"
+    }
+  },
+  "now": 1790726802076,
+  "owner": {
+    "unique_id": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+    "first_name": "Sam18",
+    "last_name": "Kit19",
+    "alias": "",
+    "full_name": "Nico Archer 20",
+    "email": "person3@example.invalid",
+    "email_status": "VERIFIED",
+    "email_is_null": false,
+    "user_email": "Rowan21",
+    "phone": "",
+    "avatar_relative_path": "https://example.invalid/redacted/1",
+    "avatar_rpath2": "https://example.invalid/redacted/2",
+    "status": "ACTIVE",
+    "employee_number": "",
+    "create_time": 1693768635,
+    "login_time": 1790724192,
+    "extras": {
+      "previous_uid_sso_id": "e27c731a-50d4-4092-9d8a-0d23d073fdc5",
+      "uid_avatar": "https://example.invalid/redacted/3"
+    },
+    "username": "",
+    "local_account_exist": false,
+    "password_revision": 0,
+    "sso_account": "person3@example.invalid",
+    "sso_uuid": "498f450d-f4f0-4105-b7a7-d67dbb63d1ce",
+    "sso_username": "Riley4",
+    "sso_picture": "https://example.invalid/redacted/4",
+    "uid_sso_id": "e27c731a-50d4-4092-9d8a-0d23d073fdc5",
+    "uid_sso_account": "person4@example.invalid",
+    "uid_account_status": "ACTIVE",
+    "groups": [
+      {
+        "unique_id": "de18468e-e4a7-438b-8205-29eb8645c982",
+        "name": "Emerson22",
+        "up_id": "8cf4e83f-da18-4fcc-b62e-1bca61c20699",
+        "up_ids": [
+          "3ddd5c8b-32d7-45c8-a563-89cf8c9889a3",
+          "8cf4e83f-da18-4fcc-b62e-1bca61c20699"
+        ],
+        "system_name": "Jordan Jennings 23",
+        "create_time": "2023-09-03T21:36:21+01:00"
+      },
+      {
+        "unique_id": "3ddd5c8b-32d7-45c8-a563-89cf8c9889a3",
+        "name": "Riley4",
+        "up_id": "",
+        "up_ids": [],
+        "system_name": "Riley4",
+        "create_time": "2023-09-03T20:17:15+01:00"
+      },
+      {
+        "unique_id": "8cf4e83f-da18-4fcc-b62e-1bca61c20699",
+        "name": "Jordan16",
+        "up_id": "3ddd5c8b-32d7-45c8-a563-89cf8c9889a3",
+        "up_ids": [
+          "3ddd5c8b-32d7-45c8-a563-89cf8c9889a3"
+        ],
+        "system_name": "Alex Keane 17",
+        "create_time": "2023-09-03T21:36:21+01:00"
+      }
+    ],
+    "roles": [
+      {
+        "unique_id": "56e4354b-1938-4bd0-8d6c-d7e983975f08",
+        "name": "Nico24",
+        "system_role": true,
+        "system_key": "owner",
+        "level": 1,
+        "create_time": "2023-09-03T20:07:04+01:00",
+        "update_time": "2023-09-03T20:07:04+01:00",
+        "is_private": false
+      }
+    ],
+    "permissions": {
+      "access.management": [
+        "admin"
+      ],
+      "calculus.management": [
+        "admin"
+      ],
+      "connect.management": [
+        "admin"
+      ],
+      "drive.management": [
+        "admin"
+      ],
+      "fabric.management": [
+        "admin"
+      ],
+      "innerspace.management": [
+        "admin"
+      ],
+      "led.management": [
+        "admin"
+      ],
+      "network.management": [
+        "admin"
+      ],
+      "olympus.management": [
+        "admin"
+      ],
+      "protect.management": [
+        "admin"
+      ],
+      "system.management.location": [
+        "admin"
+      ],
+      "system.management.user": [
+        "Nico25"
+      ],
+      "talk-relay.management": [
+        "admin"
+      ],
+      "talk.management": [
+        "admin"
+      ]
+    },
+    "scopes": [
+      "access.open_door:building",
+      "access.open_door:door",
+      "access.open_door:door_group",
+      "access.open_door:floor",
+      "access.open_door:location",
+      "adopt:access.device",
+      "assign:identity:camera",
+      "assign:identity:evstation",
+      "assign:identity:talk",
+      "assign:identity:vpn",
+      "assign:identity:wifi",
+      "assign:role",
+      "assign:role:admin",
+      "assign:role:viewer",
+      "assign:role_super_admin",
+      "cloud_access:controller",
+      "cloud_access:system",
+      "control:connect.device",
+      "create:protect.accessPolicy",
+      "create:protect.accessSchedule",
+      "create:protect.aiport",
+      "create:protect.aiprocessor",
+      "create:protect.bridge",
+      "create:protect.camera",
+      "create:protect.cameraGroup",
+      "create:protect.chime",
+      "create:protect.fob",
+      "create:protect.group",
+      "create:protect.hub",
+      "create:protect.light",
+      "create:protect.linkstation",
+      "create:protect.liveview",
+      "create:protect.locationGroup",
+      "create:protect.phoneNumber",
+      "create:protect.reader",
+      "create:protect.relay",
+      "create:protect.schedule",
+      "create:protect.sensor",
+      "create:protect.sipCallerAccount",
+      "create:protect.sipRecipient",
+      "create:protect.sipServer",
+      "create:protect.siren",
+      "create:protect.speaker",
+      "create:protect.user",
+      "create:protect.viewer",
+      "credential:send_email",
+      "delete:access.device",
+      "delete:protect.accessPolicy",
+      "delete:protect.accessSchedule",
+      "delete:protect.aiport",
+      "delete:protect.aiprocessor",
+      "delete:protect.bridge",
+      "delete:protect.camera",
+      "delete:protect.cameraGroup",
+      "delete:protect.chime",
+      "delete:protect.fob",
+      "delete:protect.group",
+      "delete:protect.hub",
+      "delete:protect.light",
+      "delete:protect.linkstation",
+      "delete:protect.locationGroup",
+      "delete:protect.nvr",
+      "delete:protect.phoneNumber",
+      "delete:protect.reader",
+      "delete:protect.relay",
+      "delete:protect.schedule",
+      "delete:protect.sensor",
+      "delete:protect.sipCallerAccount",
+      "delete:protect.sipRecipient",
+      "delete:protect.sipServer",
+      "delete:protect.siren",
+      "delete:protect.speaker",
+      "delete:protect.user",
+      "delete:protect.user:$",
+      "delete:protect.viewer",
+      "deletemedia:protect.camera",
+      "edit:access.device",
+      "edit:access.face",
+      "edit:access.license_plate",
+      "edit:access.nfc_card",
+      "edit:access.open_api",
+      "edit:access.pin_code",
+      "edit:access.policy",
+      "edit:access.schedule",
+      "edit:access.settings",
+      "edit:access.visitor",
+      "edit:access.wallet_nfc",
+      "edit:access:user",
+      "edit:api_key",
+      "edit:backup",
+      "edit:cloud_access",
+      "edit:connect.analytics",
+      "edit:connect.asset",
+      "edit:connect.device",
+      "edit:connect.playlist",
+      "edit:connect.schedule",
+      "edit:connect.system",
+      "edit:controller:fabric",
+      "edit:controller:uid-agent",
+      "edit:directory:ldap-config",
+      "edit:directory:ldap-import",
+      "edit:directory:ldap-import-setting",
+      "edit:directory:oauth-config",
+      "edit:directory:oauth-import",
+      "edit:door_group",
+      "edit:export_log",
+      "edit:fabric:identity:assignment:all",
+      "edit:feedback",
+      "edit:group",
+      "edit:holiday",
+      "edit:holiday_timezone",
+      "edit:identity:credentials_settings",
+      "edit:identity:organization_info",
+      "edit:identity:services",
+      "edit:identity:settings",
+      "edit:identity:status",
+      "edit:identity:update",
+      "edit:location",
+      "edit:location_activity",
+      "edit:location_device",
+      "edit:location_policy",
+      "edit:notification",
+      "edit:os-settings:auto_update",
+      "edit:os-settings:backup",
+      "edit:os-settings:client_network",
+      "edit:os-settings:general",
+      "edit:os-settings:hotspare",
+      "edit:os-settings:notify",
+      "edit:os-settings:poweroff",
+      "edit:os-settings:raid",
+      "edit:os-settings:remote_access",
+      "edit:os-settings:reset",
+      "edit:os-settings:restart",
+      "edit:os-settings:send_diagnostics",
+      "edit:os-settings:ssh",
+      "edit:os-settings:support_file",
+      "edit:os-settings:transfer_owner",
+      "edit:os-settings:update_channel",
+      "edit:os-settings:update_install",
+      "edit:permission",
+      "edit:permission:admin",
+      "edit:permission:owner",
+      "edit:permission:super_admin",
+      "edit:permission:viewer",
+      "edit:preview",
+      "edit:role",
+      "edit:role:admin",
+      "edit:role:viewer",
+      "edit:settings",
+      "edit:sso",
+      "edit:system_info",
+      "edit:systemlog",
+      "edit:transfer_ownership",
+      "edit:unifi-os:user_group",
+      "edit:user",
+      "edit:user_credential",
+      "edit:user_timezone",
+      "identity:view:app:users",
+      "identity:view:controller:access",
+      "manage:controller",
+      "manage:controller:access",
+      "manage:controller:calculus",
+      "manage:controller:connect",
+      "manage:controller:drive",
+      "manage:controller:innerspace",
+      "manage:controller:led",
+      "manage:controller:network",
+      "manage:controller:olympus",
+      "manage:controller:protect",
+      "manage:controller:talk",
+      "manage:controller:talk-relay",
+      "notify:access",
+      "notify:led",
+      "notify:location",
+      "notify:network",
+      "notify:protect",
+      "notify:talk",
+      "notify:user",
+      "open:door",
+      "read:protect.accessPolicy",
+      "read:protect.accessSchedule",
+      "read:protect.aiport",
+      "read:protect.aiprocessor",
+      "read:protect.bridge",
+      "read:protect.camera",
+      "read:protect.cameraGroup",
+      "read:protect.chime",
+      "read:protect.fob",
+      "read:protect.group",
+      "read:protect.hub",
+      "read:protect.light",
+      "read:protect.linkstation",
+      "read:protect.location",
+      "read:protect.locationGroup",
+      "read:protect.nvr",
+      "read:protect.phoneNumber",
+      "read:protect.reader",
+      "read:protect.relay",
+      "read:protect.schedule",
+      "read:protect.sensor",
+      "read:protect.sipCallerAccount",
+      "read:protect.sipRecipient",
+      "read:protect.sipServer",
+      "read:protect.siren",
+      "read:protect.speaker",
+      "read:protect.ulpUserGroup",
+      "read:protect.unlockSchedule",
+      "read:protect.user",
+      "read:protect.user:$",
+      "read:protect.viewer",
+      "readlive:protect.camera",
+      "readlive:protect.speaker",
+      "readmedia:protect.camera",
+      "revoke:identity:credential",
+      "send:identity:email",
+      "systemlog:access",
+      "systemlog:connect",
+      "systemlog:location",
+      "systemlog:network",
+      "systemlog:system",
+      "systemlog:user",
+      "update:access.device",
+      "view:access.dashboard",
+      "view:access.device",
+      "view:access.face",
+      "view:access.license_plate",
+      "view:access.nfc_card",
+      "view:access.open_api",
+      "view:access.pin_code",
+      "view:access.policy",
+      "view:access.schedule",
+      "view:access.settings",
+      "view:access.systemlog",
+      "view:access.visitor",
+      "view:access.wallet_nfc",
+      "view:access:user",
+      "view:admin",
+      "view:api_key",
+      "view:app:locations",
+      "view:app:settings",
+      "view:app:uid-agent",
+      "view:app:users",
+      "view:backup",
+      "view:cloud_access",
+      "view:connect.analytics",
+      "view:connect.asset",
+      "view:connect.device",
+      "view:connect.playlist",
+      "view:connect.schedule",
+      "view:connect.system",
+      "view:controller",
+      "view:controller:access",
+      "view:controller:apollo",
+      "view:controller:calculus",
+      "view:controller:connect",
+      "view:controller:drive",
+      "view:controller:fabric",
+      "view:controller:innerspace",
+      "view:controller:led",
+      "view:controller:network",
+      "view:controller:olympus",
+      "view:controller:protect",
+      "view:controller:talk",
+      "view:controller:talk-relay",
+      "view:controller:uid-agent",
+      "view:directory:ldap-config",
+      "view:directory:ldap-import",
+      "view:directory:ldap-import-setting",
+      "view:directory:oauth-config",
+      "view:directory:oauth-import",
+      "view:door_group",
+      "view:fabric:identity:assignment:all",
+      "view:group",
+      "view:holiday",
+      "view:holiday_timezone",
+      "view:identity:assignment_access",
+      "view:identity:assignment_camera",
+      "view:identity:assignment_evs",
+      "view:identity:assignment_light",
+      "view:identity:assignment_shade",
+      "view:identity:assignment_talk",
+      "view:identity:assignment_vpn",
+      "view:identity:assignment_wifi",
+      "view:identity:organization_info",
+      "view:identity:services",
+      "view:identity:settings",
+      "view:identity:update",
+      "view:location",
+      "view:location_activity",
+      "view:location_device",
+      "view:location_policy",
+      "view:notification",
+      "view:os-menu:about",
+      "view:os-menu:devices",
+      "view:os-menu:map",
+      "view:os-menu:notify-settings",
+      "view:os-menu:settings",
+      "view:os-menu:storage",
+      "view:os-menu:system-log",
+      "view:os-menu:user",
+      "view:os-settings:general",
+      "view:permission",
+      "view:permission:admin",
+      "view:permission:owner",
+      "view:permission:super_admin",
+      "view:permission:viewer",
+      "view:role",
+      "view:role:admin",
+      "view:role:viewer",
+      "view:settings",
+      "view:sso",
+      "view:system_info",
+      "view:systemlog",
+      "view:unifi-os:user",
+      "view:user",
+      "view:user_timezone",
+      "write:protect.accessPolicy",
+      "write:protect.accessSchedule",
+      "write:protect.aiport",
+      "write:protect.aiprocessor",
+      "write:protect.bridge",
+      "write:protect.camera",
+      "write:protect.cameraGroup",
+      "write:protect.chime",
+      "write:protect.fob",
+      "write:protect.group",
+      "write:protect.hub",
+      "write:protect.light",
+      "write:protect.linkstation",
+      "write:protect.location",
+      "write:protect.locationGroup",
+      "write:protect.nvr",
+      "write:protect.phoneNumber",
+      "write:protect.reader",
+      "write:protect.relay",
+      "write:protect.schedule",
+      "write:protect.sensor",
+      "write:protect.sipCallerAccount",
+      "write:protect.sipRecipient",
+      "write:protect.sipServer",
+      "write:protect.siren",
+      "write:protect.speaker",
+      "write:protect.unlockSchedule",
+      "write:protect.user",
+      "write:protect.user:$",
+      "write:protect.viewer"
+    ],
+    "cloud_access_granted": true,
+    "only_local_account": false,
+    "update_time": 1790723877,
+    "avatar": "https://example.invalid/redacted/6",
+    "nfc_token": "",
+    "nfc_display_id": "",
+    "nfc_card_type": "",
+    "nfc_card_status": "",
+    "org_user_id": "",
+    "org_role": "",
+    "role": "owner",
+    "roleId": "56e4354b-1938-4bd0-8d6c-d7e983975f08",
+    "id": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+    "isOwner": true,
+    "isSuperAdmin": true,
+    "isMember": false,
+    "maskedEmail": "ni************@icloud.com",
+    "accessMask": 106462,
+    "permissionMask": 16382
+  },
+  "portStatus": [
+    {
+      "type": "LAN",
+      "id": "eth0",
+      "mac": "02:b2:5b:51:a7:fd",
+      "enabled": true,
+      "plugged": false,
+      "labelNumber": 1
+    },
+    {
+      "type": "LAN",
+      "id": "eth1",
+      "mac": "02:fa:9e:c5:0d:bd",
+      "enabled": true,
+      "plugged": false,
+      "labelNumber": 2
+    },
+    {
+      "type": "LAN",
+      "id": "eth10",
+      "mac": "02:c6:fd:bc:85:d6",
+      "enabled": true,
+      "plugged": true,
+      "labelNumber": 11
+    },
+    {
+      "type": "LAN",
+      "id": "eth2",
+      "mac": "02:6e:37:75:24:be",
+      "enabled": true,
+      "plugged": false,
+      "labelNumber": 3
+    },
+    {
+      "type": "LAN",
+      "id": "eth3",
+      "mac": "02:77:13:f3:97:15",
+      "enabled": true,
+      "plugged": false,
+      "labelNumber": 4
+    },
+    {
+      "type": "LAN",
+      "id": "eth4",
+      "mac": "02:ba:0d:94:d5:9d",
+      "enabled": true,
+      "plugged": false,
+      "labelNumber": 5
+    },
+    {
+      "type": "LAN",
+      "id": "eth5",
+      "mac": "02:d2:83:a0:64:e8",
+      "enabled": true,
+      "plugged": false,
+      "labelNumber": 6
+    },
+    {
+      "type": "LAN",
+      "id": "eth6",
+      "mac": "02:7c:75:ae:72:6b",
+      "enabled": true,
+      "plugged": false,
+      "labelNumber": 7
+    },
+    {
+      "type": "LAN",
+      "id": "eth7",
+      "mac": "02:8b:26:ff:9e:5f",
+      "enabled": true,
+      "plugged": false,
+      "labelNumber": 8
+    },
+    {
+      "type": "WAN2",
+      "id": "eth8",
+      "mac": "02:de:99:a7:ea:3d",
+      "enabled": true,
+      "plugged": false,
+      "labelNumber": 9
+    },
+    {
+      "type": "WAN",
+      "id": "eth9",
+      "mac": "02:c1:26:ec:70:91",
+      "enabled": true,
+      "plugged": true,
+      "labelNumber": 10
+    }
+  ],
+  "ports": {
+    "https": 443,
+    "grpc": 11051,
+    "ipc": 11081,
+    "stackable": 11082,
+    "consoleGroup": 11083,
+    "supervisor": 11084
+  },
+  "storage": [
+    {
+      "id": 0,
+      "type": "raid",
+      "mounted": true,
+      "mountPoint": "/volume/3afc8cbe-9783-459b-80cf-363a9cb968c9",
+      "size": 3959417290752,
+      "used": 3901553385472,
+      "avail": 441134960226
+    },
+    {
+      "id": 1,
+      "type": "emmc",
+      "mounted": true,
+      "mountPoint": "/",
+      "size": 13165550139,
+      "used": 3962912768,
+      "avail": 8065550175
+    }
+  ],
+  "ucore_version": "5.1.132",
+  "updateSchedule": null,
+  "uptime": 1592224.44,
+  "wans": [
+    {
+      "interface": "eth8",
+      "plugged": false,
+      "enabled": true,
+      "type": "WAN2",
+      "port": 9,
+      "mac": "02:de:99:a7:ea:3d",
+      "speedType": "GbE"
+    },
+    {
+      "interface": "eth9",
+      "ipv4": "203.0.113.2",
+      "ipv6": "fe80::f692:bfff:fe9b:5ff5",
+      "plugged": true,
+      "enabled": true,
+      "type": "WAN",
+      "port": 10,
+      "mac": "02:c1:26:ec:70:91",
+      "speedType": "10G SFP+"
+    }
+  ],
+  "ispInfo": {
+    "name": "Emerson Sutton 60",
+    "country": "United Kingdom",
+    "city": "Exampleton"
+  },
+  "cpu": {
+    "model": "unknown",
+    "currentload": 0.146,
+    "temperature": 47.2
+  },
+  "sfpAggregation": false,
+  "wakeOnLan": false,
+  "isLutronSystemDetected": false,
+  "sfpWanPorts": [
+    {
+      "associatedIfaceId": "eth9",
+      "portIdx": 10,
+      "autoNego": true,
+      "linkSpeed": "10000 FDX",
+      "linkSpeedSupportedValues": [
+        "autoneg",
+        "10000 FDX",
+        "1000 FDX"
+      ]
+    }
+  ],
+  "sfpWanPort": {
+    "associatedIfaceId": "eth9",
+    "portIdx": 10,
+    "autoNego": true,
+    "linkSpeed": "10000 FDX",
+    "linkSpeedSupportedValues": [
+      "autoneg",
+      "10000 FDX",
+      "1000 FDX"
+    ]
+  },
+  "cloudSystemLogState": "disabled",
+  "hasInternet": true,
+  "publicIp": "203.0.113.2",
+  "isStacked": false,
+  "releaseChannel": "release-candidate",
+  "channels": [
+    "release",
+    "release-candidate",
+    "beta"
+  ]
+}

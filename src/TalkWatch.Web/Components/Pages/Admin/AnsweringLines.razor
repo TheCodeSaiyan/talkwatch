@@ -1,0 +1,142 @@
+@page "/admin/answering-lines"
+@page "/admin/outside-voicemail"
+@* Outside contacts ticked as answering lines: an assistant or answering service a forward may reach, whose voicemail
+   Talk logs as an answered call. Calls they take are read against their greeting phrases once Talk's transcript
+   arrives; the counts say how that is going. For those who manage alerts, since it changes what alerts fire. *@
+@attribute [Authorize(Policy = "permission:alerts")]
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Core.Calls
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject TalkWatchDbContext Db
+@inject LineDirectorySync Directory
+@inject TimeProvider Clock
+
+<PageTitle>Outside voicemail · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <a class="back" href="/admin/alerts"><Icon Name="left" Size="s" /> Alert channels</a>
+        <h1>Outside voicemail</h1>
+        <div class="sub">Calls forwarded to an outside number, such as an assistant's mobile or an answering service: Talk logs them as answered even when that
+            number's voicemail took the call. Tick the contact the forward goes to, and give phrases from its voicemail greeting: each call it answers is read
+            against them once its transcript arrives, and becomes voicemail (or missed, if the caller hung up at the greeting) when they match.</div>
+    </div>
+</header>
+
+@if (!string.IsNullOrEmpty(Msg))
+{
+    <p class="notice" role="status">@Msg</p>
+}
+
+@if (!_admin)
+{
+    <p class="empty">Outside voicemail is set up by those who manage alerts.</p>
+}
+else if (_contacts.Count == 0)
+{
+    <p class="empty">Talk holds no contacts yet.</p>
+}
+else
+{
+    <div class="stack" style="gap: 12px">
+        @foreach (var contact in _contacts)
+        {
+            var id = contact.Id.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var line = _lines.GetValueOrDefault(id);
+            var stats = _stats.GetValueOrDefault(id);
+            <details class="plane" id="contact-@id" open="@(line is not null || Open == id)" data-answering-line="@id" data-ticked="@(line is not null ? "yes" : "no")">
+                <summary class="plane-head" style="cursor: pointer">
+                    <div class="row" style="gap: 10px; flex-wrap: wrap">
+                        <h2>@contact.DisplayName</h2>
+                        @foreach (var number in contact.PhoneNumbers ?? [])
+                        {
+                            <span class="mono muted" style="font-size: 12px">@number.Did</span>
+                        }
+                    </div>
+                    <div class="end">
+                        @if (line is not null)
+                        {
+                            <span class="tag ok">Checked</span>
+                        }
+                    </div>
+                </summary>
+                @if (line is not null)
+                {
+                    <p class="hint plane-body" style="margin: 0" data-answering-stats>In the last 30 days: answered @stats.Answered call@(stats.Answered == 1 ? "" : "s");
+                        @stats.Voicemail went to its voicemail, @stats.Missed hung up at its greeting; @stats.Unchecked not checked, for want of a transcript.</p>
+                }
+                <form method="post" action="/admin/alerts/answering-lines" class="plane-body stack" style="gap: 10px">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ContactId" value="@id" />
+                    <label class="row" style="gap: 6px"><input type="checkbox" name="Ticked" value="true" checked="@(line is not null)" /> Check the calls it answers</label>
+                    <label class="field"><span class="label">Greeting phrases, one to a line</span>
+                        <textarea class="input" name="Phrases" rows="3" placeholder="is not available&#10;leave a message after the tone">@line?.Phrases</textarea>
+                    </label>
+                    <p class="hint" style="margin: 0">Words from what the provider says when it answers. Case and punctuation do not matter, and a word or two may come between.
+                        If the caller says a few words after the greeting, a message was left; if not, they hung up at it.</p>
+                    <div class="row"><button type="submit" class="btn sm">Save</button></div>
+                </form>
+                @if (line is not null)
+                {
+                    <form method="post" action="/admin/alerts/answering-lines/reprocess" class="plane-body row" style="gap: 10px; align-items: center; border-top: 1px solid var(--line)">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="ContactId" value="@id" />
+                        <button type="submit" class="btn ghost sm">Reprocess its calls</button>
+                        <span class="hint" style="margin: 0">Reads every call it has answered again, against the phrases as saved: new phrases can make past calls voicemail, and
+                            ones taken away can make them answered again. Calls set by hand are left alone; only calls from the last day raise alerts.</span>
+                    </form>
+                }
+            </details>
+        }
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery] public string? Msg { get; set; }
+
+    // A contact to show open, coming from a call it answered.
+    [SupplyParameterFromQuery] public string? Open { get; set; }
+
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    private readonly record struct Counts(int Answered, int Voicemail, int Missed, int Unchecked);
+
+    private bool _admin;
+    private List<TalkWatch.Core.Talk.TalkContact> _contacts = [];
+    private Dictionary<string, AnsweringLine> _lines = [];
+    private Dictionary<string, Counts> _stats = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _admin = HttpContext.User.Can(Permission.ManageAlerts);
+        if (!_admin)
+        {
+            return;
+        }
+
+        _lines = await Db.AnsweringLines.AsNoTracking().ToDictionaryAsync(a => a.ContactId);
+        // Ticked ones first, then everyone else by name.
+        _contacts = [.. Directory.Current.Contacts
+            .OrderByDescending(c => _lines.ContainsKey(c.Id.ToString(System.Globalization.CultureInfo.InvariantCulture)))
+            .ThenBy(c => c.DisplayName, StringComparer.OrdinalIgnoreCase)];
+
+        var ticked = _lines.Keys.ToList();
+        var since = Clock.GetUtcNow().AddDays(-30);
+        var rows = await (
+                from l in Db.CallLines
+                join c in Db.Calls on l.CallId equals c.Id
+                where l.Kind == LineKind.Contact && ticked.Contains(l.Key) && c.Direction == "in" && c.Time >= since
+                select new
+                {
+                    l.Key, c.Outcome,
+                    Checked = Db.CallFindings.Any(f => f.CallId == c.Id) || Db.CallTranscripts.IgnoreQueryFilters().Any(t => t.CallId == c.Id),
+                })
+            .ToListAsync();
+        _stats = rows.GroupBy(r => r.Key).ToDictionary(g => g.Key, g => new Counts(
+            g.Count(),
+            g.Count(r => r.Outcome == CallOutcome.OutsideVoicemail),
+            g.Count(r => r.Outcome == CallOutcome.OutsideMissed),
+            g.Count(r => r.Outcome == CallOutcome.Answered && !r.Checked)));
+    }
+}

@@ -1,0 +1,309 @@
+@page "/admin/users/{Id:guid}"
+@attribute [Authorize(Policy = "permission:ManagePeople")]
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject UserManager<AppUser> Users
+@inject RoleManager<IdentityRole<Guid>> RoleStore
+@inject CurrentSite Site
+@inject TalkWatchDbContext Db
+@inject NavigationManager Navigation
+@inject LineDirectorySync Directory
+
+<PageTitle>@_user?.UserName · TalkWatch</PageTitle>
+
+@if (_user is null)
+{
+    <header class="head"><div class="title"><a class="back" href="/admin/users"><Icon Name="left" Size="s" /> People</a><h1>Not found</h1></div></header>
+    <div class="plane"><div class="empty" data-kind="none" style="padding: 24px 16px"><b>Nobody here by that id.</b><p class="why"><a href="/admin/users">Back to people</a></p></div></div>
+}
+else
+{
+    var locked = _user.LockoutEnd > DateTimeOffset.UtcNow;
+    <header class="head">
+        <div class="title">
+            <a class="back" href="/admin/users"><Icon Name="left" Size="s" /> People</a>
+            <h1 class="row" style="gap: 12px"><span class="avatar">@Initials(_user.UserName)</span>@_user.UserName</h1>
+            <div class="sub row" style="gap: 8px; flex-wrap: wrap">
+                <span class="tag">@(_role ?? "No role")</span>
+                @if (locked)
+                {
+                    <span class="tag warn">Locked</span>
+                }
+                else
+                {
+                    <span class="tag ok">Active</span>
+                }
+                <span data-two-factor="@(_user.TwoFactorEnabled ? "on" : "off")">Two-factor sign-in is @(_user.TwoFactorEnabled ? "on" : "off").</span>
+                <span data-signs-in="@(_provider ?? "password")">@(_provider is null ? "Signs in with a TalkWatch password." : $"Signs in with {_provider}.")</span>
+            </div>
+        </div>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Msg))
+    {
+        <p class="notice" role="status">@Msg</p>
+    }
+
+    <div class="split">
+        <section class="plane" aria-label="Lines">
+            <div class="plane-head"><h2>Lines</h2></div>
+            <div class="plane-body stack" style="gap: 12px">
+                <p class="hint" style="margin: 0" data-role-permissions>@(_role ?? "Their role") allows: @(_rolePermissions == Permission.None ? "nothing beyond the lines below" : string.Join("; ", Permissions.Each.Where(p => (_rolePermissions & p) == p).Select(Permissions.Describe))).
+                    @if ((_rolePermissions & Permission.AllCalls) == Permission.AllCalls)
+                    {
+                        <text>They see every line, so the grants below make no difference to which calls they see.</text>
+                    }
+                </p>
+            </div>
+
+            @if (_grants.Count == 0)
+            {
+                @if ((_rolePermissions & Permission.AllCalls) == Permission.AllCalls)
+                {
+                    <div class="empty" data-kind="none" style="padding: 8px 16px 16px"><b>No lines granted, and none needed.</b><p class="why">Their role sees every line.</p></div>
+                }
+                else
+                {
+                    <div class="empty" data-kind="none" style="padding: 8px 16px 16px"><b>No lines granted.</b><p class="why">They see no calls until you grant a line below.</p></div>
+                }
+            }
+            else
+            {
+                <div class="grid-wrap">
+                    <table class="dg grants">
+                        <thead><tr><th class="first">Line</th><th>Kind</th><th>Recordings</th><th>Voicemail</th><th>Transcripts</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var grant in _grants)
+                            {
+                                var form = $"grant-{grant.Id:N}";
+                                <tr data-grant="@grant.Id" data-by-groups="@grant.ByGroups">
+                                    <td class="first">@Name(grant)</td>
+                                    <td class="muted">@KindName(grant.Kind)</td>
+                                    <td><input type="checkbox" form="@form" name="AllowRecordings" value="true" checked="@grant.AllowRecordings" disabled="@grant.ByGroups" aria-label="Recordings" /></td>
+                                    <td><input type="checkbox" form="@form" name="AllowVoicemail" value="true" checked="@grant.AllowVoicemail" disabled="@grant.ByGroups" aria-label="Voicemail" /></td>
+                                    <td><input type="checkbox" form="@form" name="AllowTranscripts" value="true" checked="@grant.AllowTranscripts" disabled="@grant.ByGroups" aria-label="Transcripts" /></td>
+                                    <td class="r">
+                                        @if (grant.ByGroups)
+                                        {
+                                            @* Kept in step with their groups at each sign-in: changed on the group mappings page, not here. *@
+                                            <span class="hint">From group @grant.Groups (<a href="/admin/groups">mappings</a>)</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="row" style="gap: 4px; justify-content: flex-end">
+                                                <form id="@form" method="post" action="/admin/users/@Id/grants/@grant.Id"><AntiforgeryToken /><button type="submit" class="btn ghost sm">Save</button></form>
+                                                <form method="post" action="/admin/users/@Id/grants/@grant.Id/delete"><AntiforgeryToken /><button type="submit" class="btn ghost sm danger">Remove</button></form>
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <form method="post" action="/admin/users/@Id/grants" class="add-grant plane-body stack" style="gap: 10px; border-top: 1px solid var(--line)">
+                <AntiforgeryToken />
+                <span class="eyebrow">Grant a line</span>
+                <label class="field"><span class="label">Line</span>
+                    <select class="input" name="Line" required>
+                        @foreach (var group in _lines.GroupBy(l => l.Kind))
+                        {
+                            <optgroup label="@KindName(group.Key)">
+                                @foreach (var line in group)
+                                {
+                                    <option value="@($"{line.Kind}:{line.Key}")">@line.Name@(line.Ext is { Length: > 0 } ext ? $" ({ext})" : "")@(line.Present ? "" : " (no longer on the console)")</option>
+                                }
+                            </optgroup>
+                        }
+                    </select>
+                </label>
+                <div class="row" style="gap: 14px; flex-wrap: wrap">
+                    <label class="row" style="gap: 6px"><input type="checkbox" name="AllowRecordings" value="true" /> Recordings</label>
+                    <label class="row" style="gap: 6px"><input type="checkbox" name="AllowVoicemail" value="true" /> Voicemail</label>
+                    <label class="row" style="gap: 6px"><input type="checkbox" name="AllowTranscripts" value="true" /> Transcripts</label>
+                    <button type="submit" class="btn sm primary" style="margin-left: auto">Grant</button>
+                </div>
+                <p class="hint" style="margin: 0">A line covers every call that went through it. The boxes each open one more kind of content on those calls.</p>
+            </form>
+        </section>
+
+        <div class="stack" style="gap: 16px">
+            <section class="plane account" aria-label="Account">
+                <div class="plane-head"><h2>Account</h2></div>
+                <div class="plane-body stack" style="gap: 14px">
+                    @* Where reports and email alerts for them go. *@
+                    <form method="post" action="/admin/users/@Id/email" class="stack" style="gap: 6px" data-email="@_user.Email">
+                        <AntiforgeryToken />
+                        <div class="row" style="gap: 8px; align-items: flex-end">
+                            <label class="field" style="flex: 1"><span class="label">Email</span><input class="input" name="Email" type="email" value="@_user.Email" placeholder="No email address" /></label>
+                            <button type="submit" class="btn sm">Save email</button>
+                        </div>
+                        <p class="hint" style="margin: 0">@(_provider is null
+                            ? "Their account email, and where their reports go unless a reporting address is set."
+                            : $"Their account email, and where their reports go unless a reporting address is set. {_provider} gives it again at each sign-in, so a change made there arrives when they next sign in, and one made here lasts until then.")</p>
+                    </form>
+
+                    @* Where their reports go, when not to their email. A sign-in never changes it. *@
+                    <form method="post" action="/admin/users/@Id/report-email" class="stack" style="gap: 6px" data-report-email="@_user.ReportEmail">
+                        <AntiforgeryToken />
+                        <div class="row" style="gap: 8px; align-items: flex-end">
+                            <label class="field" style="flex: 1"><span class="label">Reporting address</span><input class="input" name="ReportEmail" type="email" value="@_user.ReportEmail" placeholder="@(_user.Email ?? "No email address")" /></label>
+                            <button type="submit" class="btn sm">Save reporting address</button>
+                        </div>
+                        <p class="hint" style="margin: 0">@(string.IsNullOrWhiteSpace(_user.ReportEmail)
+                            ? "Where their reports go. Empty, they go to their email."
+                            : $"Their reports go here, not to their email. {(_provider is null ? "" : $"{_provider} never changes it. ")}Empty it to send them to their email again.")</p>
+                    </form>
+
+                    <form method="post" action="/admin/users/@Id/role" class="row" style="gap: 8px; align-items: flex-end">
+                        <AntiforgeryToken />
+                        <label class="field" style="flex: 1"><span class="label">Role</span>
+                            <select class="input" name="Role">
+                                @foreach (var role in _roles)
+                                {
+                                    <option value="@role" selected="@(role == _role)">@role</option>
+                                }
+                            </select>
+                        </label>
+                        <button type="submit" class="btn sm">Set role</button>
+                    </form>
+
+                    @* Which Talk user this person is: what lets a flow's "whoever is free in a ring group" reach them. *@
+                    <form method="post" action="/admin/users/@Id/talk-user" data-talk-user="@_user.TalkUserUuid" class="row" style="gap: 8px; align-items: flex-end">
+                        <AntiforgeryToken />
+                        <label class="field" style="flex: 1"><span class="label">On the phone system</span>
+                            <select class="input" name="TalkUser">
+                                <option value="">Not a Talk user</option>
+                                @foreach (var line in _lines.Where(l => l.Kind == TalkWatch.Core.Calls.LineKind.User))
+                                {
+                                    <option value="@line.Key" selected="@(line.Key == _user.TalkUserUuid)">@line.Name@(line.Ext is { Length: > 0 } ext ? $" ({ext})" : "")</option>
+                                }
+                            </select>
+                        </label>
+                        <button type="submit" class="btn sm">Link</button>
+                    </form>
+
+                    @* Which outside phones they carry: what lets a flow tell them who is calling while Talk puts a call through to one. *@
+                    @if (_contacts.Count > 0)
+                    {
+                        <form method="post" action="/admin/users/@Id/outside-contacts" data-outside-contacts="@_carries.Count" class="stack" style="gap: 8px">
+                            <AntiforgeryToken />
+                            <fieldset class="row" style="gap: 6px 16px; flex-wrap: wrap; border: 0; padding: 0; margin: 0">
+                                <legend class="label" style="margin-bottom: 6px">Carries the outside phone of</legend>
+                                @foreach (var contact in _contacts)
+                                {
+                                    <label class="row" style="gap: 6px"><input type="checkbox" name="Contacts" value="@contact.Uuid" checked="@_carries.Contains(contact.Uuid!)" /> @contact.DisplayName</label>
+                                }
+                            </fieldset>
+                            <div class="row" style="gap: 8px; align-items: center">
+                                <button type="submit" class="btn sm">Save</button>
+                                <a class="hint" href="/admin/outside-phones">Every outside phone and who carries it</a>
+                            </div>
+                        </form>
+                    }
+
+                    <form method="post" action="/admin/users/@Id/password" class="row" style="gap: 8px; align-items: flex-end">
+                        <AntiforgeryToken />
+                        <label class="field" style="flex: 1"><span class="label">New password</span><input class="input" name="Password" type="password" minlength="12" required autocomplete="new-password" /></label>
+                        <button type="submit" class="btn sm">Set password</button>
+                    </form>
+
+                    <div class="row" style="gap: 8px; flex-wrap: wrap">
+                        @if (_user.TwoFactorEnabled)
+                        {
+                            <form method="post" action="/admin/users/@Id/two-factor/reset"><AntiforgeryToken /><button type="submit" class="btn ghost sm">Turn off two-factor sign-in</button></form>
+                        }
+                        @if (locked)
+                        {
+                            <form method="post" action="/admin/users/@Id/unlock"><AntiforgeryToken /><button type="submit" class="btn ghost sm">Unlock</button></form>
+                        }
+                        else
+                        {
+                            <form method="post" action="/admin/users/@Id/lock"><AntiforgeryToken /><button type="submit" class="btn ghost sm danger">Lock</button></form>
+                        }
+                    </div>
+                </div>
+            </section>
+
+            @if (_tokens.Count > 0)
+            {
+                <section class="plane" aria-label="API tokens">
+                    <div class="plane-head"><h2>API tokens</h2></div>
+                    <ul class="tokens rows">
+                        @foreach (var token in _tokens)
+                        {
+                            <li data-token="@token.Id">
+                                <span class="stack" style="gap: 2px; flex: 1"><b style="font-weight: 500">@token.Name</b><span class="muted" style="font-size: 12px">last used @(token.LastUsedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "never")</span></span>
+                                <form method="post" action="/admin/users/@Id/tokens/@token.Id/revoke"><AntiforgeryToken /><button type="submit" class="btn ghost sm danger">Revoke</button></form>
+                            </li>
+                        }
+                    </ul>
+                </section>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private List<string> _roles = [];
+    private Permission _rolePermissions;
+
+    [Parameter] public Guid Id { get; set; }
+
+    [SupplyParameterFromQuery(Name = "msg")] private string? Msg { get; set; }
+
+    private AppUser? _user;
+    private string? _role;
+    private List<Grant> _grants = [];
+    private List<ApiToken> _tokens = [];
+
+    // The single sign-on provider they sign in with, by its name; null for a TalkWatch password.
+    private string? _provider;
+    private List<LineRecord> _lines = [];
+    private Dictionary<(TalkWatch.Core.Calls.LineKind, string), string> _names = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = await Users.Users.SingleOrDefaultAsync(u => u.Id == Id && u.SiteId == Site.Id);
+        if (_user is null)
+        {
+            return;
+        }
+
+        _role = (await Users.GetRolesAsync(_user)).FirstOrDefault();
+        _provider = (await Users.GetLoginsAsync(_user)).Select(l => l.ProviderDisplayName ?? l.LoginProvider).FirstOrDefault();
+        _roles = [.. Roles.BuiltIn, .. RoleStore.Roles.Select(r => r.Name!).AsEnumerable().Where(n => !Roles.BuiltIn.Contains(n)).Order()];
+        _rolePermissions = _role is not null && await RoleStore.FindByNameAsync(_role) is { } held ? await RolePermissions.GetAsync(RoleStore, held) : Permission.None;
+
+        // The signed-in admin's scope sees every grant and every line in the site.
+        _grants = await Db.Grants.AsNoTracking().Where(g => g.UserId == Id).OrderBy(g => g.Kind).ThenBy(g => g.Key).ToListAsync();
+        _lines = await Db.Lines.AsNoTracking().OrderBy(l => l.Kind).ThenBy(l => l.Name).ToListAsync();
+        _tokens = await Db.ApiTokens.AsNoTracking().Where(t => t.UserId == Id).OrderBy(t => t.CreatedAt).ToListAsync();
+        _names = _lines.ToDictionary(l => (l.Kind, l.Key), l => l.Name);
+        _contacts = [.. Directory.Current.Contacts.Where(c => c.Uuid is { Length: > 0 }).DistinctBy(c => c.Uuid).OrderBy(c => c.DisplayName, StringComparer.OrdinalIgnoreCase)];
+        _carries = (await Db.ContactLinks.AsNoTracking().Where(l => l.UserId == Id).Select(l => l.ContactUuid).ToListAsync()).ToHashSet(StringComparer.Ordinal);
+    }
+
+    // Talk's outside contacts, and those this person carries the phone of.
+    private List<TalkWatch.Core.Talk.TalkContact> _contacts = [];
+    private HashSet<string> _carries = [];
+
+    private static string Initials(string? name) =>
+        string.Concat((name ?? "?").Split(['.', ' ', '-', '_'], StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpperInvariant(p[0])));
+
+    private string Name(Grant grant) => _names.GetValueOrDefault((grant.Kind, grant.Key), grant.Key);
+
+    private static string KindName(TalkWatch.Core.Calls.LineKind kind) => kind switch
+    {
+        TalkWatch.Core.Calls.LineKind.Did => "Numbers",
+        TalkWatch.Core.Calls.LineKind.User => "People (extensions)",
+        TalkWatch.Core.Calls.LineKind.RingGroup => "Ring groups",
+        TalkWatch.Core.Calls.LineKind.Attendant => "Switchboards",
+        TalkWatch.Core.Calls.LineKind.Queue => "Queues",
+        _ => "Contacts",
+    };
+}

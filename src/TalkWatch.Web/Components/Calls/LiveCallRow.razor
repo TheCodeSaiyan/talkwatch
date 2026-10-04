@@ -1,0 +1,38 @@
+@* One call on a live board: who, its route as it happens, its state in words and a duration the browser keeps
+   ticking. A call that has just ended keeps its row a moment, faded, with how it ended. *@
+
+<div class="lc@(Call.Live ? "" : " ended")" data-s="@Call.State" role="listitem" data-live-call="@Call.Call.TalkUuid">
+    <span class="dir" data-d="@CallMarks.DirectionKey(Call.Call.Direction)" title="@CallMarks.Direction(Call.Call.Direction)"><Icon Name="@CallMarks.DirectionKey(Call.Call.Direction)" /></span>
+    <a class="who" href="/calls/@Call.Call.TalkUuid" style="text-decoration: none; color: inherit"><b>@Call.Who</b><span class="n">@Call.Number</span></a>
+    <RouteTrace Chronicle="Call.Chronicle" Last="@Last" />
+    <span class="stcol">
+        @if (Call.Live)
+        {
+            <span class="st" data-s="@LiveCalls.Mark(Call.State)"><i></i>@LiveCalls.Words(Call.State)</span>
+        }
+        else
+        {
+            <span class="oc" data-o="@CallMarks.Key(Call.Call.Outcome)"><Icon Name="@CallMarks.Icon(Call.Call.Outcome)" />@CallMarks.Words(Call.Call.Outcome)</span>
+        }
+    </span>
+    <span class="dur">
+        @if (Call.Live)
+        {
+            <span class="num" data-since="@Call.Since.ToUnixTimeMilliseconds()">@CallMarks.Duration(Now - Call.Since)</span>
+        }
+        else
+        {
+            <span class="num muted">@CallMarks.Duration(TimeSpan.FromSeconds(Call.Call.DurationSeconds))</span>
+        }
+    </span>
+    <span class="acts"></span>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public LiveCall Call { get; set; } = default!;
+
+    [Parameter, EditorRequired] public DateTimeOffset Now { get; set; }
+
+    /// <summary>Most recent route hops only, for a narrow column; 0 shows the whole route.</summary>
+    [Parameter] public int Last { get; set; }
+}

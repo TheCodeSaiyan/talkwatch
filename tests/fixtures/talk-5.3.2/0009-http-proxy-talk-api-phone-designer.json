@@ -1,0 +1,81 @@
+[
+  {
+    "id": 1,
+    "data": {
+      "theme": "dark",
+      "title": "Title 1",
+      "ringtone": {
+        "type": "standard",
+        "title": "Title 2"
+      },
+      "settings": [
+        "lockscreen",
+        "update",
+        "advanced"
+      ],
+      "time_24h": true,
+      "quick_tiles": [
+        {
+          "mac": "E438830D90F2",
+          "name": "Frankie39",
+          "type": "camera",
+          "entityId": "64f4e01514960192e4000410",
+          "cameraRtspUrl": "redacted-1",
+          "cameraRtspUrlMedium": "redacted-2"
+        },
+        {
+          "name": "Jordan Baker 27",
+          "type": "paging",
+          "entityId": "424b4f0d-662b-4e2e-aa16-182661c912b5"
+        },
+        {
+          "mac": "847848B2D917",
+          "name": "Avery Price 40",
+          "type": "camera",
+          "entityId": "685bc990001c1003e423e3ab",
+          "consoleMac": null,
+          "cameraRtspUrl": "redacted-3",
+          "cameraRtspUrlMedium": "redacted-4"
+        },
+        {
+          "mac": "74ACB90B1A37",
+          "name": "Avery41",
+          "type": "camera",
+          "entityId": "64f4e768024f1003e4000411",
+          "consoleMac": null,
+          "cameraRtspUrl": "redacted-5",
+          "cameraRtspUrlMedium": "redacted-6"
+        }
+      ],
+      "applications": [
+        "protect",
+        "uid",
+        "access"
+      ],
+      "call_waiting": true,
+      "auto_text_color": true,
+      "portrait_wallpaper": {
+        "type": "custom",
+        "filename": "a601d3a7-900b-4e0a-b7a6-b42cf15cc83b.jpeg",
+        "orientation": "portrait",
+        "predefined_text_color": "Lorem i",
+        "predefined_text_color_top_bar": "Lorem i"
+      },
+      "landscape_wallpaper": {
+        "type": "custom",
+        "filename": "a601d3a7-900b-4e0a-b7a6-b42cf15cc83b.jpeg",
+        "orientation": "landscape",
+        "predefined_text_color": "Lorem i",
+        "predefined_text_color_top_bar": "Lorem i"
+      },
+      "text_color_portrait": "Lorem i",
+      "text_color_landscape": "Lorem i",
+      "intercom_reject_incoming": false,
+      "text_color_top_bar_portrait": "Lorem i",
+      "text_color_top_bar_landscape": "Lorem i"
+    },
+    "assigned_users": [
+      "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+    ]
+  }
+]

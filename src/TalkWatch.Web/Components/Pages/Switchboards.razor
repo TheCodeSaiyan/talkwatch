@@ -1,0 +1,111 @@
+@page "/switchboard"
+@attribute [Authorize]
+@* Where callers who reach a switchboard go: how many leave during the greeting, and what each menu option leads to.
+   The figures go through the person's access scope, like the dashboard's; switchboard and option names are the site's. *@
+@using TalkWatch.Data
+@inject TalkWatchDbContext Db
+@inject TimeProvider Clock
+
+<PageTitle>Switchboards · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <h1>Switchboards</h1>
+        <div class="sub">Where callers who reach a menu go, and who leaves during the greeting.</div>
+    </div>
+    <div class="tools">
+        <nav class="seg" aria-label="Period">
+            @foreach (var days in new[] { 7, 30, 90 })
+            {
+                <a href="/switchboard?days=@days" aria-pressed="@(days == Period ? "true" : "false")" class="@(days == Period ? "current" : "")">Last @days days</a>
+            }
+        </nav>
+    </div>
+</header>
+
+<p class="hint">Calls that reached a switchboard: how many hung up during its greeting, before choosing anything or being put through, and
+    what became of the rest. A greeting's length is measured from its audio, so changing it in Talk shows here within the hour.</p>
+
+@if (_boards.Count == 0)
+{
+    <div class="plane"><div class="empty" data-kind="none" style="padding: 24px 16px"><b>No calls reached a switchboard in this period.</b><p class="why">Try a longer period, or check that calls come in on a number routed to a menu.</p></div></div>
+}
+
+@foreach (var board in _boards)
+{
+    var passed = board.Calls - board.HungUpInGreeting;
+    <section class="plane switchboard" data-switchboard="@board.InternalId" aria-label="@board.Title">
+        <div class="plane-head">
+            <div class="row" style="gap: 10px"><span class="dir" data-d="int" aria-hidden="true"><Icon Name="attendant" Size="s" /></span><h2>@board.Title</h2>@if (board.Numbers.Count > 0)
+                {
+                    <span class="mono muted" style="font-size: 12px">@string.Join(", ", board.Numbers)</span>
+                }</div>
+            <div class="end"><span class="cap" data-c="talk">Talk's switchboard</span></div>
+        </div>
+        <div class="plane-body stack" style="gap: 14px">
+        @if (board.Calls > 0)
+        {
+            var parts = new (string Css, int Count, string Word)[] { ("b-fail", board.HungUpInGreeting, "hung up in the greeting"), ("b-talk", board.Answered, "answered"), ("b-ring", board.Missed, "missed"), ("b-vm", board.Voicemail, "voicemail") };
+            <div class="band" role="img" aria-label="@string.Join(", ", parts.Where(x => x.Count > 0).Select(x => $"{x.Count} {x.Word}"))" data-switchboard-band>
+                @foreach (var part in parts.Where(x => x.Count > 0))
+                {
+                    <div class="@part.Css" style="flex: @part.Count" title="@part.Count @part.Word">@(part.Count * 8 >= board.Calls ? $"{part.Count} {part.Word}" : "")</div>
+                }
+            </div>
+        }
+        <div class="figures">
+            <div data-figure="reached"><strong>@board.Calls</strong> calls reached it</div>
+            <div data-figure="greeting"><strong>@(board.GreetingSeconds is { } g ? $"{g:0} s" : "–")</strong> greeting</div>
+            <div data-figure="hung-up-in-greeting"><strong>@board.HungUpInGreeting</strong> hung up during the greeting (@Percent(board.HungUpInGreeting, board.Calls))</div>
+            <div data-figure="median-hang-up"><strong>@(board.MedianHangUp is { } m ? $"{m.TotalSeconds:0} s" : "–")</strong> median time before they did</div>
+            <div data-figure="passed"><strong>@passed</strong> got past it: @board.Answered answered, @board.Missed missed, @board.Voicemail voicemail</div>
+        </div>
+        @if (board.HungUpInGreeting > 0)
+        {
+            <p class="hint" data-greeting-detail>
+                @if (board.HungUpBeforeGreetingEnded is { } early)
+                {
+                    <text>@early of the @board.HungUpInGreeting hung up before the greeting had finished. </text>
+                }
+                @board.HungUpRepeatCallers of them had rung before or rang again: people who know the number, not just robocalls.
+            </p>
+        }
+
+        @if (board.HasMenu)
+        {
+            <h3 class="eyebrow">Menu options</h3>
+            <div class="grid-wrap"><table class="dg menu-options">
+                <thead><tr><th>Option</th><th>Calls</th><th>Answered</th><th>Missed</th><th>Voicemail</th><th>Hung up</th></tr></thead>
+                <tbody>
+                    @foreach (var option in board.Options)
+                    {
+                        <tr data-option="@option.Label">
+                            <td>@option.Label</td><td>@option.Calls</td><td>@option.Answered</td><td>@option.Missed</td><td>@option.Voicemail</td><td>@option.HungUp</td>
+                        </tr>
+                    }
+                    @if (board.NoChoice > 0)
+                    {
+                        <tr><td><em>Chose nothing</em></td><td>@board.NoChoice</td><td colspan="4"></td></tr>
+                    }
+                </tbody>
+            </table></div>
+        }
+        </div>
+    </section>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "days")] private int? Days { get; set; }
+
+    private int Period => Days is 7 or 30 or 90 ? Days.Value : 30;
+
+    private IReadOnlyList<SwitchboardStatistics> _boards = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var now = Clock.GetUtcNow();
+        _boards = await SwitchboardStatistics.ComputeAsync(Db, now - TimeSpan.FromDays(Period), now, CancellationToken.None);
+    }
+
+    private static string Percent(int part, int whole) => whole == 0 ? "–" : ((double)part / whole).ToString("P0", System.Globalization.CultureInfo.CurrentCulture);
+}

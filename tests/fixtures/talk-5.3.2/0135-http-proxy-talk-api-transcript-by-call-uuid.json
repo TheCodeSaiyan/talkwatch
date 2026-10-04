@@ -1,0 +1,162 @@
+{
+  "id": "848c67e944c7414785a371eec1eeb8f0",
+  "type": "analytics",
+  "source": "call",
+  "status": "COMPLETED",
+  "context": {
+    "call_sid": "CA0e365e2bf9fba3b974a1372da05acb24",
+    "call_date": "2026-09-17T11:04:05.419Z",
+    "call_uuid": "d84ca438-9c0a-4fd8-a389-95d6c150583e",
+    "caller_name": null,
+    "dialed_name": "Casey45",
+    "call_country": "GB",
+    "call_duration": 50,
+    "caller_number": "+443069990520",
+    "dialed_number": "+441144960042",
+    "call_direction": "in",
+    "call_timestamp": 1789643045419,
+    "answered_by_name": "Charlie Vaughan 11",
+    "caller_entity_id": null,
+    "dialed_entity_id": "sa_45",
+    "answered_by_number": "+447700900210",
+    "answered_by_entity_id": "contact_3"
+  },
+  "analytics": {
+    "lines": [
+      {
+        "line": "Lorem ipsum dolor sit ",
+        "speaker": "Harper46",
+        "line_end_time": 1.789,
+        "line_start_time": 0.529,
+        "line_word_confidence": [0.998,0,0.814,0.999,0
+        ],
+        "line_word_start_time": [0.61,
+          null,1.059,1.46,
+          null
+        ]
+      },
+      {
+        "line": "Lorem ipsum dolor sit ",
+        "speaker": "Harper46",
+        "line_end_time": 6.909,
+        "line_start_time": 5.679,
+        "line_word_confidence": [0.997,0,0.809,0.999,0
+        ],
+        "line_word_start_time": [5.69,
+          null,6.09,6.469,
+          null
+        ]
+      },
+      {
+        "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod",
+        "speaker": "Robin47",
+        "line_end_time": 15.18,
+        "line_start_time": 9.56,
+        "line_word_confidence": [1,0.999,1,1,0,1,0.999,0,0.988,1,1,1,0,1,0.999,0,0.965,0.997,0
+        ],
+        "line_word_start_time": [9.72,9.88,10.329,10.449,
+          null,11.05,11.409,
+          null,12.25,12.449,12.689,12.84,
+          null,13.449,13.779,
+          null,14.649,14.789,
+          null
+        ]
+      }
+    ],
+    "summary": "Lorem ipsum dolor sit amet",
+    "duration": 15,
+    "sentiment": 0,
+    "sentimentClassification": "neutral"
+  },
+  "document": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna a",
+  "vector": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et",
+  "sum_vector": "Lorem ipsum dolor sit amet, ",
+  "updated_at": "2026-09-17T11:07:08.440Z",
+  "created_at": "2026-09-17T11:04:57.795Z",
+  "call_rec": {
+    "uuid": "d84ca438-9c0a-4fd8-a389-95d6c150583e",
+    "from": "+443069990520",
+    "to": "+441144960042",
+    "direction": "in",
+    "status": [
+      "accepted",
+      "ringing",
+      "accepted",
+      "normal_end"
+    ],
+    "time": "2026-09-17T11:04:05.419Z",
+    "duration": 50,
+    "recording": true,
+    "quality_score": 100,
+    "quality_data": null,
+    "from_mac": null,
+    "answered_by_mac": null,
+    "from_id": null,
+    "to_id": null,
+    "to_group_id": null,
+    "from_contact_id": null,
+    "to_contact_id": null,
+    "from_did": null,
+    "twilio_call_sid": "CA0e365e2bf9fba3b974a1372da05acb24",
+    "block_rule_id": null,
+    "vm_data": {},
+    "is_video_call": false,
+    "to_smart_attendant_id": 45,
+    "to_smart_attendant_title": "Title 18",
+    "call_events": [
+      {
+        "time": "2026-09-17T11:04:05.450Z",
+        "event": "call_started",
+        "event_data": {
+          "to": "+441144960042",
+          "from": "+443069990520",
+          "to_smart_attendant_id": 45
+        },
+        "event_uuid": "52b99b3d-6189-4080-a10f-0e9151214bac"
+      },
+      {
+        "time": "2026-09-17T11:04:29.668Z",
+        "event": "seq_call_trying_endpoints",
+        "event_data": {
+          "contact_uuids": [
+            "ac7a4901-2722-4e41-9f20-87f95df72cb2"
+          ]
+        },
+        "event_uuid": "f97db8d4-1f81-4815-815c-9796146a3ebc"
+      },
+      {
+        "time": "2026-09-17T11:04:40.337Z",
+        "event": "call_accepted",
+        "event_data": {
+          "accepted_by": "+447700900210",
+          "accepted_by_contact_id": 3,
+          "accepted_by_contact_uuid": "ac7a4901-2722-4e41-9f20-87f95df72cb2"
+        },
+        "event_uuid": "0f8e51d1-2781-4b75-86f7-78e913251ec0"
+      },
+      {
+        "time": "2026-09-17T11:04:55.535Z",
+        "event": "call_hangup",
+        "event_data": {
+          "hangup_cause": "normal_end"
+        },
+        "event_uuid": "07037567-062f-4f00-ab29-f159ec2e3e17"
+      }
+    ],
+    "answered_by": "+447700900210",
+    "answered_by_user_uuid": null,
+    "answered_by_contact_id": 3,
+    "rung_or_skipped_user_uuids": [],
+    "deleted_for_user_uuids": [],
+    "is_read_by_user_uuids": [],
+    "is_intercom_call": false,
+    "time_unix": "3565550102",
+    "from_caller_name": null,
+    "is_group_intercom_call": false,
+    "answered_by_group_id": null,
+    "country": "GB",
+    "to_user_name": null,
+    "to_queue_id": null,
+    "recording_filename": "20260917_120440_443069990520_-01914980820-01314960734_d84ca4.mp3"
+  }
+}

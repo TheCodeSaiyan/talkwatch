@@ -1,0 +1,257 @@
+@* The Signal Rail's workspaces: every workspace is a word with its live state beneath it, so the way to a view is also
+   the reason to go there. Interactive, so the counts move while the page stays put. Each count is the signed-in
+   person's own: read through their access scope, in a database scope of its own (see ReadAsync). *@
+@implements IDisposable
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Core.Calls
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject IServiceScopeFactory Scopes
+@inject BrowserAlerts Alerts
+@inject LiveStatus Live
+@inject NavigationManager Nav
+@inject TimeProvider Clock
+@inject Microsoft.Extensions.Options.IOptions<SiteOptions> Site
+@inject IServiceProvider Services
+
+<nav class="signals" aria-label="Workspaces" data-activity="@_onCalls">
+    <a class="ws" href="/live" data-key="n" data-tone="live" data-zero="@Zero(_onCalls)" aria-current="@Current("/live")">
+        <span class="wl">Now</span><span class="wn"><b class="num">@_onCalls</b><span>on @(_onCalls == 1 ? "a call" : "calls")</span></span>
+    </a>
+    <a class="ws" href="/operator" data-key="o" data-tone="ok" data-zero="@Zero(_free)" aria-current="@Current("/operator")">
+        <span class="wl">Operator</span><span class="wn"><b class="num">@_free</b><span>free</span></span>
+    </a>
+    <a class="ws" href="/calls" data-key="c" data-tone="bad" data-zero="@Zero(_missedToday)" aria-current="@Current("/calls")">
+        <span class="wl">Calls</span><span class="wn"><b class="num">@_missedToday</b><span>missed today</span></span>
+    </a>
+    <a class="ws" href="/callbacks" data-key="b" data-tone="warn" data-zero="@Zero(_callBacks)" aria-current="@Current("/callbacks")">
+        <span class="wl">Call-backs</span><span class="wn"><b class="num">@_callBacks</b><span>to return</span></span>
+    </a>
+    <a class="ws" href="/alerts/inbox" data-key="l" data-tone="bad" data-zero="@Zero(_unread)" aria-current="@Current("/alerts")"
+       aria-label="@(_unread == 0 ? "Alerts" : $"Alerts: {_unread} unread")">
+        <span class="wl">Alerts</span><span class="wn"><b class="num" data-bell="@_unread">@_unread</b><span>unread</span></span>
+    </a>
+    @if (_canFlows)
+    {
+        <a class="ws" href="/flows" data-key="f" data-tone="ok" data-zero="@Zero(_flowsOn)" aria-current="@Current("/flows")">
+            <span class="wl">Flows</span><span class="wn"><b class="num">@_flowsOn</b><span>on</span></span>
+        </a>
+    }
+    <span class="ws-sep" aria-hidden="true"></span>
+    <a class="ws" href="/dashboard" data-key="a" data-grp="insight" aria-current="@Current("/dashboard")">
+        <span class="wl">Analytics</span><span class="wn"><span>Trends</span></span>
+    </a>
+    <a class="ws" href="/switchboard" data-key="s" data-grp="insight" aria-current="@Current("/switchboard")">
+        <span class="wl">Switchboards</span><span class="wn"><span>Menu hang-ups</span></span>
+    </a>
+    <a class="ws" href="/reports" data-key="r" data-grp="insight" aria-current="@Current("/reports")">
+        <span class="wl">Reports</span><span class="wn"><span>Scheduled</span></span>
+    </a>
+    @if (_configure.Count > 0)
+    {
+        <details class="menu ws ws-menu" aria-current="@(_configure.Any(c => IsHere(c.Href)) ? "page" : null)">
+            <summary><span class="wl">Configure <svg class="ico s" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6 8 10.5 12.5 6"></path></svg></span>
+                <span class="wn">@(_configure.FirstOrDefault(c => IsHere(c.Href))?.Label ?? _configureSummary)</span></summary>
+            <div class="menu-panel" role="menu">
+                @foreach (var item in _configure)
+                {
+                    <a role="menuitem" href="@item.Href">@item.Label</a>
+                }
+            </div>
+        </details>
+    }
+</nav>
+@if (_popup is { } popup)
+{
+    <a class="popup" role="status" href="/alerts/inbox" data-popup><b>@popup.Title</b> @popup.Message</a>
+}
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private sealed record MenuItem(string Label, string Href);
+
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+    private Guid _me;
+    private bool _admin;
+    private HashSet<string> _allowedUsers = [];
+    private List<MenuItem> _configure = [];
+    private string _configureSummary = "";
+    private int _onCalls, _free, _missedToday, _callBacks, _unread;
+    private BrowserAlert? _popup;
+    private CancellationTokenSource? _hide;
+    private Timer? _timer;
+    private bool _canFlows;
+    private int _flowsOn;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = (await AuthenticationState!).User;
+        Guid.TryParse(_user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out _me);
+        _admin = _user.Can(Permission.AllCalls);
+
+        // What roles on numbers allow: their own alerts, and choosing who holds which role on a number.
+        bool numberAlerts, numberPeople;
+        using (var scope = Scopes.CreateScope())
+        {
+            scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UsePrincipal(_user);
+            var db = scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>();
+            numberAlerts = _me != Guid.Empty && await NumberAccess.AnywhereAsync(db, _me, Permission.OwnAlerts);
+            numberPeople = _me != Guid.Empty && await NumberAccess.AnywhereAsync(db, _me, Permission.ManageNumberPeople);
+        }
+
+        // Configuration lives behind one menu, out of the operational rail, and only what this person may open is in it.
+        if (_user.Can(Permission.ManagePeople))
+        {
+            _configure.AddRange([new("People", "/admin/users"), new("Roles", "/admin/roles"), new("Groups", "/admin/groups")]);
+        }
+        if (_user.Can(Permission.ManagePeople) || _user.Can(Permission.ManageNumberPeople) || numberPeople)
+        {
+            _configure.Add(new("Numbers", "/numbers"));
+        }
+        if (_user.Can(Permission.OwnAlerts) || _user.Can(Permission.ManageAlerts) || numberAlerts)
+        {
+            _canFlows = true;
+            _configure.Add(new("Alert channels", "/admin/alerts"));
+        }
+        if (_user.Can(Permission.ManageAlerts))
+        {
+            // Forwards to outside numbers whose voicemail Talk logs as answered: where to say which ones to check.
+            _configure.Add(new("Outside voicemail", "/admin/answering-lines"));
+        }
+        if (_user.Can(Permission.ManagePeople))
+        {
+            // Who carries the mobiles Talk puts calls through to, so a flow can tell them who is calling while it rings.
+            _configure.Add(new("Outside phones", "/admin/outside-phones"));
+        }
+        if (_user.Can(Permission.ManageRetention))
+        {
+            _configure.Add(new("Retention", "/admin/retention"));
+        }
+
+        // The second line says what is behind the menu: "People, roles, groups".
+        // Short, so the rail fits: "People and settings" when there is more than people, else what there is.
+        _configureSummary = _configure.Count == 0 ? "" : _configure.Any(c => c.Label == "People")
+            ? (_configure.Count > 3 ? "People and settings" : "People and roles")
+            : string.Join(", ", _configure.Select(c => c.Label));
+
+        await ReadAsync(latestAlert: false);
+        CountOnCalls();
+
+        Alerts.Arrived += OnAlert;
+        Live.Changed += OnLive;
+        Nav.LocationChanged += OnLocation;
+        // Calls and call-backs change with each poll; a minute keeps the rail honest without a query per event.
+        _timer = new Timer(_ => _ = InvokeAsync(async () => { await ReadAsync(latestAlert: false); StateHasChanged(); }), null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
+    }
+
+    /// <summary>
+    /// In a database scope of its own: while a page renders on the server, the rail runs beside it, and the page's own
+    /// context cannot take a second query at once.
+    /// </summary>
+    private async Task ReadAsync(bool latestAlert)
+    {
+        using var scope = Scopes.CreateScope();
+        scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UsePrincipal(_user);
+        var db = scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>();
+
+        var zone = TimeZoneInfo.FindSystemTimeZoneById(Site.Value.TimeZone);
+        var now = Clock.GetUtcNow();
+        var today = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(TimeZoneInfo.ConvertTime(now, zone).Date, zone), TimeSpan.Zero);
+        _missedToday = await db.Calls.AsNoTracking().CountAsync(c => c.Direction == "in" && CallOutcomes.MissedKinds.Contains(c.Outcome) && c.Time >= today);
+
+        var since = now - TimeSpan.FromDays(Pages.CallBacks.RecentDays);
+        _callBacks = await db.Calls.AsNoTracking().Returnable().Where(c => c.ReturnedAt == null && c.Time >= since).Select(c => c.FromE164).Distinct().CountAsync();
+
+        if (!_admin)
+        {
+            _allowedUsers = (await db.Grants.AsNoTracking().Where(g => g.Kind == LineKind.User).Select(g => g.Key).ToListAsync()).ToHashSet(StringComparer.Ordinal);
+        }
+
+        if (_canFlows)
+        {
+            _flowsOn = await db.AlertFlows.AsNoTracking().CountAsync(f => f.Enabled);
+        }
+
+        if (_me != Guid.Empty)
+        {
+            _unread = await BrowserAlerts.InboxOf(db, _me).CountAsync(a => a.SeenAt == null && a.AcknowledgedAt == null);
+            _popup = latestAlert ? await BrowserAlerts.InboxOf(db, _me).FirstOrDefaultAsync() : _popup;
+        }
+    }
+
+    // People on calls, from the live feed, only those this person's grants cover; admins see the whole site.
+    private void CountOnCalls()
+    {
+        var (users, _) = Live.Snapshot();
+        var visible = users.Where(u => _admin || _allowedUsers.Contains(u.Uuid)).ToList();
+        _onCalls = visible.Count(u => u.OnCall);
+        // A demo has no live feed, so nobody is on a call by it; its calls in progress stand in, so the rail moves.
+        if (Services.GetService<DemoActivity>() is { } demo)
+        {
+            _onCalls = demo.InProgress();
+        }
+        // Free: not on a call, and not set to do not disturb or offline.
+        _free = visible.Count(u => !u.OnCall && u.Presence?.ToLowerInvariant() is not ("dnd" or "do_not_disturb" or "busy" or "offline" or "unavailable"));
+    }
+
+    private void OnLive() => InvokeAsync(() =>
+    {
+        var before = (_onCalls, _free);
+        CountOnCalls();
+        if (before != (_onCalls, _free))
+        {
+            StateHasChanged();
+        }
+    });
+
+    private void OnAlert(Guid userId)
+    {
+        if (userId != _me)
+        {
+            return;
+        }
+
+        _ = InvokeAsync(async () =>
+        {
+            await ReadAsync(latestAlert: true);
+            StateHasChanged();
+
+            // The pop-up stays a few seconds; the rail keeps the count.
+            _hide?.Cancel();
+            _hide = new CancellationTokenSource();
+            var token = _hide.Token;
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(10), token);
+                _popup = null;
+                StateHasChanged();
+            }
+            catch (TaskCanceledException)
+            {
+            }
+        });
+    }
+
+    private void OnLocation(object? sender, LocationChangedEventArgs e) => InvokeAsync(StateHasChanged);
+
+    private bool IsHere(string href)
+    {
+        var path = "/" + Nav.ToBaseRelativePath(Nav.Uri).Split('?', '#')[0];
+        return path == href || path.StartsWith(href + "/", StringComparison.Ordinal);
+    }
+
+    private string? Current(string href) => IsHere(href) ? "page" : null;
+
+    private static bool? Zero(int n) => n == 0 ? true : null;
+
+    public void Dispose()
+    {
+        Alerts.Arrived -= OnAlert;
+        Live.Changed -= OnLive;
+        Nav.LocationChanged -= OnLocation;
+        _timer?.Dispose();
+        _hide?.Cancel();
+        _hide?.Dispose();
+    }
+}

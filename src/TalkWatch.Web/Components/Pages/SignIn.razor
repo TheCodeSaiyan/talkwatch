@@ -1,0 +1,78 @@
+@page "/signin"
+@using Microsoft.Extensions.Options
+@using TalkWatch.Web.Services
+@inject IOptions<OidcOptions> Oidc
+@inject IOptions<DemoOptions> DemoSettings
+
+<PageTitle>Sign in · TalkWatch</PageTitle>
+
+<section class="auth signin" aria-labelledby="signin-title">
+    <div class="auth-brand"><svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6c6 0 8 6 14 6M2 12h14M2 18c6 0 8-6 14-6" fill="none" stroke="var(--live)" stroke-width="1.8" stroke-linecap="round"></path><circle cx="19" cy="12" r="3" fill="var(--fg)"></circle></svg><span>Talk<b>Watch</b></span></div>
+    <h1 id="signin-title">Sign in</h1>
+
+    @if (DemoSettings.Value is { Enabled: true, GuestUsername.Length: > 0 } demo)
+    {
+        @* The guest's password is meant to be read: the data is made up, and the guest can change nothing that matters. *@
+        <div class="demo-guest" data-demo-guest>
+            <span class="eyebrow">Trying the demo?</span>
+            <p style="margin: 0">Sign in as <b class="mono">@demo.GuestUsername</b> with the password <b class="mono">@demo.GuestPassword</b>. Every call, number and recording is made up.</p>
+            <form method="post" action="/account/signin">
+                <AntiforgeryToken />
+                <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+                <input type="hidden" name="Username" value="@demo.GuestUsername" />
+                <input type="hidden" name="Password" value="@demo.GuestPassword" />
+                <button type="submit" class="btn primary" style="width: 100%">Sign in as guest</button>
+            </form>
+        </div>
+        <div class="auth-or"><span>or with your own account</span></div>
+    }
+
+    @if (!string.IsNullOrEmpty(Limited))
+    {
+        <p class="notice problem" role="alert">Too many sign-in attempts from here. Wait a minute and try again.</p>
+    }
+
+    @if (OidcRefusal is { Length: > 0 } refusal)
+    {
+        <p class="notice problem" role="alert">@(refusal switch
+        {
+            "not-allowed" => $"{Oidc.Value.DisplayName} signed you in, but you are not in a group that may use TalkWatch. Ask an admin.",
+            "locked" => "This account is locked. Ask an admin.",
+            "no-username" => $"{Oidc.Value.DisplayName} did not send a username.",
+            _ => $"Signing in with {Oidc.Value.DisplayName} did not work. Try again.",
+        })</p>
+    }
+
+    @if (Failed)
+    {
+        <p class="notice problem" role="alert">Sign-in failed. Check the username and password; after five failures the account is locked for 15 minutes.</p>
+    }
+
+    <form method="post" action="/account/signin" class="stack" style="gap: 12px">
+        <AntiforgeryToken />
+        <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+        <label class="field"><span class="label">Username</span><input class="input" name="Username" autocomplete="username" required autofocus /></label>
+        <label class="field"><span class="label">Password</span><input class="input" name="Password" type="password" autocomplete="current-password" required /></label>
+        <button type="submit" class="btn @(DemoSettings.Value.Enabled ? "" : "primary")">Sign in</button>
+    </form>
+
+    @if (Oidc.Value.Enabled)
+    {
+        <div class="auth-or"><span>or</span></div>
+        <a class="btn" href="/account/signin/oidc?returnUrl=@Uri.EscapeDataString(ReturnUrl ?? AccountEndpoints.Home)" data-enhance-nav="false">Sign in with @Oidc.Value.DisplayName</a>
+    }
+</section>
+
+@code {
+    // A string, not a bool: a typed parameter throws on a value it cannot parse, and a query string is whatever a link
+    // says. The first real deploy showed a 500 here after a failed sign-in.
+    [SupplyParameterFromQuery(Name = "failed")] private string? FailedValue { get; set; }
+
+    private bool Failed => !string.IsNullOrEmpty(FailedValue);
+
+    [SupplyParameterFromQuery] private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "limited")] private string? Limited { get; set; }
+
+    [SupplyParameterFromQuery(Name = "oidc")] private string? OidcRefusal { get; set; }
+}

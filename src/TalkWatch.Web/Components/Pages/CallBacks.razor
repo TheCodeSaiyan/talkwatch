@@ -1,0 +1,221 @@
+@page "/callbacks"
+@attribute [Authorize]
+@* Missed callers still to be got back to, one row per caller. A caller leaves the list when someone rings them back,
+   when a later call from them is answered, or when someone marks them done. Everything here goes through the person's
+   access scope, so it lists only callers who rang lines they are granted. *@
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Core.Calls
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject TalkWatchDbContext Db
+@inject AlertService Alerting
+@inject TimeProvider Clock
+
+<PageTitle>Call-backs · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <h1>Call-backs</h1>
+        <div class="sub">Missed callers nobody has got back to@(All ? "" : $" in the last {RecentDays} days"). Each leaves the list when someone rings them back from
+            any phone on the system, or a later call from them is answered.</div>
+    </div>
+    <div class="tools">
+        @if (!All)
+        {
+            <a class="btn ghost sm" href="/callbacks?all=1">Include older</a>
+        }
+        else
+        {
+            <a class="btn ghost sm" href="/callbacks">Last @RecentDays days only</a>
+        }
+    </div>
+</header>
+
+@if (!string.IsNullOrEmpty(Msg))
+{
+    <p class="notice" role="status">@Msg</p>
+}
+
+<section class="plane" aria-label="Waiting for a call-back">
+    <div class="plane-head">
+        <div class="row" style="gap: 10px"><h2>Waiting</h2><span class="mono muted" style="font-size: 12px">@_open.Count @(_open.Count == 1 ? "caller" : "callers")</span></div>
+        <div class="end"><span class="cap" data-c="derived">Worked out from the call log</span></div>
+    </div>
+    @if (_open.Count == 0)
+    {
+        <div class="empty" data-kind="none" style="padding: 24px 16px" data-callbacks-empty>
+            <b>Nobody to call back.</b>
+            <p class="why">Every missed caller@(All ? "" : $" in the last {RecentDays} days") has been rung back, got through on a later call, or been marked done.</p>
+        </div>
+    }
+    else
+    {
+        <ul class="cb-list callbacks" style="list-style: none; margin: 0; padding: 0">
+            @foreach (var caller in _open)
+            {
+                var waited = _now - caller.Last;
+                var tone = waited.TotalHours >= 24 ? "bad" : waited.TotalHours >= 4 ? "warn" : "live";
+                <li class="cb-row" data-callback="@caller.Number" data-tone="@tone">
+                    <span class="dir" data-d="in" title="Inbound"><Icon Name="missed" /></span>
+                    <div class="who">
+                        <b>@caller.Who</b>
+                        <span class="n">@(caller.Times == 1 ? "Rang once" : $"Rang {caller.Times} times") · @string.Join(", ", caller.Lines)</span>
+                        @if (caller.AssignedTo is { } assigned)
+                        {
+                            <span class="tag" style="align-self: flex-start" data-assigned="@assigned">Assigned to @_people.GetValueOrDefault(assigned, "someone removed")</span>
+                        }
+                    </div>
+                    <div class="cb-voicemail">
+                        @foreach (var audio in caller.Voicemails)
+                        {
+                            <span class="audio"><span class="sr">Voicemail</span><audio controls preload="none" src="/audio/@audio" data-audio="@audio" data-kind="Voicemail" data-label="Voicemail from @caller.Who" data-call-url="/calls/@caller.LatestUuid"></audio></span>
+                        }
+                    </div>
+                    <div class="cb-wait" title="Last rang @Local(caller.Last).ToString("ddd d MMM, HH:mm")">
+                        <span class="num">@Span(waited)</span>
+                        <span class="faint">waiting · last rang @Local(caller.Last).ToString(waited.TotalHours >= 24 ? "ddd HH:mm" : "HH:mm")</span>
+                    </div>
+                    <div class="row cb-actions">
+                        <a class="btn ghost sm" href="/calls/@caller.LatestUuid">Latest call</a>
+                        @* Who returns them, chosen by hand: as a flow's Assign step does. *@
+                        <form method="post" action="/callbacks/assign" class="row cb-assign" style="gap: 4px">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="Number" value="@caller.Number" />
+                            <select class="input sm" name="Person" aria-label="Who returns the call from @caller.Who">
+                                <option value="" selected="@(caller.AssignedTo is null)">Nobody in particular</option>
+                                @foreach (var (id, name) in _everyone)
+                                {
+                                    <option value="@id" selected="@(caller.AssignedTo == id)">@name</option>
+                                }
+                            </select>
+                            <button type="submit" class="btn ghost sm">Assign</button>
+                        </form>
+                        <form method="post" action="/callbacks/done">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="Number" value="@caller.Number" />
+                            <button type="submit" class="btn sm">Mark done</button>
+                        </form>
+                    </div>
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@if (_withheld > 0)
+{
+    <p class="hint">@_withheld missed call@(_withheld == 1 ? "" : "s") from a withheld number can't be returned, so @(_withheld == 1 ? "isn't" : "aren't") listed.</p>
+}
+
+<section class="plane" aria-label="Got back to lately">
+    <div class="plane-head"><h2>Got back to lately</h2><span class="muted" style="font-size: 12px">the last week</span></div>
+    @if (_returned.Count == 0)
+    {
+        <p class="empty" style="padding: 16px">None in the last week.</p>
+    }
+    else
+    {
+        <ul class="cb-done callbacks-done" style="list-style: none; margin: 0; padding: 0">
+            @foreach (var call in _returned)
+            {
+                <li class="cb-row done" data-returned="@call.How">
+                    <span class="oc" data-o="answered"><Icon Name="check" /></span>
+                    <div class="who"><b>@Who(call.CallerName, call.FromRaw)</b><span class="n">Missed @Local(call.Time).ToString("ddd HH:mm")</span></div>
+                    <span>@How(call.How, call.By)</span>
+                    <span class="num muted">after @Span(call.At - call.Time)</span>
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    /// <summary>How far back the list looks by default; the Signal Rail counts the same window.</summary>
+    public const int RecentDays = 30;
+
+    [SupplyParameterFromQuery(Name = "msg")] private string? Msg { get; set; }
+
+    [SupplyParameterFromQuery(Name = "all")] private string? AllText { get; set; }
+
+    private bool All => AllText is "1" or "true";
+
+    // Everyone a call-back can be given to, for the assign menu.
+    private List<KeyValuePair<Guid, string>> _everyone = [];
+
+    private sealed record Caller(string Number, string Who, int Times, DateTimeOffset Last, string LatestUuid, IReadOnlyList<string> Lines, IReadOnlyList<Guid> Voicemails, Guid? AssignedTo);
+
+    // Who a call-back has been given to, by name: only names, so anyone who can see the call-back sees who has it.
+    private Dictionary<Guid, string> _people = [];
+
+    private sealed record Returned(string? CallerName, string? FromRaw, DateTimeOffset Time, DateTimeOffset At, CallBackHow? How, string? By);
+
+    private List<Caller> _open = [];
+    private List<Returned> _returned = [];
+    private int _withheld;
+    private DateTimeOffset _now;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _now = Clock.GetUtcNow();
+        var since = All ? DateTimeOffset.MinValue : (_now - TimeSpan.FromDays(RecentDays)).ToUniversalTime();
+
+        var open = await Db.Calls.AsNoTracking().Returnable()
+            .Where(c => c.ReturnedAt == null && c.Time >= since)
+            .Select(c => new { c.Id, c.TalkUuid, c.FromE164, c.FromRaw, c.CallerName, c.Time, c.ToRaw, c.CallBackAssignedTo, c.CallBackAssignedAt })
+            .ToListAsync();
+        var ids = open.Select(c => c.Id).ToList();
+        // Voicemail this person may hear: the same access scope filters audio, grant flags included.
+        var voicemail = await Db.AudioFiles.AsNoTracking()
+            .Where(a => ids.Contains(a.CallId) && a.Kind == AudioKind.Voicemail && a.State == AudioState.Copied)
+            .Select(a => new { a.Id, a.CallId }).ToListAsync();
+
+        var names = await CallerNames.ForAsync(Db, open.Select(c => c.FromE164));
+        _open = [.. open.GroupBy(c => c.FromE164!)
+            .Select(g =>
+            {
+                var latest = g.MaxBy(c => c.Time)!;
+                var name = g.OrderByDescending(c => c.Time).Select(c => c.CallerName).FirstOrDefault(n => !string.IsNullOrEmpty(n));
+                return new Caller(g.Key, CallerNames.Who(name, latest.FromRaw ?? g.Key, g.Key, names), g.Count(), latest.Time, latest.TalkUuid,
+                    [.. g.Select(c => c.ToRaw).OfType<string>().Distinct()],
+                    [.. voicemail.Where(v => g.Any(c => c.Id == v.CallId)).Select(v => v.Id)],
+                    g.Where(c => c.CallBackAssignedTo is not null).MaxBy(c => c.CallBackAssignedAt)?.CallBackAssignedTo);
+            })
+            .OrderByDescending(c => c.Last)];
+
+        _everyone = await Db.Users.AsNoTracking().OrderBy(u => u.UserName).Select(u => new KeyValuePair<Guid, string>(u.Id, u.UserName ?? "")).ToListAsync();
+        var assignees = _open.Select(c => c.AssignedTo).OfType<Guid>().Distinct().ToList();
+        _people = assignees.Count == 0 ? [] : await Db.Users.AsNoTracking().Where(u => assignees.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.UserName ?? "");
+
+        _withheld = await Db.Calls.CountAsync(c => c.Direction == "in" && CallOutcomes.UnansweredKinds.Contains(c.Outcome)
+            && c.FromE164 == null && c.Time >= since);
+
+        var week = (_now - TimeSpan.FromDays(7)).ToUniversalTime();
+        _returned = await Db.Calls.AsNoTracking().Returnable()
+            .Where(c => c.ReturnedAt != null && c.ReturnedAt >= week)
+            .OrderByDescending(c => c.ReturnedAt).Take(25)
+            .Select(c => new Returned(c.CallerName, c.FromRaw, c.Time, c.ReturnedAt!.Value, c.ReturnedHow, c.ReturnedBy))
+            .ToListAsync();
+    }
+
+    private DateTimeOffset Local(DateTimeOffset at) => TimeZoneInfo.ConvertTime(at, Alerting.Zone);
+
+    private static string Who(string? name, string? number) => name is { Length: > 0 } ? $"{name} ({number})" : number ?? "";
+
+    private string Ago(DateTimeOffset at) => $"{Span(_now - at)} ago";
+
+    private static string Span(TimeSpan span) => span switch
+    {
+        { TotalMinutes: < 1 } => "under a minute",
+        { TotalMinutes: < 60 } => $"{(int)span.TotalMinutes} min",
+        { TotalHours: < 48 } => $"{(int)span.TotalHours} h",
+        _ => $"{(int)span.TotalDays} days",
+    };
+
+    private static string How(CallBackHow? how, string? by) => how switch
+    {
+        CallBackHow.CalledBack => "Called back",
+        CallBackHow.GotThrough => "Got through on a later call",
+        CallBackHow.MarkedDone => $"Marked done by {by}",
+        _ => "",
+    };
+}

@@ -1,0 +1,105 @@
+@page "/admin/outside-phones"
+@* Who carries each of Talk's outside contacts: the mobile a ring group, a switchboard option or an overflow puts calls
+   through to. A flow can then alert those people while the call rings their phone, on their own channels other than
+   email. One phone can be carried by several people, as an on-call mobile passed round is. For those who manage people,
+   as the same links are made on each person's page. *@
+@attribute [Authorize(Policy = "permission:ManagePeople")]
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject TalkWatchDbContext Db
+@inject LineDirectorySync Directory
+
+<PageTitle>Outside phones · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <h1>Outside phones</h1>
+        <div class="sub">Calls Talk puts through to an outside contact, such as a mobile in a ring group or behind a switchboard option. Tick who carries each phone:
+            a flow that notifies <b>whoever it was put through to outside</b> tells them who is calling while it rings, on their own channels other than email.
+            People who may not see the line hear only the caller and the line, nothing more.</div>
+    </div>
+</header>
+
+@if (!string.IsNullOrEmpty(Msg))
+{
+    <p class="notice" role="status">@Msg</p>
+}
+
+@if (_contacts.Count == 0)
+{
+    <p class="empty">Talk holds no contacts yet, or TalkWatch's account may not read them.</p>
+}
+else
+{
+    <div class="stack" style="gap: 12px">
+        @foreach (var contact in _contacts)
+        {
+            var uuid = contact.Uuid!;
+            var carriers = _links.GetValueOrDefault(uuid) ?? [];
+            <details class="plane" id="contact-@uuid" open="@(carriers.Count > 0)" data-outside-phone="@uuid" data-carriers="@carriers.Count">
+                <summary class="plane-head" style="cursor: pointer">
+                    <div class="row" style="gap: 10px; flex-wrap: wrap">
+                        <h2>@contact.DisplayName</h2>
+                        @foreach (var number in contact.PhoneNumbers ?? [])
+                        {
+                            <span class="mono muted" style="font-size: 12px">@number.Did</span>
+                        }
+                    </div>
+                    <div class="end">
+                        @if (carriers.Count > 0)
+                        {
+                            <span class="tag ok">@string.Join(", ", carriers.Select(p => _people.GetValueOrDefault(p, "someone removed")).Order())</span>
+                        }
+                    </div>
+                </summary>
+                <form method="post" action="/admin/outside-phones" class="plane-body stack" style="gap: 10px">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="Contact" value="@uuid" />
+                    <fieldset class="row" style="gap: 6px 16px; flex-wrap: wrap; border: 0; padding: 0; margin: 0">
+                        <legend class="label" style="margin-bottom: 6px">Carried by</legend>
+                        @foreach (var (id, name) in _people.OrderBy(p => p.Value, StringComparer.OrdinalIgnoreCase))
+                        {
+                            <label class="row" style="gap: 6px">
+                                <input type="checkbox" name="People" value="@id" checked="@carriers.Contains(id)" /> @name
+                                @if (_seesChannels && carriers.Contains(id) && !_reachable.Contains(id))
+                                {
+                                    <span class="tag warn" title="Their only channels are email, or none is turned on, so they would hear nothing while the phone rings">no channel but email</span>
+                                }
+                            </label>
+                        }
+                    </fieldset>
+                    <div class="row"><button type="submit" class="btn sm">Save</button></div>
+                </form>
+            </details>
+        }
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery] public string? Msg { get; set; }
+
+    private List<TalkWatch.Core.Talk.TalkContact> _contacts = [];
+    private Dictionary<string, List<Guid>> _links = [];
+    private Dictionary<Guid, string> _people = [];
+
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    // People with a channel turned on that is not email: what these alerts go to. Only someone who manages alerts sees
+    // everyone's channels, so only they are told who has none.
+    private HashSet<Guid> _reachable = [];
+    private bool _seesChannels;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _seesChannels = HttpContext.User.Can(Permission.ManageAlerts);
+        _people = await Db.Users.AsNoTracking().ToDictionaryAsync(u => u.Id, u => u.UserName ?? u.Id.ToString());
+        _links = (await Db.ContactLinks.AsNoTracking().ToListAsync()).GroupBy(l => l.ContactUuid).ToDictionary(g => g.Key, g => g.Select(l => l.UserId).ToList(), StringComparer.Ordinal);
+        _reachable = (await Db.AlertChannels.AsNoTracking().Where(c => c.Enabled && c.Kind != ChannelKind.Email && c.OwnerUserId != null).Select(c => c.OwnerUserId!.Value).ToListAsync()).ToHashSet();
+
+        // Carried ones first, then everyone else by name.
+        _contacts = [.. Directory.Current.Contacts.Where(c => c.Uuid is { Length: > 0 }).DistinctBy(c => c.Uuid)
+            .OrderByDescending(c => _links.ContainsKey(c.Uuid!))
+            .ThenBy(c => c.DisplayName, StringComparer.OrdinalIgnoreCase)];
+    }
+}

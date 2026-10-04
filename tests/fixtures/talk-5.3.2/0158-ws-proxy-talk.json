@@ -1,0 +1,17 @@
+{
+  "event": "USER_STORE_UPDATED",
+  "data": {
+    "user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+    "item": {
+      "id": 2,
+      "active_ring_flow_id": 1,
+      "status": "Available",
+      "redirect": {},
+      "voicemail_enabled": true,
+      "has_active_calls": true,
+      "user_store_item_meta": {
+        "last_updated": "2026-09-30T00:06:48.592Z"
+      }
+    }
+  }
+}

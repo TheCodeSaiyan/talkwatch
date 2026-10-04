@@ -1,0 +1,134 @@
+@using TalkWatch.Data
+@inherits LayoutComponentBase
+@inject TalkWatch.Web.Services.IngestionStatus Status
+@inject TalkWatch.Web.Services.PlatformStatus Platform
+@inject Microsoft.Extensions.Options.IOptions<TalkWatch.Web.Services.DemoOptions> Demo
+@inject IServiceProvider Services
+@inject TimeProvider Clock
+
+@if (Demo.Value.Enabled)
+{
+    <p class="demo" role="note" data-demo>Demo: every call, number and recording here is made up. Nothing is read from a real console.
+        @if (Services.GetService<TalkWatch.Web.Services.DemoActivity>()?.NextResetAt is { } reset)
+        {
+            <span class="demo-reset">It starts over in <b class="mono" data-countdown="@reset.ToString("o")">@Countdown(reset)</b>.</span>
+        }
+    </p>
+}
+
+@* The Signal Rail is the navigation and the sense of "now" in one strip: no sidebar, so the page keeps the full width. *@
+<header class="rail shell">
+    @* Inside a permanent box: page changes merge the new page into this one, which would strip the drawing size the
+       script gives the canvas and leave the line stretched out of sight until a reload. A permanent element's own
+       attributes are still merged; only what is inside it is left alone. *@
+    <div id="rail-current" class="rail-canvas" data-permanent><canvas data-rail-current aria-hidden="true"></canvas></div>
+    <a class="brand" href="/live" aria-label="TalkWatch, go to Now">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6c6 0 8 6 14 6M2 12h14M2 18c6 0 8-6 14-6" fill="none" stroke="var(--live)" stroke-width="1.8" stroke-linecap="round"></path><circle cx="19" cy="12" r="3" fill="var(--fg)"></circle></svg>
+        <span>Talk<b>Watch</b></span>
+    </a>
+    <AuthorizeView>
+        <Authorized>
+            <NumberSwitch />
+            <Workspaces @rendermode="InteractiveServer" />
+            <div class="rail-end">
+                <button type="button" class="searchbtn" data-palette aria-label="Search and go (Ctrl K)"><svg class="ico s" viewBox="0 0 16 16" aria-hidden="true"><path d="M7 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM10.6 10.6 14 14"></path></svg><span class="lbl">Search or jump</span><kbd>Ctrl K</kbd></button>
+                <RailFreshness @rendermode="InteractiveServer" />
+                <details class="menu">
+                    <summary class="iconbtn" aria-label="Your account and preferences"><span class="avatar">@Initials(context.User.Identity?.Name)</span></summary>
+                    <div class="menu-panel end" role="menu">
+                        <div class="who"><b>@context.User.Identity?.Name</b></div>
+                        <div class="sep"></div>
+                        @* A full load: the account page's notification script would not run in a page swapped in by enhanced navigation. *@
+                        <a role="menuitem" href="/account" data-enhance-nav="false">Account, notifications and sign-in</a>
+                        <div class="sep"></div>
+                        <span class="eyebrow label">Theme</span>
+                        <div class="theme-choice" role="group" aria-label="Theme">
+                            <button type="button" data-theme-choice="system">System</button>
+                            <button type="button" data-theme-choice="light">Light</button>
+                            <button type="button" data-theme-choice="dark">Dark</button>
+                        </div>
+                        <div class="sep"></div>
+                        <form method="post" action="/account/signout" class="signout">
+                            <AntiforgeryToken />
+                            <button type="submit" role="menuitem">Sign out</button>
+                        </form>
+                    </div>
+                </details>
+            </div>
+        </Authorized>
+    </AuthorizeView>
+</header>
+
+@* Only what needs someone shows here; a healthy system says so with the freshness dot in the rail instead. *@
+<AuthorizeView>
+    <Authorized>
+        @if (Status.Drifted || Status.LastError is not null || (Platform.Versions is not null && (Platform.Fit is not TalkWatch.Core.Talk.VersionFit.Tested || Platform.PreRelease)))
+        {
+            <div class="attention" role="status">
+                @if (Status.Drifted)
+                {
+                    <p class="drift" data-status="drift">
+                        <b>Talk's data has changed shape.</b> New calls are not being copied until TalkWatch is updated.
+                        @if (Platform.Previous is { } before && Platform.Versions is { } now)
+                        {
+                            <text> The console was updated @Platform.ChangedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") (Talk @before.Talk → @now.Talk, UniFi OS @before.UnifiOs → @now.UnifiOs).</text>
+                        }
+                    </p>
+                }
+                else if (Status.LastError is not null)
+                {
+                    <p class="warn" data-status="warn"><b>The console could not be reached at the last poll.</b> What you see is from @(Status.LastSuccess?.ToLocalTime().ToString("HH:mm") ?? "before then").</p>
+                }
+                @if (Platform.Versions is { } versions && (Platform.Fit is not TalkWatch.Core.Talk.VersionFit.Tested || Platform.PreRelease))
+                {
+                    <p class="warn" data-platform>
+                        Talk @versions.Talk@(TalkWatch.Core.Talk.ConsoleVersions.IsPreRelease(versions.TalkChannel) ? $" ({versions.TalkChannel})" : ""),
+                        UniFi OS @versions.UnifiOs@(TalkWatch.Core.Talk.ConsoleVersions.IsPreRelease(versions.UnifiOsChannel) ? $" ({versions.UnifiOsChannel})" : "").
+                        @if (Platform.Fit is TalkWatch.Core.Talk.VersionFit.NewerUntested or TalkWatch.Core.Talk.VersionFit.OlderUntested)
+                        {
+                            <text> Not yet tested with TalkWatch (tested: Talk @TalkWatch.Core.Talk.ConsoleVersions.Tested.Talk, UniFi OS @TalkWatch.Core.Talk.ConsoleVersions.Tested.UnifiOs).</text>
+                        }
+                        @if (Platform.PreRelease)
+                        {
+                            <text> A pre-release channel: endpoints may change before general release.</text>
+                        }
+                    </p>
+                }
+            </div>
+        }
+    </Authorized>
+</AuthorizeView>
+
+<main class="page" id="main">
+    @Body
+</main>
+
+@* Kept across page changes, so a recording keeps playing while you look at something else. *@
+<div id="tw-mini" data-permanent></div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    Something went wrong on this page.
+    <a href="." class="reload">Reload</a>
+    <button type="button" class="dismiss" aria-label="Dismiss">×</button>
+</div>
+
+@code {
+    // As the page is sent; tw.js keeps it counting.
+    private string Countdown(DateTimeOffset at)
+    {
+        var left = at - Clock.GetUtcNow();
+        return left <= TimeSpan.Zero ? "a moment" : $"{(int)left.TotalMinutes}:{left.Seconds:00}";
+    }
+
+    // "Grace Kim" → "GK"; a single-word username gives its first two letters.
+    private static string Initials(string? name)
+    {
+        var parts = (name ?? "?").Split([' ', '.', '_', '-'], StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length switch
+        {
+            0 => "?",
+            1 => parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant(),
+            _ => string.Concat(parts[0][0], parts[^1][0]).ToUpperInvariant(),
+        };
+    }
+}

@@ -1,0 +1,8 @@
+duration
+file_path
+path
+read_at
+received_at
+uuid
+vm_left_for_ext
+vm_receiver_uuid

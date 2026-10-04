@@ -1,0 +1,154 @@
+@page "/admin/groups"
+@* What each identity-provider group gives its members when they sign in through it: a role, lines, or both. Applied at
+   every sign-in, so joining or leaving a group in the provider changes access the next time someone signs in. *@
+@attribute [Authorize(Policy = "permission:ManagePeople")]
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.Extensions.Options
+@using TalkWatch.Core.Calls
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject TalkWatchDbContext Db
+@inject RoleManager<IdentityRole<Guid>> RoleStore
+@inject IOptions<OidcOptions> Oidc
+
+<PageTitle>Group mappings · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <a class="back" href="/admin/users"><Icon Name="left" Size="s" /> People</a>
+        <h1>Group mappings</h1>
+        <div class="sub">What each group from @Oidc.Value.DisplayName gives its members when they sign in: a role, lines, or both.</div>
+    </div>
+</header>
+
+@if (!string.IsNullOrEmpty(Msg))
+{
+    <p class="notice" role="status">@Msg</p>
+}
+
+@if (!Oidc.Value.Enabled)
+{
+    <p class="notice">Sign-in through an identity provider is off (Oidc__Authority and Oidc__ClientId are unset), so these mappings do nothing yet.</p>
+}
+
+<section class="plane" aria-label="How mappings work">
+    <div class="plane-body stack" style="gap: 8px">
+        <p class="hint" style="margin: 0">When someone signs in with @Oidc.Value.DisplayName, the groups it sends (the <code>@Oidc.Value.GroupsClaim</code> claim) decide what they get:</p>
+        <ul class="hint" style="margin: 0; padding-left: 18px">
+            <li><b>Role:</b> members of @(OidcOptions.Names(Oidc.Value.AdminGroups) is { Count: > 0 } admins ? string.Join(", ", admins) : "the Oidc__AdminGroups") are Admins whatever is mapped here, so a mistake here can't lock admins out.
+                Otherwise the first mapping below, in order, that gives a role decides it. With none, a new account is a Viewer and an existing one keeps the role it was given by hand.</li>
+            <li><b>Lines:</b> every mapping their groups match grants its lines. These grants follow the groups at each sign-in; lines given by hand on a person's page are left alone.</li>
+            <li><b>Turned away:</b> anyone whose groups match no mapping here@(OidcOptions.Names(Oidc.Value.ViewerGroups) is { Count: > 0 } viewers ? $", and none of {string.Join(", ", viewers)}" : "") and no admin group.</li>
+        </ul>
+    </div>
+</section>
+
+@foreach (var mapping in _mappings)
+{
+    <section class="plane group-mapping" data-group="@mapping.Group" aria-label="@mapping.Group">
+        <div class="plane-head">
+            <div class="row" style="gap: 10px"><span class="dir" aria-hidden="true"><Icon Name="group" Size="s" /></span><h2 class="mono">@mapping.Group</h2>@if (mapping.Role is { } given)
+                {
+                    <span class="tag">@given</span>
+                }</div>
+            <div class="end"><form method="post" action="/admin/groups/@mapping.Id/delete"><AntiforgeryToken /><button type="submit" class="btn ghost sm danger">Unmap @mapping.Group</button></form></div>
+        </div>
+        <form method="post" action="/admin/groups/@mapping.Id" class="mapping-role plane-body row" style="gap: 10px; align-items: flex-end; flex-wrap: wrap">
+            <AntiforgeryToken />
+            <label class="field"><span class="label">Gives the role</span>
+                <select class="input" name="Role">
+                    <option value="" selected="@(mapping.Role is null)">no role: lines only</option>
+                    @foreach (var role in _roles)
+                    {
+                        <option value="@role" selected="@(mapping.Role == role)">@role</option>
+                    }
+                </select>
+            </label>
+            <label class="field"><span class="label">Order</span><input class="input minutes" type="number" name="Order" value="@mapping.Order" /></label>
+            <button type="submit" class="btn sm">Save</button>
+        </form>
+
+        @if (mapping.Lines.Count == 0)
+        {
+            <p class="empty" style="padding: 0 16px 8px">Grants no lines.</p>
+        }
+        else
+        {
+            <div class="grid-wrap">
+                <table class="dg grants">
+                    <thead><tr><th class="first">Line</th><th>Recordings</th><th>Voicemail</th><th>Transcripts</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var line in mapping.Lines.OrderBy(l => l.Kind).ThenBy(l => l.Key))
+                        {
+                            <tr data-group-line="@($"{line.Kind}:{line.Key}")">
+                                <td class="first">@_names.GetValueOrDefault((line.Kind, line.Key), line.Key) <span class="muted" style="font-size: 12px">@line.Kind</span></td>
+                                <td>@(line.AllowRecordings ? "yes" : "")</td>
+                                <td>@(line.AllowVoicemail ? "yes" : "")</td>
+                                <td>@(line.AllowTranscripts ? "yes" : "")</td>
+                                <td class="r"><form method="post" action="/admin/groups/@mapping.Id/lines/@line.Id/delete"><AntiforgeryToken /><button type="submit" class="btn ghost sm danger">Remove</button></form></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <form method="post" action="/admin/groups/@mapping.Id/lines" class="add-grant plane-body row" style="gap: 12px; align-items: flex-end; flex-wrap: wrap; border-top: 1px solid var(--line)">
+            <AntiforgeryToken />
+            <label class="field" style="flex: 1; min-width: 16rem"><span class="label">Grant</span>
+                <select class="input" name="Line" required>
+                    @foreach (var kind in _lines.GroupBy(l => l.Kind))
+                    {
+                        <optgroup label="@kind.Key">
+                            @foreach (var line in kind)
+                            {
+                                <option value="@($"{line.Kind}:{line.Key}")">@line.Name@(line.Ext is { Length: > 0 } ext ? $" ({ext})" : "")</option>
+                            }
+                        </optgroup>
+                    }
+                </select>
+            </label>
+            <label class="row" style="gap: 6px; height: 32px"><input type="checkbox" name="AllowRecordings" value="true" /> Recordings</label>
+            <label class="row" style="gap: 6px; height: 32px"><input type="checkbox" name="AllowVoicemail" value="true" /> Voicemail</label>
+            <label class="row" style="gap: 6px; height: 32px"><input type="checkbox" name="AllowTranscripts" value="true" /> Transcripts</label>
+            <button type="submit" class="btn sm">Add line</button>
+        </form>
+    </section>
+}
+
+<section class="plane" aria-label="Map a group">
+    <div class="plane-head"><h2>Map a group</h2></div>
+    <form method="post" action="/admin/groups" class="add-group plane-body row" style="gap: 12px; align-items: flex-end; flex-wrap: wrap">
+        <AntiforgeryToken />
+        <label class="field" style="flex: 1; min-width: 14rem"><span class="label">Group</span><input class="input mono" name="Group" required maxlength="200" placeholder="talkwatch-sales" /></label>
+        <label class="field"><span class="label">Gives the role</span>
+            <select class="input" name="Role">
+                <option value="">no role: lines only</option>
+                @foreach (var role in _roles)
+                {
+                    <option value="@role">@role</option>
+                }
+            </select>
+        </label>
+        <label class="field"><span class="label">Order</span><input class="input minutes" type="number" name="Order" value="@((_mappings.Count == 0 ? 0 : _mappings.Max(m => m.Order)) + 10)" /></label>
+        <button type="submit" class="btn sm primary">Map</button>
+    </form>
+</section>
+
+@code {
+    [SupplyParameterFromQuery(Name = "msg")] private string? Msg { get; set; }
+
+    private List<GroupMapping> _mappings = [];
+    private List<string> _roles = [];
+    private List<LineRecord> _lines = [];
+    private Dictionary<(LineKind, string), string> _names = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _mappings = await Db.GroupMappings.AsNoTracking().Include(m => m.Lines).OrderBy(m => m.Order).ThenBy(m => m.Group).ToListAsync();
+        _roles = [.. Roles.BuiltIn, .. RoleStore.Roles.Select(r => r.Name!).AsEnumerable().Where(n => !Roles.BuiltIn.Contains(n)).Order()];
+        _lines = await Db.Lines.AsNoTracking().Where(l => l.Present).OrderBy(l => l.Kind).ThenBy(l => l.Name).ToListAsync();
+        _names = await Db.Lines.AsNoTracking().ToDictionaryAsync(l => (l.Kind, l.Key), l => l.Name);
+    }
+}

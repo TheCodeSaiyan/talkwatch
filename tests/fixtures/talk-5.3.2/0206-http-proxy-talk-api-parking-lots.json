@@ -1,0 +1,21 @@
+[
+  {
+    "uuid": "c4d04912-1f2a-4712-bf86-1571832bc550",
+    "name": "Marley Hughes 62",
+    "park_timeout": 300,
+    "on_timeout_action": "voicemail",
+    "playback_track": {
+      "type": "standard",
+      "title": "Title 3"
+    },
+    "user_uuids": [
+      "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+    ],
+    "group_ids": [],
+    "vm_receiver_uuids": [
+      "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+    ],
+    "vm_receiver_group_id": null,
+    "transfer_to_entity_id": null
+  }
+]

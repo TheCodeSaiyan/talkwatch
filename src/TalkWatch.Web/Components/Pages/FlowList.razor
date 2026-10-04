@@ -1,0 +1,140 @@
+@page "/flows"
+@attribute [Authorize(Policy = "permission:alerts")]
+@* Flows: what happens when something is alerted on, drawn as the diagram each one runs, with how often it has
+   fired. A Manager sees only their own flows (the database filters them). Building and changing a flow is the editor's;
+   channels and the mail and Telegram settings stay under Configure. *@
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Core.Alerts
+@using TalkWatch.Data
+@using TalkWatch.Web.Components.Alerts
+@using TalkWatch.Web.Services
+@inject TalkWatchDbContext Db
+@inject AlertService Alerting
+@inject TimeProvider Clock
+@inject LineDirectorySync Directory
+
+<PageTitle>Flows · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <h1>Flows</h1>
+        <div class="sub">What happens when something is alerted on: who hears of it, and who next if nobody picks it up.</div>
+    </div>
+    <div class="tools">
+        <a class="btn ghost sm" href="/admin/alerts">Channels</a>
+        <a class="btn primary sm" href="/flows/new">New flow</a>
+    </div>
+</header>
+
+@if (!string.IsNullOrEmpty(Msg))
+{
+    <p class="notice" role="status">@Msg</p>
+}
+
+<p class="hint">Each flow runs top to bottom for every alert it applies to. A wait gives people time to acknowledge: once someone does, the
+    flow stops. Only calls from the last @((int)AlertService.RecentCall.TotalMinutes) minutes start a flow, so importing history sends nothing.
+    Times are in @Alerting.Zone.Id.</p>
+
+@if (_flows.Count == 0)
+{
+    <div class="plane">
+        <div class="empty" data-kind="unconfigured" style="padding: 24px 16px">
+            <b>No flows yet, so nothing is sent.</b>
+            <p class="why">@(_channels == 0 ? "Add a channel first, so a flow has somewhere to send, then build a flow." : "Build one: pick what starts it, who hears first, and who next if nobody picks it up.")</p>
+            <div class="row">
+                @if (_channels == 0)
+                {
+                    <a class="btn sm" href="/admin/alerts">Add a channel</a>
+                }
+                <a class="btn primary sm" href="/flows/new">New flow</a>
+            </div>
+        </div>
+    </div>
+}
+
+@foreach (var (flow, definition) in _flows)
+{
+    var runs = _runs.GetValueOrDefault(flow.Id) ?? [];
+    <section class="plane flow-card@(flow.Enabled ? "" : " off")" data-flow="@flow.Id" aria-label="@flow.Name">
+        <div class="plane-head">
+            <div class="row" style="gap: 10px">
+                <h2>@flow.Name</h2>
+                @if (flow.Enabled)
+                {
+                    <span class="tag ok">On</span>
+                }
+                else
+                {
+                    <span class="tag">Off</span>
+                }
+            </div>
+            <div class="end flow-actions">
+                <a class="btn sm" href="/flows/@flow.Id">Edit</a>
+                <form method="post" action="/admin/alerts/flows/@flow.Id/toggle"><AntiforgeryToken /><button type="submit" class="btn ghost sm">@(flow.Enabled ? "Turn off" : "Turn on")</button></form>
+                <form method="post" action="/admin/alerts/flows/@flow.Id/delete"><AntiforgeryToken /><button type="submit" class="btn ghost sm danger">Remove</button></form>
+            </div>
+        </div>
+        <div class="flow-body">
+            <div class="flow-diagram">
+                @if (definition is null)
+                {
+                    <p class="notice problem">This flow could not be read, so it does nothing. Remove it and build it again.</p>
+                }
+                else
+                {
+                    <FlowView Flow="definition" Names="_names" />
+                }
+            </div>
+            <aside class="flow-stats" aria-label="How often it fired">
+                <span class="eyebrow">Last 7 days</span>
+                <span class="v num">@runs.Count</span>
+                <span class="muted" style="font-size: 12px">@(runs.Count == 1 ? "alert started it" : "alerts started it")</span>
+                <div class="flow-week" role="img" aria-label="@string.Join(", ", Week(runs).Select(d => $"{d.Day:ddd} {d.Count}"))">
+                    @{ var most = Math.Max(1, Week(runs).Max(d => d.Count)); }
+                    @foreach (var d in Week(runs))
+                    {
+                        <span class="d" title="@d.Day.ToString("ddd d MMM"): @d.Count"><i style="height: @(d.Count == 0 ? 2 : 4 + 26 * d.Count / most)px"></i><small>@d.Day.ToString("ddd")[..1]</small></span>
+                    }
+                </div>
+                <span class="muted" style="font-size: 12px">@(runs.Count == 0 ? "Not fired this week." : $"Last {TimeZoneInfo.ConvertTime(runs.Max(r => r.CreatedAt), Alerting.Zone):ddd HH:mm} · {runs.Count(r => r.State == FlowRunState.Stopped)} stopped early, most by an acknowledgement")</span>
+            </aside>
+        </div>
+    </section>
+}
+
+@code {
+    [SupplyParameterFromQuery(Name = "msg")] private string? Msg { get; set; }
+
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    private sealed record Run(DateTimeOffset CreatedAt, FlowRunState State);
+
+    private List<(AlertFlow Flow, FlowDefinition? Definition)> _flows = [];
+    private Dictionary<Guid, List<Run>> _runs = [];
+    private FlowNames _names = FlowNames.None;
+    private int _channels;
+    private DateTime _today;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Before anything is awaited: the page is drawn once at the first await that has to wait, and which await that is
+        // depends on the database. Drawn with flows but no day yet, the week before it could not be counted back to.
+        var now = Clock.GetUtcNow();
+        _today = TimeZoneInfo.ConvertTime(now, Alerting.Zone).Date;
+
+        var admin = HttpContext.User.Can(Permission.ManageAlerts);
+        _flows = [.. (await Db.AlertFlows.AsNoTracking().OrderBy(f => f.Name).ToListAsync()).Select(f => (f, Flows.Read(f.Definition)))];
+        _names = await Admin.FlowEditor.NamesAsync(Db, admin, HttpContext.User.Identity?.Name, Directory.Current);
+        _channels = await Db.AlertChannels.CountAsync();
+
+        var since = now - TimeSpan.FromDays(7);
+        var ids = _flows.Select(f => f.Flow.Id).ToList();
+        _runs = (await Db.AlertFlowRuns.AsNoTracking().Where(r => ids.Contains(r.FlowId) && r.CreatedAt >= since)
+                .Select(r => new { r.FlowId, r.CreatedAt, r.State }).ToListAsync())
+            .GroupBy(r => r.FlowId).ToDictionary(g => g.Key, g => g.Select(r => new Run(r.CreatedAt, r.State)).ToList());
+    }
+
+    // Seven days ending today, in the site's zone, with how many alerts each day started this flow.
+    private IEnumerable<(DateTime Day, int Count)> Week(List<Run> runs) =>
+        Enumerable.Range(0, 7).Select(i => _today.AddDays(i - 6)).Select(day => (day, runs.Count(r => TimeZoneInfo.ConvertTime(r.CreatedAt, Alerting.Zone).Date == day)));
+}
