@@ -296,6 +296,18 @@ public class PseudonymiserTests
     }
 
     [Fact]
+    public void A_hostname_is_replaced_the_same_way_every_time()
+    {
+        // Whoever set the console up named it, and that name can say whose it is.
+        var pseudonymiser = new Pseudonymiser(Key);
+        var first = JsonNode.Parse(pseudonymiser.Json("""{"hostname":"SmithsOfficeUDM","name":"UDM SE"}"""))!;
+        var again = JsonNode.Parse(pseudonymiser.Json("""{"host_name":"SmithsOfficeUDM"}"""))!;
+
+        Assert.StartsWith("console-", (string)first["hostname"]!, StringComparison.Ordinal);
+        Assert.Equal((string?)first["hostname"], (string?)again["host_name"]);
+    }
+
+    [Fact]
     public void Replaced_identifiers_still_join_across_files()
     {
         var pseudonymiser = new Pseudonymiser(Key);
