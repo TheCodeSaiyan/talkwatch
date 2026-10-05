@@ -21,6 +21,10 @@ TalkWatch's own Console page.
 | **Postgres** | Railway's PostgreSQL. TalkWatch builds its connection string from this service's variables, so there's no password to copy. |
 | **TalkWatch** | `ghcr.io/thecodesaiyan/talkwatch:latest`, with a volume at `/data/audio` for copied recordings and voicemail, a public HTTPS domain, and `/healthz` as its health check. |
 
+The database and the recordings each need a volume, and Railway's Free plan
+allows only one per project, so the template needs the Hobby plan or above,
+or a trial that hasn't ended. Railway says so before it deploys anything.
+
 ## Deploying
 
 1. Choose **Deploy on Railway** from TalkWatch's README, and sign in to your

@@ -202,6 +202,7 @@ try {
 
   // The board left to run: every ride, arrival and missed mark is marked, and the animations are cut from around them.
   await page.goto(base + '/live');
+  await page.waitForSelector('[data-board]');
   await settle(page);
   await record(page, 'board', async (mark) => {
     await page.exposeBinding('twMark', (_, kind) => mark(kind));
@@ -222,6 +223,7 @@ try {
   // A caller going through the main switchboard's menu: they ride from the menu to the option they press, and on to the
   // one they press next.
   await page.goto(base + '/operator');
+  await page.waitForSelector('section[aria-label="Main switchboard"]');
   await page.locator('section[aria-label="Main switchboard"]').scrollIntoViewIfNeeded();
   await settle(page);
   await record(page, 'operator-ride', async (mark) => {
