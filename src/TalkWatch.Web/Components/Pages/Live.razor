@@ -154,6 +154,10 @@
                     <span class="dir" data-d="@CallMarks.DirectionKey(l.Direction)" title="@CallMarks.Direction(l.Direction)"><Icon Name="@CallMarks.DirectionKey(l.Direction)" /><span class="sr">@CallMarks.Direction(l.Direction)</span></span>
                     <span class="who"><b data-grow>@l.Who</b><span class="n">@l.Number</span></span>
                     <span class="line hide-sm @(CallMarks.IsNumber(l.Line) ? "tel" : null)">@l.Line</span>
+                    <span class="by ext">@l.AnsweredBy</span>
+                    <span class="q ext" data-poor="@(l.Quality < QualityStatistics.PoorBelow ? "true" : null)" title="@(l.Quality is { } q ? $"Call quality {q}, Talk's score" : null)">@l.Quality</span>
+                    <span class="rate ext" data-r="@l.Rating" title="@(l.Rating is { } r ? $"Talk rated the call {r}" : null)">@l.Rating</span>
+                    <span class="al ext" title="@(l.Alerts > 0 ? $"{l.Alerts} alert{(l.Alerts == 1 ? "" : "s")} raised" : null)">@if (l.Alerts > 0) { <Icon Name="bell" Size="s" /><span>@l.Alerts</span> }</span>
                     <span class="oc" data-o="@CallMarks.Key(l.Outcome)"><Icon Name="@CallMarks.Icon(l.Outcome)" />@CallMarks.Words(l.Outcome)</span>
                     <span class="num">@CallMarks.Duration(TimeSpan.FromSeconds(l.Seconds))</span>
                 </a>
@@ -217,7 +221,12 @@
     // The sentence in three parts, so the caller's name can grow from it into the Context Inspector.
     private sealed record Recent(string TalkUuid, DateTimeOffset Time, CallOutcome Outcome, string Lead, string Party, string Tail, string Sub, string Stream);
 
-    private sealed record Logged(string TalkUuid, DateTimeOffset Time, string Direction, CallOutcome Outcome, string Who, string Number, string Line, int Seconds);
+    /// <param name="AnsweredBy">Who picked up, for a call that was answered.</param>
+    /// <param name="Quality">Talk's score for the call's audio, when it gave one.</param>
+    /// <param name="Rating">How Talk rated the call from its transcript (positive, neutral or negative), only where this person may read the transcript.</param>
+    /// <param name="Alerts">Alerts the call raised that this person can see.</param>
+    private sealed record Logged(string TalkUuid, DateTimeOffset Time, string Direction, CallOutcome Outcome, string Who, string Number, string Line, int Seconds,
+        string? AnsweredBy, int? Quality, string? Rating, int Alerts);
 
     private sealed record Today(int Inbound, int Answered, int Missed, int Voicemail, int Menu);
 
@@ -339,8 +348,19 @@
         _recentTruth = [.. recent.Where(c => !onBoard.Contains(c.Id) && !going.Contains(c.Id)).Take(12).Select(c => new Recent(c.TalkUuid, c.Time, c.Outcome, Words(c).Lead, Party(c), Words(c).Tail,
             (Line(c) is { Length: > 0 } l && c.Direction == "in" ? l + " · " : "") + CallMarks.Duration(TimeSpan.FromSeconds(c.DurationSeconds)), LiveCalls.Stream(c.Outcome)))];
 
-        _logTruth = [.. logged.Where(c => !onBoard.Contains(c.Id) && !going.Contains(c.Id)).Take(8).Select(c => new Logged(c.TalkUuid, c.Time, c.Direction, c.Outcome, Party(c),
-            (c.Direction == "out" ? c.ToRaw : c.FromRaw) is { } n && n != Party(c) ? n : "", c.Direction == "in" ? Line(c) : "", c.DurationSeconds))];
+        // The log's further columns. Transcripts and alerts are read through this person's access scope, so a rating shows
+        // only where they may read the transcript, and only the alerts they could see.
+        var shown = logged.Where(c => !onBoard.Contains(c.Id) && !going.Contains(c.Id)).Take(8).ToList();
+        var shownIds = shown.Select(c => c.Id).ToList();
+        var ratings = await db.CallTranscripts.AsNoTracking().Where(t => shownIds.Contains(t.CallId) && t.SentimentClass != null)
+            .Select(t => new { t.CallId, t.SentimentClass }).ToDictionaryAsync(t => t.CallId, t => t.SentimentClass);
+        var raised = await db.AlertEvents.AsNoTracking().Where(e => e.CallId != null && shownIds.Contains(e.CallId.Value))
+            .GroupBy(e => e.CallId!.Value).Select(g => new { g.Key, Count = g.Count() }).ToDictionaryAsync(g => g.Key, g => g.Count);
+
+        _logTruth = [.. shown.Select(c => new Logged(c.TalkUuid, c.Time, c.Direction, c.Outcome, Party(c),
+            (c.Direction == "out" ? c.ToRaw : c.FromRaw) is { } n && n != Party(c) ? n : "", c.Direction == "in" ? Line(c) : "", c.DurationSeconds,
+            c.Outcome == CallOutcome.Answered ? chronicles[c.Id].Steps.FirstOrDefault(s => s.Kind == StepKind.Answered)?.Subject : null,
+            c.QualityScore, ratings.GetValueOrDefault(c.Id), raised.GetValueOrDefault(c.Id)))];
 
         var todayCounts = await db.Calls.AsNoTracking().Where(c => c.Direction == "in" && c.Time >= today)
             .GroupBy(c => c.Outcome).Select(g => new { g.Key, Count = g.Count() }).ToListAsync();

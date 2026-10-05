@@ -13,6 +13,13 @@ which handsets are online. The page stays live, so you can leave it open.
 
 ![A call ends and travels its stream from Live calls into Recent activity](images/board-ride.gif)
 
+Each row of the call log says who answered, Talk's score for the call's
+quality (in amber below 70, where TalkWatch counts a call as poor), how Talk
+rated the call from its transcript, and a bell with how many alerts the call
+raised. The rating shows only where you may read the call's transcript, and
+the alerts only those you could see. On a narrow window the log keeps to its
+first columns.
+
 When a call comes in, a pulse runs in from the left along the inlet, and its
 row appears as the pulse lands, with **Calls today** and **In progress**
 changing at the same moment. A count is never held back longer than the move

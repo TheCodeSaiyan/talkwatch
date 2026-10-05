@@ -167,6 +167,56 @@ public sealed class NowBoardTests(TalkWatchApp talkwatch) : IClassFixture<TalkWa
         Assert.Contains($"data-key=\"{uuid}\"", Node(page, "node-log"), StringComparison.Ordinal);
     }
 
+    // Put through to the outside phone, which picked up; Talk scored the audio poorly.
+    private static string AnsweredPoorly(string uuid, DateTimeOffset at)
+    {
+        var time = at.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
+        return $$$"""
+            {"uuid":"{{{uuid}}}","time":"{{{time}}}","direction":"in","status":"accepted","duration":90,"from":"+447700900318","to":"+441144960042","quality_score":42,
+             "call_events":[
+               {"time":"{{{time}}}","event":"call_started"},
+               {"time":"{{{time}}}","event":"seq_call_trying_endpoints","event_data":{"contact_uuids":["ac7a4901-2722-4e41-9f20-87f95df72cb2"]}},
+               {"time":"{{{time}}}","event":"call_accepted","event_data":{"accepted_by_contact_uuid":"ac7a4901-2722-4e41-9f20-87f95df72cb2","accepted_by":"+447700900210"}},
+               {"time":"{{{time}}}","event":"call_hangup"}]}
+            """;
+    }
+
+    [Fact]
+    public async Task The_call_log_says_who_answered_the_calls_quality_its_rating_and_the_alerts_it_raised()
+    {
+        var console = new FixtureConsole(FixtureConsole.DefaultDirectory);
+        var uuid = Guid.NewGuid().ToString();
+        console.AddCall(AnsweredPoorly(uuid, DateTimeOffset.UtcNow.AddMinutes(-10)));
+        await using var app = talkwatch.Create(console);
+        await app.Services.GetRequiredService<CallLogPoller>().RunOnceAsync(Ct);
+        int raised;
+        using (var scope = app.Services.CreateScope())
+        {
+            scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UseSystemScope();
+            var db = scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>();
+            var call = await db.Calls.SingleAsync(c => c.TalkUuid == uuid, Ct);
+            call.UpdatedAt = DateTimeOffset.UtcNow - LiveCalls.Linger - TimeSpan.FromSeconds(1);
+            db.CallTranscripts.Add(new CallTranscript { SiteId = call.SiteId, CallId = call.Id, TalkId = "t-" + uuid, SentimentClass = "negative", Lines = "[]", Text = "" });
+            await db.SaveChangesAsync(Ct);
+            // A poor call raises alerts of its own as it is read in.
+            raised = await db.AlertEvents.CountAsync(e => e.CallId == call.Id, Ct);
+        }
+
+        using var browser = TalkWatchApp.Browser(app);
+        await TalkWatchApp.SignInAsync(browser, TalkWatchApp.AdminUsername, TalkWatchApp.AdminPassword);
+        var log = Node(WebUtility.HtmlDecode(await browser.GetStringAsync(new Uri("/live", UriKind.Relative), Ct)), "node-log");
+
+        var at = log.IndexOf($"data-key=\"{uuid}\"", StringComparison.Ordinal);
+        Assert.True(at > 0, "the call is not in the call log");
+        var row = log[at..log.IndexOf("</a>", at, StringComparison.Ordinal)];
+        Assert.Matches("<span class=\"by ext\">[^<]+</span>", row);
+        Assert.Contains("data-poor=\"true\"", row, StringComparison.Ordinal);
+        Assert.Contains(">42</span>", row, StringComparison.Ordinal);
+        Assert.Contains("data-r=\"negative\"", row, StringComparison.Ordinal);
+        Assert.True(raised > 0, "the poor call raised no alert");
+        Assert.Contains($"title=\"{raised} alert{(raised == 1 ? "" : "s")} raised\"", row, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task The_board_joins_its_nodes_at_ports_and_its_streams_are_as_loud_as_the_last_five_minutes()
     {
