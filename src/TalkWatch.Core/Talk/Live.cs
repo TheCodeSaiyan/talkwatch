@@ -97,6 +97,15 @@ public sealed record LiveMessage(string Event, JsonElement Data)
     /// <summary>The transcript an <see cref="TranscriptUpdated"/> message carries, or null for any other message.</summary>
     public TalkTranscript? Transcript() => Event == TranscriptUpdated ? TalkTranscript.Parse(Data) : null;
 
+    /// <summary>
+    /// For <see cref="CallEventsUpdated"/>: the call whose events changed, as its uuid. Talk sends nothing else, so the
+    /// events themselves are read with <see cref="TalkClient.GetCallEventsAsync"/>.
+    /// </summary>
+    public string? CallId() =>
+        Event == CallEventsUpdated && Data.ValueKind == JsonValueKind.Object && Data.TryGetProperty("call_id", out var id) && id.ValueKind == JsonValueKind.String
+            ? id.GetString()
+            : null;
+
     public IReadOnlyList<CallLogRecord> CallRecords() =>
         Data.ValueKind == JsonValueKind.Object && Data.TryGetProperty("records", out var records) && records.ValueKind == JsonValueKind.Array
             ? records.Deserialize<List<CallLogRecord>>(TalkJson.Options) ?? []

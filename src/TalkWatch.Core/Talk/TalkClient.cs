@@ -194,6 +194,36 @@ public sealed class TalkClient(HttpClient http)
     }
 
     /// <summary>
+    /// A call's routing events as they stand now, while it is still going: the call started, the menu played, a key
+    /// pressed, an option entered, who rang. Talk announces each change as CALL_EVENTS_UPDATED with only the call's id;
+    /// this is how the change itself is read. Empty when Talk has none for the call.
+    /// </summary>
+    public async Task<IReadOnlyList<CallEvent>> GetCallEventsAsync(string callUuid, CancellationToken cancellationToken)
+    {
+        using var response = await GetResponseAsync("/proxy/talk/api/call_log/flow/" + Uri.EscapeDataString(callUuid), HttpCompletionOption.ResponseContentRead, cancellationToken);
+        // A call Talk has no flow for (gone, or never more than a notice): no steps, not a fault.
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return [];
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new TalkApiException($"GET /proxy/talk/api/call_log/flow returned HTTP {(int)response.StatusCode}.");
+        }
+
+        var raw = await response.Content.ReadAsStringAsync(cancellationToken);
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<List<CallEvent>>(raw, TalkJson.Options) ?? [];
+        }
+        catch (System.Text.Json.JsonException e)
+        {
+            throw new TalkSchemaException($"GET /proxy/talk/api/call_log/flow returned a shape TalkWatch does not recognise: {e.Message}", e);
+        }
+    }
+
+    /// <summary>
     /// Where a call's voicemail message is kept on the console and how long it is, or null when the call has none. Read
     /// before <see cref="GetVoicemailAudioAsync"/>, which fetches the message by that path.
     /// </summary>

@@ -18,6 +18,7 @@
 @inject LineDirectorySync Directory
 @inject IServiceScopeFactory Scopes
 @inject TimeProvider Clock
+@inject Microsoft.Extensions.Options.IOptions<SiteOptions> SiteSettings
 
 <PageTitle>Operator · TalkWatch</PageTitle>
 
@@ -28,6 +29,66 @@
     </div>
     <div class="tools"><span class="cap" data-c="none" title="TalkWatch reads Talk and never controls calls">Answer and transfer on the handset</span></div>
 </header>
+
+@* Each switchboard the chosen number reaches, as the flow its callers move through: in, the menu, each option, where
+   it puts them through. A caller is drawn at the stage their last step put them, and rides the stream to the next one
+   as Talk reports the step (tw-switchboard.js), as a finished call rides into Recent activity on Now. *@
+@foreach (var flow in _flows)
+{
+    <section class="plane sb" aria-label="@flow.Title" data-switchboard="@flow.Id" @key="flow.Id">
+        <div class="plane-head">
+            <h2>@flow.Title</h2>
+            @if (flow.InTheMenu > 0)
+            {
+                <span class="tag live">@flow.InTheMenu in the menu</span>
+            }
+            @if (flow.Callers.Count(c => c.Mark == "ringing") is > 0 and var ringing)
+            {
+                <span class="tag">@ringing ringing</span>
+            }
+            <div class="end">
+                <span class="mono muted" style="font-size: 12px">@flow.Stages[0].Today today@(flow.HungUpToday > 0 ? $" · {flow.HungUpToday} hung up in the menu" : "")</span>
+                <span class="cap" data-c="derived" title="Worked out from each step Talk reports as it happens">Live from Talk's steps</span>
+            </div>
+        </div>
+        @* The Data Current: each stage a node on the flow, laid out as a tree, with the streams between them drawn by
+           tw-switchboard.js. The callers at a stage stack under its node. *@
+        <div class="sb-scroll">
+        <div class="flow sb-flow" data-sb-flow role="group" aria-label="Callers moving through @flow.Title"
+             style="height: @(FlowTop * 2 + (flow.RowCount - 1) * RowHeight + StackRoom)px; min-width: @(flow.Columns * ColumnWidth)px">
+            <canvas aria-hidden="true"></canvas>
+            @foreach (var stage in flow.Stages)
+            {
+                var here = flow.At(stage.Id).ToList();
+                var left = Pct((stage.Column + .5) / flow.Columns);
+                var top = FlowTop + flow.Rows[stage.Id] * RowHeight;
+                var marks = (here.Count > 0 ? " hot" : "") + (stage.Kind == "hungup" && stage.Today > 0 ? " alert" : "");
+                <div class="node@(marks)" style="left: @left%; top: @Px(top)px"
+                     data-stage="@stage.Id" data-from="@stage.From" data-kind="@stage.Kind" data-today="@stage.Today" data-now="@here.Count">
+                    <b>@stage.Label</b><span class="m">@string.Join(" · ", new[] { here.Count > 0 ? $"{here.Count} now" : null, stage.Counted ? $"{stage.Today} today" : null }.OfType<string>())</span>
+                </div>
+                @* The callers here, as a stack of cards: three show, the rest are counted, and pointing at the stack (or
+                   tabbing into it) fans it open to scroll through. A card is the caller and how long they have been here;
+                   choosing one opens the call beside the page, with what they did. *@
+                <div class="sb-callers" role="list" data-stage-list="@stage.Id" data-now="@here.Count" tabindex="-1" aria-label="@here.Count at @stage.Label" style="left: @left%; top: @Px(top + 24)px">
+                    @foreach (var c in here)
+                    {
+                        <a class="sb-caller" role="listitem" data-key="@c.Key" href="/calls/@c.Key" data-inspect="@c.Key" title="@c.Step" @key="c.Key">
+                            <span class="st" data-s="@c.Mark"><i></i></span>
+                            <b>@c.Who</b>
+                            <span class="num" data-since="@c.Since.ToUnixTimeMilliseconds()">@CallMarks.Duration(Clock.GetUtcNow() - c.Since)</span>
+                        </a>
+                    }
+                    @if (here.Count > 3)
+                    {
+                        <span class="sb-more num" aria-hidden="true">+@(here.Count - 3)</span>
+                    }
+                </div>
+            }
+        </div>
+        </div>
+    </section>
+}
 
 <div class="op-grid">
     <div class="stack" style="gap: 16px">
@@ -149,6 +210,15 @@
     private List<LiveCall> _waiting = [];
     private List<LiveCall> _talking = [];
     private List<WaitingCaller> _callBacks = [];
+    private List<SwitchboardFlow> _flows = [];
+
+    // The flow's layout, in pixels: room above the first row and below the last, each row's height, room under the
+    // last row for its caller stack, and the narrowest a column gets before the flow scrolls sideways.
+    private const int FlowTop = 34, RowHeight = 78, StackRoom = 64, ColumnWidth = 196;
+
+    private static string Pct(double fraction) => (fraction * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string Px(double px) => px.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
     private CancellationTokenSource? _pending;
     private Timer? _timer;
 
@@ -181,6 +251,22 @@
         var live = current.Select(c => LiveCalls.Of(c, chronicles[c.Id], names)).ToList();
         _waiting = [.. live.Where(c => c.State is "ringing" or "menu" or "routing")];
         _talking = [.. live.Where(c => c.State is "connected" or "voicemail" or "calling")];
+
+        // The switchboards: their tree, where today's callers went, and where each caller in one is now.
+        var ids = current.Select(c => c.Id).ToList();
+        var events = await db.CallEvents.AsNoTracking().Where(e => ids.Contains(e.CallId)).OrderBy(e => e.Sequence)
+            .Select(e => new { e.CallId, e.Event, e.DataJson }).ToListAsync();
+        var journeys = events.GroupBy(e => e.CallId).ToDictionary(g => g.Key, g => TalkWatch.Core.Talk.MenuJourney.Of(g.Select(e => (e.Event, e.DataJson))));
+        var zone = TimeZoneInfo.FindSystemTimeZoneById(SiteSettings.Value.TimeZone);
+        var midnight = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(TimeZoneInfo.ConvertTime(now, zone).Date, zone), TimeSpan.Zero);
+        var today = await db.Calls.AsNoTracking().Where(c => c.Direction == "in" && c.Time >= midnight && c.Outcome != CallOutcome.Blocked)
+            .Select(c => new { c.Outcome, Events = c.Events.OrderBy(e => e.Sequence).Select(e => new { e.Event, e.DataJson }).ToList() }).ToListAsync();
+        var nodes = await db.SwitchboardNodes.AsNoTracking().ToListAsync();
+        var normaliser = new NumberNormaliser(Site.Region);
+        _flows = [.. SwitchboardFlows.Build(nodes,
+            [.. today.Select(c => new FlowHistory(TalkWatch.Core.Talk.MenuJourney.Of(c.Events.Select(e => (e.Event, e.DataJson))), c.Outcome))],
+            [.. live.Select(l => (l, journeys.GetValueOrDefault(l.Call.Id) ?? new TalkWatch.Core.Talk.MenuJourney(null, [])))],
+            _user.FindFirstValue(AccessScopeHolder.DidClaim), normaliser.ToE164)];
 
         // Waiting callers, longest wait first: the same rule as Call-backs, over the same window.
         var since = now - TimeSpan.FromDays(Pages.CallBacks.RecentDays);

@@ -147,6 +147,55 @@ public sealed class CallLogIngestor(
         return stale.Count;
     }
 
+    /// <summary>
+    /// Brings a call still in progress up to date with its events as Talk has them now (a key pressed, an option
+    /// entered, who is ringing), read when Talk announces CALL_EVENTS_UPDATED. The call record itself arrives with
+    /// CALL_LOG_UPDATED, which can come a moment later, so a call not stored yet is left for it. A call that has ended
+    /// is left alone: its record is the whole story. Returns whether anything changed.
+    /// </summary>
+    public async Task<bool> UpdateEventsAsync(string callUuid, IReadOnlyList<CallEvent> events, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        var call = await db.Calls.Include(c => c.Events).SingleOrDefaultAsync(c => c.SiteId == siteId && c.TalkUuid == callUuid, cancellationToken);
+        if (call is null || call.Outcome != CallOutcome.InProgress || !ReplaceEvents(call, events))
+        {
+            return false;
+        }
+
+        var now = clock.GetUtcNow();
+        var lastEvent = events.Count == 0 ? (DateTimeOffset?)null : events.Max(e => e.Time);
+        call.Outcome = CallOutcomes.Of(call.Direction, call.Status, [.. events.Select(e => e.Event)], CallOutcomes.Over(call.Time, lastEvent, now));
+        call.UpdatedAt = now;
+        await db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    /// <summary>Replaces a call's events when Talk's differ from those stored. Returns whether they did.</summary>
+    private bool ReplaceEvents(CallRow call, IReadOnlyList<CallEvent> callEvents)
+    {
+        var events = callEvents.Select((e, i) => (e, i)).ToList();
+        var changed = call.Events.Count != events.Count
+            || call.Events.OrderBy(e => e.Sequence).Zip(events).Any(p => p.First.EventUuid != p.Second.e.EventUuid || p.First.Event != p.Second.e.Event);
+        if (!changed)
+        {
+            return false;
+        }
+
+        call.Events.Clear();
+        call.Events.AddRange(events.Select(p => new CallEventRow
+        {
+            Id = Guid.NewGuid(),
+            SiteId = siteId,
+            CallId = call.Id,
+            Sequence = p.i,
+            Time = p.e.Time,
+            Event = p.e.Event,
+            EventUuid = p.e.EventUuid,
+            DataJson = p.e.EventData?.GetRawText(),
+        }));
+        return true;
+    }
+
     /// <summary>Copies a record onto a call. Returns true when anything changed.</summary>
     private bool Apply(CallRow call, CallLogRecord record, DateTimeOffset now, OutsideFinding? finding = null)
     {
@@ -168,24 +217,7 @@ public sealed class CallLogIngestor(
         call.Country = record.Country;
         call.QualityScore = record.QualityScore;
 
-        var events = record.CallEvents.Select((e, i) => (e, i)).ToList();
-        var eventsChanged = call.Events.Count != events.Count
-            || call.Events.OrderBy(e => e.Sequence).Zip(events).Any(p => p.First.EventUuid != p.Second.e.EventUuid || p.First.Event != p.Second.e.Event);
-        if (eventsChanged)
-        {
-            call.Events.Clear();
-            call.Events.AddRange(events.Select(p => new CallEventRow
-            {
-                Id = Guid.NewGuid(),
-                SiteId = siteId,
-                CallId = call.Id,
-                Sequence = p.i,
-                Time = p.e.Time,
-                Event = p.e.Event,
-                EventUuid = p.e.EventUuid,
-                DataJson = p.e.EventData?.GetRawText(),
-            }));
-        }
+        var eventsChanged = ReplaceEvents(call, record.CallEvents);
 
         var lines = CallRouting.TouchedLines(record, numbers, directory ?? LineDirectory.Empty);
         var linesChanged = !lines.SetEquals(call.Lines.Select(l => new LineRef(l.Kind, l.Key)));

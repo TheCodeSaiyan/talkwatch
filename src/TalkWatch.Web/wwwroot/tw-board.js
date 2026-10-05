@@ -608,6 +608,16 @@
   };
   new MutationObserver(inspectorChanged).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-call'] });
 
+  // ---------- shared with other boards ----------
+  // Operator's switchboards (tw-switchboard.js) move callers with the same moves, timings and budget as Now: one
+  // in-flight count across both, so a page never has more than three things travelling.
+  TW.continuity = {
+    reduced: reduced, ease: ease, inOut: inOut, lerp: lerp, css: css, visible: visible, centre: centre, normalise: normalise,
+    copyOf: copyOf, flash: flash, curve: curve, poly: poly, speak: speak,
+    canFly: canFly, take: function () { flying++; }, done: function () { flying = Math.max(0, flying - 1); },
+    EASE: EASE, EASE_IN: EASE_IN,
+  };
+
   // ---------- wiring ----------
   var board = null;
   function scan() {

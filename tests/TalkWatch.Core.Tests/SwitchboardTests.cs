@@ -54,6 +54,10 @@ public class SwitchboardTests
         Assert.Equal([1, 2, 3], nodes.Where(n => n.ParentId == "swb_15" && n.Type == SwitchboardNode.Menu).Select(n => n.Key!.Value).Order());
         Assert.Equal([1, 2], nodes.Where(n => n.ParentId == "swb_16").Select(n => n.Key!.Value).Order());
 
+        // Where calls end up has no title of its own: a ring group is named by its group, a contact by their name.
+        Assert.Equal("Jordan Baker 27", nodes.Single(n => n.Id == "grp_39_1").Title);
+        Assert.Equal("Morgan9 Nico10", nodes.Single(n => n.Type == "contact").Title);
+
         var greeting = await talk.GetSwitchboardAudioAsync(roots.Single(r => r.InternalId == 15).GreetingFileName!, Ct);
         Assert.InRange(Mp3.Duration(greeting)!.Value.TotalSeconds, 1, 120);
         Assert.Null(await talk.GetSwitchboardAudioAsync("not-there.mp3", Ct));

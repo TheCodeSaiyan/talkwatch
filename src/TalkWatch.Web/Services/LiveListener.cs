@@ -172,6 +172,22 @@ public sealed partial class LiveListener(
                 await transcripts.HandleAsync(transcript, cancellationToken);
             }
 
+            // A step within a call that is still going (a key pressed, an option entered, a ring group rung): Talk names
+            // only the call, so its events are read now. Operator draws callers moving through the switchboard from them,
+            // a step at a time, instead of only when the call ends.
+            if (message.CallId() is { } callId)
+            {
+                var events = await session.Client.GetCallEventsAsync(callId, cancellationToken);
+                using var scope = scopes.CreateScope();
+                scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UseSystemScope();
+                var db = scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>();
+                var site = scope.ServiceProvider.GetRequiredService<CurrentSite>();
+                if (await new CallLogIngestor(null, db, site.Id, new NumberNormaliser(site.Region), clock).UpdateEventsAsync(callId, events, cancellationToken))
+                {
+                    ingestion.Stored();
+                }
+            }
+
             if (message.Event == LiveMessage.CallLogUpdated && message.CallRecords() is { Count: > 0 } records)
             {
                 using var scope = scopes.CreateScope();
