@@ -27,8 +27,8 @@ or a trial that hasn't ended. Railway says so before it deploys anything.
 
 ## Deploying
 
-1. Choose **Deploy on Railway** from TalkWatch's README, and sign in to your
-   Railway account.
+1. Choose [**Deploy on Railway**](https://railway.com/deploy/talkwatch?referralCode=Ovpomw&utm_medium=integration&utm_source=template&utm_campaign=generic),
+   or the button in TalkWatch's README, and sign in to your Railway account.
 2. Fill in `Site__Name`, `Site__Region` and `Site__TimeZone` for the site, as
    Railway asks. Everything else is filled in for you.
 3. Deploy. TalkWatch creates its database and the first admin, and waits for a
