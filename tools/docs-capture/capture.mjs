@@ -94,7 +94,56 @@ async function callDetail(page) {
   await visit(page, links[0], 'call-detail', { full: true });
 }
 
+// A caller going through the main switchboard's menu: they ride from the menu to the option they press, and on to the
+// one they press next. On a page of its own, so nothing left from the board's recording is in the way.
+async function operatorRide() {
+  try {
+    const page = await signedIn();
+    await page.goto(base + '/operator');
+    const board = page.locator('section[aria-label="Main switchboard"]');
+    await board.waitFor({ state: 'attached', timeout: 60000 });
+    // Not Playwright's own scroll, which waits for the section to stop moving: its streams never do.
+    await board.evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
+    await settle(page);
+    await record(page, 'operator-ride', async (mark) => {
+      await scenario(page, 'Presses 1, then 2');
+      await wait(4500);
+      mark('start');
+      await wait(9500);
+      mark('end');
+      await wait(1000);
+    }, { keep: mainSwitchboard });
+    await page.context().close();
+  } catch (e) {
+    log('FAILED operator-ride', e.message);
+  }
+}
+
+// Light theme, and a phone.
+async function lightAndPhone() {
+  try {
+    const light = await signedIn({ theme: 'light' });
+    await visit(light, '/live', 'now-light');
+    await visit(light, '/calls', 'calls-light');
+    await light.context().close();
+    const phone = await signedIn({ width: 390, height: 844, mobile: true });
+    await visit(phone, '/live', 'now-phone');
+    await visit(phone, '/calls', 'calls-phone');
+    await phone.context().close();
+  } catch (e) {
+    log('FAILED light and phone', e.message);
+  }
+}
+
 // TW_ONLY names one shot to take again, so a picture that came out badly needn't mean the whole run again.
+if (process.env.TW_ONLY === 'operator-ride') {
+  await operatorRide();
+  await lightAndPhone();
+  await browser.close();
+  log('done');
+  process.exit(0);
+}
+
 if (process.env.TW_ONLY === 'call-detail') {
   try { await callDetail(await signedIn()); } catch (e) { log('FAILED', e.stack); }
   await browser.close();
@@ -135,7 +184,7 @@ try {
   await wait(3000);
   await scenario(page, 'Hangs up in the menu');
   await wait(4500);
-  await page.locator('section[aria-label="Main switchboard"]').scrollIntoViewIfNeeded();
+  await page.locator('section[aria-label="Main switchboard"]').evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
   await shot(page, 'operator', { settleMs: 400 });
   // Each scenario plays out in about a minute: let them finish before the next pictures.
   await wait(50000);
@@ -220,32 +269,8 @@ try {
     await wait(240000);
   }, { keep: () => { const b = document.querySelector('[data-board]').getBoundingClientRect(); return { x: 0, y: Math.max(0, b.top - 8), width: innerWidth, height: Math.min(innerHeight - Math.max(0, b.top - 8), 760) }; } });
 
-  // A caller going through the main switchboard's menu: they ride from the menu to the option they press, and on to the
-  // one they press next.
-  await page.goto(base + '/operator');
-  await page.waitForSelector('section[aria-label="Main switchboard"]');
-  await page.locator('section[aria-label="Main switchboard"]').scrollIntoViewIfNeeded();
-  await settle(page);
-  await record(page, 'operator-ride', async (mark) => {
-    await scenario(page, 'Presses 1, then 2');
-    await wait(4500);
-    mark('start');
-    await wait(9500);
-    mark('end');
-    await wait(1000);
-  }, { keep: mainSwitchboard });
-
-  // Light theme, and a phone.
-  {
-    const light = await signedIn({ theme: 'light' });
-    await visit(light, '/live', 'now-light');
-    await visit(light, '/calls', 'calls-light');
-    await light.context().close();
-    const phone = await signedIn({ width: 390, height: 844, mobile: true });
-    await visit(phone, '/live', 'now-phone');
-    await visit(phone, '/calls', 'calls-phone');
-    await phone.context().close();
-  }
+  await operatorRide();
+  await lightAndPhone();
 } catch (e) {
   log('FAILED', e.stack);
 } finally {

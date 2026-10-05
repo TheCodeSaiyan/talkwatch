@@ -125,7 +125,7 @@ public sealed partial class DemoScenarios(
                 }
                 else
                 {
-                    call.Event("call_accepted", Accepted());
+                    call.Event("call_accepted");
                     if (Member() is { } member)
                     {
                         call.Fields["answered_by_user_uuid"] = Quote(member);
@@ -195,7 +195,7 @@ public sealed partial class DemoScenarios(
         await PushAsync(call, ct);
         await WaitAsync(8, ct);
         call.Status = "accepted";
-        call.Event("call_accepted", Accepted());
+        call.Event("call_accepted");
         if (Member() is { } member)
         {
             call.Fields["answered_by_user_uuid"] = Quote(member);
@@ -270,9 +270,6 @@ public sealed partial class DemoScenarios(
 
     private string? Member() => Group()?.MemberList?[0];
 
-    // Who answered, as Talk says it: by their extension.
-    private string Accepted() =>
-        directory.Current.Users.FirstOrDefault(u => u.Uuid == Member())?.Ext is { } ext ? $$"""{"accepted_by":"{{ext}}"}""" : "{}";
 
     private static string Quote(string value) => "\"" + value + "\"";
 
