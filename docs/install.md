@@ -4,6 +4,8 @@ You need Docker with Compose, a UniFi console running Talk, and a machine on the
 
 To look round before you point it at a console, [try the demo](demo.md):
 the same image, with a capture from a real console replayed in place of yours.
+To run it on Railway rather than on the site's LAN, see
+[Deploying on Railway](railway.md).
 
 ## 1. A console account for TalkWatch
 
