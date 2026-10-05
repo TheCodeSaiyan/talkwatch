@@ -51,6 +51,19 @@ public sealed class SwitchboardFlowTests
         Assert.Equal("n:ivr_16", flow.Stages.Single(s => s.Id == "n:ivr_17").From);
     }
 
+    // Laid out as a tree: each stage nothing leads on from takes a row, and a stage sits level with the middle of what
+    // it leads to.
+    [Fact]
+    public void Each_stage_sits_level_with_the_middle_of_where_it_leads()
+    {
+        var flow = Build()[0];
+
+        Assert.Equal(
+            [("n:grp_40", 0d), ("n:ivr_17", 0d), ("n:ivr_16", 0d), ("n:grp_39", 1d), ("n:ivr_18", 1d), ("hungup", 2d), ("n:swb_15", 1d), ("in", 1d)],
+            flow.Rows.Select(r => (r.Key, r.Value)));
+        Assert.Equal(3, flow.RowCount);
+    }
+
     // As on the console it was built against: each option splits by opening hours before its ring group, and the ring
     // group has no title of its own. The split passes the option's calls on; Talk logs no step for it.
     [Fact]
@@ -95,6 +108,28 @@ public sealed class SwitchboardFlowTests
         Assert.Equal(("n:grp_39", "ringing"), flow.Callers.Single(c => c.Key == "ringing") is var r ? (r.StageId, r.Mark) : default);
         Assert.Equal("n:ivr_16", flow.Callers.Single(c => c.Key == "nested").StageId);
         Assert.Equal(3, flow.InTheMenu);
+    }
+
+    // A real call on the console it was tried on: 1 for the second menu, then 1 in it. Talk names the top switchboard
+    // as sa_id for both choices, and the option itself as sa_item_id.
+    [Fact]
+    public void A_caller_two_menus_deep_is_at_the_option_they_chose_in_the_second()
+    {
+        SwitchboardNodeRow[] tree =
+        [
+            new() { NodeId = "swb_15", InternalId = 15, Type = "root", Title = "Fluxion", Numbers = "+441174960404" },
+            new() { NodeId = "swb_16", InternalId = 16, Type = "ivr", Key = 1, Title = "Sales And Billing Support", ParentId = "swb_15" },
+            new() { NodeId = "swb_37", InternalId = 37, Type = "ivr", Key = 1, Title = "Sales", ParentId = "swb_16" },
+            new() { NodeId = "swb_42", InternalId = 42, Type = "ivr", Key = 2, Title = "Billing", ParentId = "swb_16" },
+        ];
+        var caller = Caller("deep", ("call_started", Started()),
+            ("entered_sa_menu", """{"sa_id": 15, "sa_item_id": 16, "sa_item_key": 1, "sa_item_type": "ivr", "sa_item_title": "Sales And Billing Support"}"""),
+            ("keypress", """{"key":"1"}"""), ("keypress", """{"key":"1"}"""),
+            ("entered_sa_menu", """{"sa_id": 15, "sa_item_id": 37, "sa_item_key": 1, "sa_item_type": "ivr", "sa_item_title": "Sales"}"""));
+
+        var flow = SwitchboardFlows.Build(tree, [], [caller], null, n => n)[0];
+
+        Assert.Equal("n:swb_37", flow.Callers.Single().StageId);
     }
 
     [Fact]

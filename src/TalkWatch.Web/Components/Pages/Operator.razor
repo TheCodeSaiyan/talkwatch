@@ -51,35 +51,37 @@
                 <span class="cap" data-c="derived" title="Worked out from each step Talk reports as it happens">Live from Talk's steps</span>
             </div>
         </div>
+        @* The Data Current: each stage a node on the flow, laid out as a tree, with the streams between them drawn by
+           tw-switchboard.js. The callers at a stage stack under its node. *@
         <div class="sb-scroll">
-        <div class="sb-flow" data-sb-flow style="grid-template-columns: repeat(@flow.Columns, minmax(160px, 1fr))">
-            <canvas class="sb-current" aria-hidden="true"></canvas>
-            @for (var column = 0; column < flow.Columns; column++)
+        <div class="flow sb-flow" data-sb-flow role="group" aria-label="Callers moving through @flow.Title"
+             style="height: @(FlowTop * 2 + (flow.RowCount - 1) * RowHeight + StackRoom)px; min-width: @(flow.Columns * ColumnWidth)px">
+            <canvas aria-hidden="true"></canvas>
+            @foreach (var stage in flow.Stages)
             {
-                <div class="sb-col">
-                    @foreach (var stage in flow.Stages.Where(s => s.Column == column))
+                var here = flow.At(stage.Id).ToList();
+                var left = Pct((stage.Column + .5) / flow.Columns);
+                var top = FlowTop + flow.Rows[stage.Id] * RowHeight;
+                var marks = (here.Count > 0 ? " hot" : "") + (stage.Kind == "hungup" && stage.Today > 0 ? " alert" : "");
+                <div class="node@(marks)" style="left: @left%; top: @Px(top)px"
+                     data-stage="@stage.Id" data-from="@stage.From" data-kind="@stage.Kind" data-today="@stage.Today" data-now="@here.Count">
+                    <b>@stage.Label</b><span class="m">@string.Join(" · ", new[] { here.Count > 0 ? $"{here.Count} now" : null, stage.Counted ? $"{stage.Today} today" : null }.OfType<string>())</span>
+                </div>
+                @* The callers here, as a stack of cards: three show, the rest are counted, and pointing at the stack (or
+                   tabbing into it) fans it open to scroll through. A card is the caller and how long they have been here;
+                   choosing one opens the call beside the page, with what they did. *@
+                <div class="sb-callers" role="list" data-stage-list="@stage.Id" data-now="@here.Count" tabindex="-1" aria-label="@here.Count at @stage.Label" style="left: @left%; top: @Px(top + 24)px">
+                    @foreach (var c in here)
                     {
-                        var here = flow.At(stage.Id).ToList();
-                        <div class="sb-stage" data-stage="@stage.Id" data-from="@stage.From" data-kind="@stage.Kind" data-today="@stage.Today" data-now="@here.Count">
-                            <div class="sb-node"><b>@stage.Label</b><span class="m num">@string.Join(" · ", new[] { here.Count > 0 ? $"{here.Count} now" : null, stage.Counted ? $"{stage.Today} today" : null }.OfType<string>())</span></div>
-                            @* The callers here, as a stack of cards: three show, the rest are counted, and pointing at the stack
-                               (or tabbing into it) fans it open to scroll through. A card is the caller and how long they
-                               have been here; choosing one opens the call beside the page, with what they did. *@
-                            <div class="sb-callers" role="list" data-stage-list="@stage.Id" tabindex="-1" aria-label="@here.Count at @stage.Label">
-                                @foreach (var c in here)
-                                {
-                                    <a class="sb-caller" role="listitem" data-key="@c.Key" href="/calls/@c.Key" data-inspect="@c.Key" title="@c.Step" @key="c.Key">
-                                        <span class="st" data-s="@c.Mark"><i></i></span>
-                                        <b data-grow>@c.Who</b>
-                                        <span class="num" data-since="@c.Since.ToUnixTimeMilliseconds()">@CallMarks.Duration(Clock.GetUtcNow() - c.Since)</span>
-                                    </a>
-                                }
-                                @if (here.Count > 3)
-                                {
-                                    <span class="sb-more num" aria-hidden="true">+@(here.Count - 3)</span>
-                                }
-                            </div>
-                        </div>
+                        <a class="sb-caller" role="listitem" data-key="@c.Key" href="/calls/@c.Key" data-inspect="@c.Key" title="@c.Step" @key="c.Key">
+                            <span class="st" data-s="@c.Mark"><i></i></span>
+                            <b>@c.Who</b>
+                            <span class="num" data-since="@c.Since.ToUnixTimeMilliseconds()">@CallMarks.Duration(Clock.GetUtcNow() - c.Since)</span>
+                        </a>
+                    }
+                    @if (here.Count > 3)
+                    {
+                        <span class="sb-more num" aria-hidden="true">+@(here.Count - 3)</span>
                     }
                 </div>
             }
@@ -209,6 +211,14 @@
     private List<LiveCall> _talking = [];
     private List<WaitingCaller> _callBacks = [];
     private List<SwitchboardFlow> _flows = [];
+
+    // The flow's layout, in pixels: room above the first row and below the last, each row's height, room under the
+    // last row for its caller stack, and the narrowest a column gets before the flow scrolls sideways.
+    private const int FlowTop = 34, RowHeight = 78, StackRoom = 64, ColumnWidth = 196;
+
+    private static string Pct(double fraction) => (fraction * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string Px(double px) => px.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
     private CancellationTokenSource? _pending;
     private Timer? _timer;
 

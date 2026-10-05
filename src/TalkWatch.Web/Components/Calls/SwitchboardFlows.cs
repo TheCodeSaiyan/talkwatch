@@ -34,6 +34,37 @@ public sealed record SwitchboardFlow(int Id, string Title, IReadOnlyList<string>
     public IEnumerable<FlowCaller> At(string stageId) => Callers.Where(c => c.StageId == stageId).OrderBy(c => c.Since);
 
     public int InTheMenu => Callers.Count(c => c.Mark == "routing");
+
+    /// <summary>
+    /// Where each stage sits down the flow, in rows: the stages nothing leads on from take a row each, in order, and a
+    /// stage sits level with the middle of what it leads to, so each branch fans out from its stage as a tree.
+    /// </summary>
+    public IReadOnlyDictionary<string, double> Rows => _rows ??= Lay();
+
+    /// <summary>How many rows the flow needs.</summary>
+    public int RowCount => Rows.Count == 0 ? 0 : (int)Rows.Values.Max() + 1;
+
+    private Dictionary<string, double>? _rows;
+
+    private Dictionary<string, double> Lay()
+    {
+        var rows = new Dictionary<string, double>(StringComparer.Ordinal);
+        var next = 0;
+        double Place(FlowStage stage)
+        {
+            var onward = Stages.Where(s => s.From == stage.Id).ToList();
+            var row = onward.Count == 0 ? next++ : onward.Select(Place).ToList() is var placed ? (placed[0] + placed[^1]) / 2 : 0;
+            rows[stage.Id] = row;
+            return row;
+        }
+
+        foreach (var start in Stages.Where(s => s.From is null))
+        {
+            Place(start);
+        }
+
+        return rows;
+    }
 }
 
 /// <summary>A call from today, as far as the flow needs it: where it went in the switchboard and how it ended.</summary>
