@@ -1,0 +1,67 @@
+/* The documentation in TalkWatch's own look: its two faces, bundled here as they are in the app so the site fetches
+   nothing from a font service; its colours, from the design system's tokens; and a wider page, because the pictures
+   are of a 1440px-wide screen and the theme's default column shrank them past reading. */
+@font-face { font-family: "Schibsted Grotesk"; src: url("fonts/schibsted-grotesk.woff2") format("woff2"); font-weight: 400 900; font-display: swap; }
+@font-face { font-family: "Azeret Mono"; src: url("fonts/azeret-mono.woff2") format("woff2"); font-weight: 400 600; font-display: swap; }
+
+:root {
+  --md-text-font-family: "Schibsted Grotesk", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --md-code-font-family: "Azeret Mono", "Cascadia Mono", Consolas, monospace;
+}
+
+/* Light: the editorial theme, a cool paper ground with white planes. */
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #0e1418;
+  --md-primary-fg-color--light: #3b4650;
+  --md-primary-fg-color--dark: #0e1418;
+  --md-primary-bg-color: #f7f9fa;
+  --md-accent-fg-color: #0970a2;
+  --md-default-bg-color: #eef1f4;
+  --md-default-fg-color: #0e1418;
+  --md-default-fg-color--light: #3b4650;
+  --md-default-fg-color--lighter: #5e6a74;
+  --md-typeset-a-color: #0970a2;
+  --md-code-bg-color: #ffffff;
+  --md-footer-bg-color: #0e1418;
+}
+
+/* Dark: the instrument, layered blue-black, never pure black. */
+[data-md-color-scheme="slate"] {
+  --md-hue: 210;
+  --md-primary-fg-color: #0f1317;
+  --md-primary-fg-color--light: #141a1f;
+  --md-primary-fg-color--dark: #0a0d10;
+  --md-primary-bg-color: #e4e9ed;
+  --md-accent-fg-color: #8fdcff;
+  --md-default-bg-color: #0a0d10;
+  --md-default-fg-color: #e4e9ed;
+  --md-default-fg-color--light: #a9b4bd;
+  --md-default-fg-color--lighter: #87929b;
+  --md-default-fg-color--lightest: #4e5862;
+  --md-typeset-a-color: #45c4f2;
+  --md-code-bg-color: #141a1f;
+  --md-footer-bg-color: #0f1317;
+  --md-footer-bg-color--dark: #0a0d10;
+}
+
+/* The header: a hairline under it rather than a coloured bar, as the app's rail has. */
+.md-header { box-shadow: none; border-bottom: 1px solid #1f272e; }
+[data-md-color-scheme="default"] .md-header { border-bottom-color: #2c3740; }
+.md-header__button.md-logo img { height: 1.5rem; }
+
+/* Room for the pictures, while the writing keeps a measure that reads: only paragraphs holding a picture, tables and
+   code take the full width. */
+.md-grid { max-width: 1400px; }
+.md-typeset > p:not(:has(img)), .md-typeset > ul, .md-typeset > ol, .md-typeset > .admonition { max-width: 46rem; }
+
+.md-typeset h1 { font-weight: 700; letter-spacing: -0.012em; color: var(--md-default-fg-color); }
+.md-typeset h2 { font-weight: 650; letter-spacing: -0.01em; }
+
+/* Screenshots sit on the page as planes: a hairline and the app's largest radius, no shadow. */
+.md-typeset img { border-radius: 8px; border: 1px solid #1f272e; }
+[data-md-color-scheme="default"] .md-typeset img { border-color: #dde3e8; }
+
+/* Two pictures side by side, such as a phone beside a desktop; one above the other on a narrow screen. */
+.md-typeset .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.6fr); gap: 1rem; align-items: start; }
+.md-typeset .pair p { margin: 0; }
+@media (max-width: 760px) { .md-typeset .pair { grid-template-columns: minmax(0, 1fr); } }

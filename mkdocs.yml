@@ -6,17 +6,30 @@ copyright: MIT licence. Not affiliated with Ubiquiti.
 
 theme:
   name: material
+  # TalkWatch's own faces, bundled in assets/ as they are in the app, so the site makes no request to a font service.
+  font: false
+  logo: assets/mark.svg
+  favicon: assets/mark.svg
   features:
     - content.code.copy
     - navigation.sections
+    # A page's contents sit in the left navigation, so the page itself has the width its pictures need.
+    - toc.integrate
     - search.highlight
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
+      primary: custom
+      accent: custom
       toggle: { icon: material/weather-night, name: Dark }
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      primary: custom
+      accent: custom
       toggle: { icon: material/weather-sunny, name: Light }
+
+extra_css:
+  - assets/talkwatch.css
 
 markdown_extensions:
   - admonition

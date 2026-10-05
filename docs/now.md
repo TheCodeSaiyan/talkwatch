@@ -32,9 +32,10 @@ Below 1000px of room, on a narrow window or with a call open beside it, the
 board stacks into one column and the streams run down between the lists. In
 the light theme it's the same board on paper.
 
-<div class="grid" markdown>
-![Now on a phone](images/now-phone.png){ width="260" }
-![Now in the light theme](images/now-light.png){ width="440" }
+<div class="pair" markdown>
+![Now on a phone](images/now-phone.png)
+
+![Now in the light theme](images/now-light.png)
 </div>
 
 The people and handsets come from Talk's live feed. If that's down, the
