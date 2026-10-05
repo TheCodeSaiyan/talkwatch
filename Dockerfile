@@ -23,11 +23,26 @@ RUN dotnet publish src/TalkWatch.Web -c Release -a $TARGETARCH -o /app \
 # handed to the app's user so it can write there; mount a volume over it to keep the audio.
 RUN mkdir -p /data/audio
 
+# The helpers for a console that isn't on TalkWatch's own network (Talk__Route): wireproxy, a userspace WireGuard client,
+# and Tailscale's own tailscaled and tailscale. Built from source at pinned versions, static, for the target architecture,
+# and run as the app's unprivileged user: neither needs root, a TUN device or a shell.
+FROM --platform=$BUILDPLATFORM golang:1.27.1 AS tunnel
+ARG TARGETARCH
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH GOFLAGS=-trimpath
+RUN go install -ldflags="-s -w" github.com/windtf/wireproxy/cmd/wireproxy@v1.1.3 \
+    && go install -ldflags="-s -w" tailscale.com/cmd/tailscaled@v1.104.0 tailscale.com/cmd/tailscale@v1.104.0 \
+    && mkdir /out \
+    # Cross-compiled binaries land in a folder named for their platform; native ones don't.
+    && if [ -d "/go/bin/linux_$TARGETARCH" ]; then cp /go/bin/linux_$TARGETARCH/* /out/; else cp /go/bin/wireproxy /go/bin/tailscaled /go/bin/tailscale /out/; fi \
+    && cp /go/pkg/mod/github.com/windtf/wireproxy@v1.1.3/LICENSE /out/LICENSE-wireproxy \
+    && cp /go/pkg/mod/tailscale.com@v1.104.0/LICENSE /out/LICENSE-tailscale
+
 # chiseled-extra: no shell or package manager, but it keeps ICU and tzdata, which time-zone-aware
 # alert rules and locale formatting need.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra
 WORKDIR /app
 COPY --from=build /app .
+COPY --from=tunnel /out /app/tunnel
 COPY --from=build --chown=$APP_UID:$APP_UID /data /data
 # The pseudonymised fixtures, for demo mode (Demo__Enabled): fictional numbers and synthetic audio only.
 COPY tests/fixtures/talk-5.3.2 /app/demo/talk-5.3.2

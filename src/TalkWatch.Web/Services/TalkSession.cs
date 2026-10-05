@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using TalkWatch.Core.Talk;
 
 namespace TalkWatch.Web.Services;
@@ -8,7 +7,7 @@ namespace TalkWatch.Web.Services;
 /// sign-in, so everything that talks to the console goes through here: one sign-in, and one back-off when refused.
 /// </summary>
 public sealed partial class TalkSession(
-    IHttpClientFactory clients, IHttpMessageHandlerFactory handlers, IOptions<TalkOptions> options, IngestionStatus status,
+    IHttpClientFactory clients, IHttpMessageHandlerFactory handlers, ConsoleConnection connection, IngestionStatus status,
     TimeProvider clock, ILogger<TalkSession> logger) : IDisposable
 {
     public const string HttpClientName = "talk";
@@ -22,9 +21,31 @@ public sealed partial class TalkSession(
     // cookie jar, each thinking itself signed in or not, signed in over each other's session until the console refused.
     private readonly Lazy<TalkClient> _client = new(() => new TalkClient(clients.CreateClient(HttpClientName)), LazyThreadSafetyMode.ExecutionAndPublication);
 
-    public TalkClient Client => _client.Value;
+    private Action? _onChanged;
 
-    public Uri? ConsoleUrl => options.Value.ConsoleUrl;
+    public TalkClient Client
+    {
+        get
+        {
+            if (_onChanged is null && Interlocked.CompareExchange(ref _onChanged, SettingsChanged, null) is null)
+            {
+                connection.Changed += SettingsChanged;
+            }
+
+            return _client.Value;
+        }
+    }
+
+    // New settings from the Console page: a new console, account or way to it needs a new sign-in, tried straight away
+    // rather than after a back-off the old settings earned.
+    private void SettingsChanged()
+    {
+        _client.Value.SessionEnded();
+        status.BackOffUntil = null;
+    }
+
+    /// <summary>The console as the settings now name it; null while none is set.</summary>
+    public async ValueTask<Uri?> ConsoleUrlAsync(CancellationToken cancellationToken) => (await connection.GetAsync(cancellationToken)).Url;
 
     public bool BackingOff => status.BackOffUntil is { } until && clock.GetUtcNow() < until;
 
@@ -55,7 +76,8 @@ public sealed partial class TalkSession(
                 return true;
             }
 
-            await Client.SignInAsync(options.Value.Username ?? "", options.Value.Password ?? "", cancellationToken);
+            var target = await connection.GetAsync(cancellationToken);
+            await Client.SignInAsync(target.Username, target.Password, cancellationToken);
             return true;
         }
         catch (TalkRateLimitedException e)
@@ -82,7 +104,15 @@ public sealed partial class TalkSession(
         LogBackOff(logger, wait.TotalMinutes, e);
     }
 
-    public void Dispose() => _signIn.Dispose();
+    public void Dispose()
+    {
+        if (_onChanged is not null)
+        {
+            connection.Changed -= SettingsChanged;
+        }
+
+        _signIn.Dispose();
+    }
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "The console refused; not trying again for {Minutes:0.#} minute(s).")]
     private static partial void LogBackOff(ILogger logger, double minutes, Exception exception);

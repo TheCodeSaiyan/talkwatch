@@ -3,13 +3,38 @@ namespace TalkWatch.Web.Services;
 // Every setting here is described, and docs/configuration.md is generated from these descriptions and defaults: a
 // test fails when the two differ, and writes the new version for review.
 
-/// <summary>The console TalkWatch reads from.</summary>
+/// <summary>
+/// The console TalkWatch reads from, and the way to it. Each of these but PollSeconds and CopyTranscripts can instead be
+/// set on the Console page, which wins, field by field.
+/// </summary>
 public sealed class TalkOptions
 {
     public const string Section = "Talk";
 
     /// <summary>The console's LAN address, such as https://10.0.0.1. Polling is off while this is unset.</summary>
     public Uri? ConsoleUrl { get; set; }
+
+    /// <summary>
+    /// How TalkWatch reaches the console: Direct, on the same network; WireGuard, through the site gateway's own WireGuard
+    /// VPN server; or Tailscale, through a tailnet with a subnet router on the site's network. ConsoleUrl stays the
+    /// console's LAN address whichever it is.
+    /// </summary>
+    public Data.ConsoleRoute Route { get; set; } = Data.ConsoleRoute.Direct;
+
+    /// <summary>
+    /// For WireGuard: the client's .conf as the gateway's VPN server gives it out, whole. Its endpoint can be the site's
+    /// dynamic DNS name, which TalkWatch looks up again every few minutes.
+    /// </summary>
+    public string? WireGuardConfig { get; set; }
+
+    /// <summary>
+    /// For Tailscale: an auth key, or an OAuth client secret with the auth_keys scope, which does not expire. TalkWatch
+    /// joins as an ephemeral node each time it starts.
+    /// </summary>
+    public string? TailscaleAuthKey { get; set; }
+
+    /// <summary>For Tailscale: the tags TalkWatch's node advertises, comma-separated, such as tag:talkwatch. An OAuth client secret needs at least one.</summary>
+    public string? TailscaleTags { get; set; }
 
     /// <summary>A console user with read-only access to Talk, signed in by username (not e-mail address).</summary>
     public string? Username { get; set; }

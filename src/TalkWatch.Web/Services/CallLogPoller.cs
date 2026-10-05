@@ -35,15 +35,23 @@ public sealed partial class CallLogPoller(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (options.Value.ConsoleUrl is null)
-        {
-            LogDisabled(logger);
-            return;
-        }
-
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(Math.Max(10, options.Value.PollSeconds)), clock);
+        var said = false;
         do
         {
+            // The console can be set on the Console page while TalkWatch runs, so an unset one waits rather than stops.
+            if (await session.ConsoleUrlAsync(stoppingToken) is null)
+            {
+                if (!said)
+                {
+                    LogDisabled(logger);
+                    said = true;
+                }
+
+                continue;
+            }
+
+            said = false;
             await RunOnceAsync(stoppingToken);
         }
         while (await timer.WaitForNextTickAsync(stoppingToken));
@@ -160,7 +168,7 @@ public sealed partial class CallLogPoller(
         }
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Polling is off: Talk__ConsoleUrl is not set.")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "Polling waits for a console: set its address on the Console page, or as Talk__ConsoleUrl.")]
     private static partial void LogDisabled(ILogger logger);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Call log: {Added} new, {Updated} updated, {Pages} page(s) read.")]

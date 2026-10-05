@@ -130,6 +130,11 @@
         {
             _configure.Add(new("Retention", "/admin/retention"));
         }
+        if (_user.IsInRole(Roles.Admin))
+        {
+            // The console's account and the way to it: the Admin role's alone, whatever another role holds.
+            _configure.Add(new("Console", "/admin/console"));
+        }
 
         // The second line says what is behind the menu: "People, roles, groups".
         // Short, so the rail fits: "People and settings" when there is more than people, else what there is.
