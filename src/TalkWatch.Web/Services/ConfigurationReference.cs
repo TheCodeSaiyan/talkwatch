@@ -28,7 +28,8 @@ public static partial class ConfigurationReference
         ("OTEL_SERVICE_NAME", "`talkwatch`", "The service name traces and metrics carry."),
     ];
 
-    private static readonly string[] SecretNames = ["Password", "Secret", "Token"];
+    // A WireGuard config carries its private key.
+    private static readonly string[] SecretNames = ["Password", "Secret", "Token", "AuthKey", "WireGuardConfig"];
 
     /// <summary>A property TalkWatch reads as a setting: public, settable, and not worked out from others.</summary>
     public static IEnumerable<PropertyInfo> Settings(Type options) =>

@@ -45,6 +45,8 @@ nav:
       - Trying the demo: demo.md
       - Installing: install.md
       - Behind a reverse proxy: proxy.md
+      - Reaching a console from elsewhere: remote-console.md
+      - Deploying on Railway: railway.md
       - Configuration: configuration.md
       - Upgrading: upgrading.md
   - A tour:

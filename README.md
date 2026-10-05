@@ -74,6 +74,17 @@ services:
 Then open `http://<host>:8080` and choose **Sign in as guest**. For your own
 console, follow [Installing](https://thecodesaiyan.github.io/talkwatch/install/).
 
+## Deploying on Railway
+
+The template deploys the published image, PostgreSQL and a volume for
+recordings into your own Railway account. TalkWatch reaches the site's console
+through the site gateway's own WireGuard VPN, or Tailscale, set up on its
+Console page.
+[Deploying on Railway](https://thecodesaiyan.github.io/talkwatch/railway/) says
+what to fill in.
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://thecodesaiyan.github.io/talkwatch/railway/)
+
 ## Limits, plainly
 
 - **It reads Talk's undocumented local API.** When a response stops looking as

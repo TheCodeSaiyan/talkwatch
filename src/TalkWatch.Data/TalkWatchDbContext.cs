@@ -33,6 +33,9 @@ public sealed class TalkWatchDbContext(DbContextOptions<TalkWatchDbContext> opti
     public bool ScopeManageRetention => scope.Current.Can(Permission.ManageRetention);
     public bool ScopeManageReports => scope.Current.Can(Permission.ManageReports);
 
+    /// <summary>Admins, and TalkWatch itself: the console's credentials and the way to it are for nobody else.</summary>
+    public bool ScopeAdmin => scope.Current.Can(Permission.All);
+
     /// <summary>
     /// The keys that sign session cookies and antiforgery tokens. Kept here, not in the container, so a restart or
     /// redeploy does not sign everyone out, and they are backed up with everything else.
@@ -60,6 +63,7 @@ public sealed class TalkWatchDbContext(DbContextOptions<TalkWatchDbContext> opti
     public DbSet<AlertDelivery> AlertDeliveries => Set<AlertDelivery>();
     public DbSet<AlertSettings> AlertSettings => Set<AlertSettings>();
     public DbSet<RetentionSettings> RetentionSettings => Set<RetentionSettings>();
+    public DbSet<ConsoleSettings> ConsoleSettings => Set<ConsoleSettings>();
     public DbSet<ApiToken> ApiTokens => Set<ApiToken>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
     public DbSet<Site> Sites => Set<Site>();
@@ -506,6 +510,22 @@ public sealed class TalkWatchDbContext(DbContextOptions<TalkWatchDbContext> opti
             e.Property(a => a.TelegramProtectedBotToken).HasMaxLength(2000);
             e.Property(a => a.TelegramChatId).HasMaxLength(64);
             e.HasQueryFilter(a => a.SiteId == ScopeSiteId && ScopeManageAlerts);
+        });
+
+        builder.Entity<ConsoleSettings>(e =>
+        {
+            e.ToTable("console_settings");
+            e.HasKey(c => c.SiteId);
+            e.HasOne<Site>().WithMany().HasForeignKey(c => c.SiteId);
+            e.Property(c => c.ConsoleUrl).HasMaxLength(255);
+            e.Property(c => c.Username).HasMaxLength(255);
+            e.Property(c => c.ProtectedPassword).HasMaxLength(2000);
+            e.Property(c => c.CertificateSha256).HasMaxLength(100);
+            e.Property(c => c.Route).HasConversion<string>().HasMaxLength(16);
+            e.Property(c => c.ProtectedWireGuardConfig).HasMaxLength(8000);
+            e.Property(c => c.ProtectedTailscaleAuthKey).HasMaxLength(2000);
+            e.Property(c => c.TailscaleTags).HasMaxLength(500);
+            e.HasQueryFilter(c => c.SiteId == ScopeSiteId && ScopeAdmin);
         });
 
         builder.Entity<LineRecord>(e =>

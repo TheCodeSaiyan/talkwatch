@@ -21,7 +21,7 @@ public sealed class TalkSessionTests(TalkWatchApp talkwatch) : IClassFixture<Tal
         for (var round = 0; round < 300; round++)
         {
             var session = new TalkSession(services.GetRequiredService<IHttpClientFactory>(), services.GetRequiredService<IHttpMessageHandlerFactory>(),
-                services.GetRequiredService<IOptions<TalkOptions>>(), new IngestionStatus(), TimeProvider.System, NullLogger<TalkSession>.Instance);
+                services.GetRequiredService<ConsoleConnection>(), new IngestionStatus(), TimeProvider.System, NullLogger<TalkSession>.Instance);
             using var start = new Barrier(8);
             var clients = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(() => { start.SignalAndWait(TestContext.Current.CancellationToken); return session.Client; })));
             Assert.Single(clients.Distinct());

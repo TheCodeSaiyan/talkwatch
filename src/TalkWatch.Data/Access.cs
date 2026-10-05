@@ -128,6 +128,9 @@ public static class Permissions
     /// <summary>The policy for the alerts pages: one's own alerts, or every alert.</summary>
     public const string AlertsPolicy = "permission:alerts";
 
+    /// <summary>The policy for what only the Admin role may do, whatever permissions another role holds: the console's credentials and the way to it.</summary>
+    public const string AdminPolicy = "role:admin";
+
     /// <summary>
     /// What a role allows when it is held on a number rather than site-wide: about that number's calls, never about the
     /// site. Anything else a role holds is ignored on a number.
