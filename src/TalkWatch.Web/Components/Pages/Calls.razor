@@ -127,9 +127,9 @@ else
                         var chronicle = _chronicles.GetValueOrDefault(call.Id);
                         <tr data-call="@call.TalkUuid">
                             <td class="first">
-                                <a href="/calls/@call.TalkUuid" class="row" style="gap: 10px; text-decoration: none; color: inherit">
+                                <a href="/calls/@call.TalkUuid" class="row" data-inspect="@call.TalkUuid" style="gap: 10px; text-decoration: none; color: inherit">
                                     <span class="dir" data-d="@CallMarks.DirectionKey(call.Direction)" title="@CallMarks.Direction(call.Direction)"><Icon Name="@CallMarks.DirectionKey(call.Direction)" /><span class="sr">@CallMarks.Direction(call.Direction)</span></span>
-                                    <span class="who"><b>@Party(call)</b><span class="n">@Number(call)</span></span>
+                                    <span class="who"><b data-grow>@Party(call)</b><span class="n">@Number(call)</span></span>
                                 </a>
                             </td>
                             <td><span class="who"><b style="font-weight: 500">@LineName(call)</b>@if (call.Direction != "out" && LineName(call) != call.ToRaw)

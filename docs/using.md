@@ -47,6 +47,18 @@ it. The choice is kept on your account rather than in the browser, so it
 follows you to your phone, and the switcher changes colour while it's
 narrowed so you don't forget either.
 
+## Looking at one call without leaving the page
+
+Choosing a call on Now or in the call log opens it in a panel on the right,
+with the page still there beside it. The panel shows how the call ended (or
+how it's going), its line, how long it lasted and how long it took to answer,
+the route it took and what happened step by step. **Open** goes to the call's
+full page, with its recording and transcript. **Pin** keeps the panel open
+while you move between pages; otherwise it closes when you go somewhere else.
+**Esc** or the cross closes it. On a narrower screen it sits over the page
+instead of beside it. To open a call's full page straight away, open the link
+in a new tab as you normally would.
+
 ## The status strip
 
 When something needs attention, a strip appears under the rail on every page:
@@ -65,10 +77,21 @@ When all's well there's no strip. The freshness dot on the rail says so instead.
 ## Now
 
 TalkWatch opens on **Now**: what the phone system is doing at this moment.
-Calls in progress, from ringing through to connected; where inbound calls went
-over the last two hours; recent activity, outbound calls included; today's
-inbound and unanswered counts; who's on a call; and which handsets are online.
-The page stays live, so you can leave it open.
+It's laid out as the calls move through it. Calls stream in to **Live calls**,
+from ringing through to connected. When one ends it stays a few seconds,
+faded, with how it ended, then travels along its stream (answered, voicemail
+or missed) into **Recent activity**, and from there into the **call log** at
+the bottom. A missed call's mark also climbs to the rail's "missed today",
+which changes when it lands. The streams get busier the more calls took that
+path in the last five minutes. Above the lists are today's calls, calls in
+progress, the answer rate and missed calls; below them, who's on a call and
+which handsets are online. The page stays live, so you can leave it open.
+
+A list holds still while your pointer is over it, or you're tabbing through
+it, so nothing moves under a click. Its heading counts what's waiting
+("2 waiting · Show"); choose that to catch up at once, or move away and it
+catches up half a second later. The figures above never wait. If your system
+is set to reduce motion, nothing travels: changes just appear where they land.
 
 The people and handsets come from Talk's live feed. If that's down, the
 heading says so and what went wrong, and calls carry on being copied from the

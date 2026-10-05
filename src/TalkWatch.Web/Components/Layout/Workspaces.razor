@@ -9,6 +9,7 @@
 @inject IServiceScopeFactory Scopes
 @inject BrowserAlerts Alerts
 @inject LiveStatus Live
+@inject IngestionStatus Ingestion
 @inject NavigationManager Nav
 @inject TimeProvider Clock
 @inject Microsoft.Extensions.Options.IOptions<SiteOptions> Site
@@ -16,25 +17,25 @@
 
 <nav class="signals" aria-label="Workspaces" data-activity="@_onCalls">
     <a class="ws" href="/live" data-key="n" data-tone="live" data-zero="@Zero(_onCalls)" aria-current="@Current("/live")">
-        <span class="wl">Now</span><span class="wn"><b class="num">@_onCalls</b><span>on @(_onCalls == 1 ? "a call" : "calls")</span></span>
+        <span class="wl">Now</span><span class="wn"><b class="num roll" data-roll="oncalls"><span class="rv">@_onCalls</span></b><span>on @(_onCalls == 1 ? "a call" : "calls")</span></span>
     </a>
     <a class="ws" href="/operator" data-key="o" data-tone="ok" data-zero="@Zero(_free)" aria-current="@Current("/operator")">
-        <span class="wl">Operator</span><span class="wn"><b class="num">@_free</b><span>free</span></span>
+        <span class="wl">Operator</span><span class="wn"><b class="num roll" data-roll="free"><span class="rv">@_free</span></b><span>free</span></span>
     </a>
     <a class="ws" href="/calls" data-key="c" data-tone="bad" data-zero="@Zero(_missedToday)" aria-current="@Current("/calls")">
-        <span class="wl">Calls</span><span class="wn"><b class="num">@_missedToday</b><span>missed today</span></span>
+        <span class="wl">Calls</span><span class="wn"><b class="num roll" data-roll="missed"><span class="rv">@_missedToday</span></b><span>missed today</span></span>
     </a>
     <a class="ws" href="/callbacks" data-key="b" data-tone="warn" data-zero="@Zero(_callBacks)" aria-current="@Current("/callbacks")">
-        <span class="wl">Call-backs</span><span class="wn"><b class="num">@_callBacks</b><span>to return</span></span>
+        <span class="wl">Call-backs</span><span class="wn"><b class="num roll" data-roll="callbacks"><span class="rv">@_callBacks</span></b><span>to return</span></span>
     </a>
     <a class="ws" href="/alerts/inbox" data-key="l" data-tone="bad" data-zero="@Zero(_unread)" aria-current="@Current("/alerts")"
        aria-label="@(_unread == 0 ? "Alerts" : $"Alerts: {_unread} unread")">
-        <span class="wl">Alerts</span><span class="wn"><b class="num" data-bell="@_unread">@_unread</b><span>unread</span></span>
+        <span class="wl">Alerts</span><span class="wn"><b class="num roll" data-roll="unread" data-bell="@_unread"><span class="rv">@_unread</span></b><span>unread</span></span>
     </a>
     @if (_canFlows)
     {
         <a class="ws" href="/flows" data-key="f" data-tone="ok" data-zero="@Zero(_flowsOn)" aria-current="@Current("/flows")">
-            <span class="wl">Flows</span><span class="wn"><b class="num">@_flowsOn</b><span>on</span></span>
+            <span class="wl">Flows</span><span class="wn"><b class="num roll" data-roll="flows"><span class="rv">@_flowsOn</span></b><span>on</span></span>
         </a>
     }
     <span class="ws-sep" aria-hidden="true"></span>
@@ -81,6 +82,7 @@
     private BrowserAlert? _popup;
     private CancellationTokenSource? _hide;
     private Timer? _timer;
+    private CancellationTokenSource? _stored;
     private bool _canFlows;
     private int _flowsOn;
 
@@ -141,7 +143,9 @@
         Alerts.Arrived += OnAlert;
         Live.Changed += OnLive;
         Nav.LocationChanged += OnLocation;
-        // Calls and call-backs change with each poll; a minute keeps the rail honest without a query per event.
+        // A missed call changes the counts the moment it is stored, so the rail says so while the Now board shows it
+        // happening; a second gathers a burst of stored calls into one read. The minute catches what nothing announces.
+        Ingestion.CallsStored += OnStored;
         _timer = new Timer(_ => _ = InvokeAsync(async () => { await ReadAsync(latestAlert: false); StateHasChanged(); }), null, TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(60));
     }
 
@@ -233,6 +237,25 @@
         });
     }
 
+    private void OnStored()
+    {
+        _stored?.Cancel();
+        _stored = new CancellationTokenSource();
+        var token = _stored.Token;
+        _ = InvokeAsync(async () =>
+        {
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1), token);
+                await ReadAsync(latestAlert: false);
+                StateHasChanged();
+            }
+            catch (TaskCanceledException)
+            {
+            }
+        });
+    }
+
     private void OnLocation(object? sender, LocationChangedEventArgs e) => InvokeAsync(StateHasChanged);
 
     private bool IsHere(string href)
@@ -250,7 +273,10 @@
         Alerts.Arrived -= OnAlert;
         Live.Changed -= OnLive;
         Nav.LocationChanged -= OnLocation;
+        Ingestion.CallsStored -= OnStored;
         _timer?.Dispose();
+        _stored?.Cancel();
+        _stored?.Dispose();
         _hide?.Cancel();
         _hide?.Dispose();
     }

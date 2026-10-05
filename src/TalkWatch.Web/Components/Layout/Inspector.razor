@@ -1,0 +1,217 @@
+@* The Context Inspector: one call, opened from the right without leaving the view, so the board or the list stays
+   behind it. A row marked data-inspect opens here instead of its own page (tw-board.js does that, and grows the caller's
+   name from the row into the head); the link still opens the full page in a new tab, or here without the script. Its
+   head offers Open (the full page), Pin (keep it open while moving between pages) and Close (Esc). In the layout, so
+   it reads in a database scope of its own, through the viewer's access scope like every call page. *@
+@implements IDisposable
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Core.Calls
+@using TalkWatch.Data
+@using TalkWatch.Web.Components.Calls
+@using TalkWatch.Web.Services
+@inject IServiceScopeFactory Scopes
+@inject IngestionStatus Ingestion
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@inject TimeProvider Clock
+@inject Microsoft.Extensions.Options.IOptions<SiteOptions> Site
+
+@if (_uuid is not null)
+{
+    <aside class="insp" aria-label="Call details" data-call="@_uuid" data-pinned="@(_pinned ? "" : null)">
+        <div class="insp-inner">
+            <div class="insp-head">
+                <div class="insp-title">
+                    <span class="eyebrow">@(_call is null ? "Call" : _call.Direction == "out" ? "Call to" : "Call from")</span>
+                    <b class="insp-name" data-grow-target>@(_call is null ? "Not found" : _who)</b>
+                    @if (_call is not null && _number is { Length: > 0 })
+                    {
+                        <span class="n mono">@_number</span>
+                    }
+                </div>
+                <a class="btn ghost sm" href="/calls/@_uuid">Open</a>
+                <button type="button" class="iconbtn" aria-pressed="@(_pinned ? "true" : "false")" @onclick="TogglePin"
+                        aria-label="@(_pinned ? "Unpin: close it when you move to another page" : "Pin: keep it open while you move between pages")"><Icon Name="pin" Size="s" /></button>
+                <button type="button" class="iconbtn" data-insp-close @onclick="Close" aria-label="Close (Esc)"><Icon Name="x" Size="s" /></button>
+            </div>
+            <div class="insp-body">
+                @if (_call is null)
+                {
+                    <p class="empty">No such call, or not one you can see.</p>
+                }
+                else
+                {
+                    <div class="row" style="gap: 10px; flex-wrap: wrap">
+                        @if (_live is { Live: true } live)
+                        {
+                            <span class="st" data-s="@LiveCalls.Mark(live.State)"><i></i>@LiveCalls.Words(live.State)</span>
+                        }
+                        else
+                        {
+                            <span class="oc" data-o="@CallMarks.Key(_call.Outcome)"><Icon Name="@CallMarks.Icon(_call.Outcome)" />@CallMarks.Words(_call.Outcome)</span>
+                        }
+                        <span class="muted" style="font-size: 12px">@TimeZoneInfo.ConvertTime(_call.Time, _zone).ToString("ddd d MMM, HH:mm:ss")</span>
+                    </div>
+                    <dl class="insp-facts">
+                        <dt>Line</dt><dd>@(_line is { Length: > 0 } ? _line : "—")</dd>
+                        @if (_live is { Live: true } going)
+                        {
+                            <dt>So far</dt><dd class="mono" data-since="@going.Since.ToUnixTimeMilliseconds()">@CallMarks.Duration(Clock.GetUtcNow() - going.Since)</dd>
+                        }
+                        else
+                        {
+                            <dt>Length</dt><dd class="mono">@CallMarks.Duration(TimeSpan.FromSeconds(_call.DurationSeconds))</dd>
+                        }
+                        <dt>Answered after</dt><dd class="mono">@(_chronicle?.TimeToAnswer is { } wait ? Chronicle.Seconds(wait) : "—")</dd>
+                    </dl>
+                    @if (_chronicle is not null)
+                    {
+                        <section class="stack" style="gap: 8px" aria-label="Route">
+                            <span class="eyebrow">Route taken</span>
+                            <RouteTrace Chronicle="_chronicle" Line="@_line" Wrap="true" />
+                        </section>
+                        <section class="stack" style="gap: 8px" aria-label="What happened">
+                            <span class="eyebrow">What happened</span>
+                            <ChronicleView Chronicle="_chronicle" Zone="_zone" />
+                        </section>
+                    }
+                }
+            </div>
+        </div>
+    </aside>
+}
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private System.Security.Claims.ClaimsPrincipal _user = new();
+    private TimeZoneInfo _zone = TimeZoneInfo.Utc;
+    private string? _uuid;
+    private bool _pinned;
+    private CallRow? _call;
+    private Chronicle? _chronicle;
+    private LiveCall? _live;
+    private string _who = "", _number = "", _line = "";
+    private DotNetObjectReference<Inspector>? _self;
+    private CancellationTokenSource? _stored;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = AuthenticationState is null ? new() : (await AuthenticationState).User;
+        _zone = TimeZoneInfo.FindSystemTimeZoneById(Site.Value.TimeZone);
+        Nav.LocationChanged += OnLocation;
+        Ingestion.CallsStored += OnStored;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _self = DotNetObjectReference.Create(this);
+        try
+        {
+            await JS.InvokeVoidAsync("TW.inspector.connect", _self);
+        }
+        catch (JSException)
+        {
+            // Without the script rows are plain links to the call's page.
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+
+    /// <summary>Called by the script when a row marked data-inspect is chosen.</summary>
+    [JSInvokable]
+    public Task Open(string uuid) => InvokeAsync(async () =>
+    {
+        _uuid = uuid;
+        await ReadAsync();
+        StateHasChanged();
+    });
+
+    private async Task ReadAsync()
+    {
+        if (_uuid is not { } uuid)
+        {
+            return;
+        }
+
+        using var scope = Scopes.CreateScope();
+        scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UsePrincipal(_user);
+        var db = scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>();
+        _call = await db.Calls.AsNoTracking().FirstOrDefaultAsync(c => c.TalkUuid == uuid);
+        if (_call is not { } call)
+        {
+            _chronicle = null;
+            _live = null;
+            return;
+        }
+
+        var names = await ChronicleLoader.NamesAsync(db, [call.FromE164, call.ToE164, call.AnsweredByE164]);
+        _chronicle = (await ChronicleLoader.ForAsync(db, [call], names))[call.Id];
+        _live = LiveCalls.Of(call, _chronicle, names);
+        _who = _live.Who;
+        _number = (call.Direction == "out" ? call.ToRaw : call.FromRaw) is { } n && n != _who ? n : "";
+        _line = names.Number(call.ToE164 ?? "") ?? call.ToRaw ?? "";
+    }
+
+    private void Close()
+    {
+        _uuid = null;
+        _call = null;
+        _pinned = false;
+    }
+
+    private void TogglePin() => _pinned = !_pinned;
+
+    // Moving to another page closes it, unless it is pinned.
+    private void OnLocation(object? sender, LocationChangedEventArgs e)
+    {
+        if (_uuid is not null && !_pinned)
+        {
+            _ = InvokeAsync(() =>
+            {
+                Close();
+                StateHasChanged();
+            });
+        }
+    }
+
+    // A call in progress changes as it goes: read it again when calls are stored, a burst gathered into one read.
+    private void OnStored()
+    {
+        if (_uuid is null)
+        {
+            return;
+        }
+
+        _stored?.Cancel();
+        _stored = new CancellationTokenSource();
+        var token = _stored.Token;
+        _ = InvokeAsync(async () =>
+        {
+            try
+            {
+                await Task.Delay(250, token);
+                await ReadAsync();
+                StateHasChanged();
+            }
+            catch (TaskCanceledException)
+            {
+            }
+        });
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocation;
+        Ingestion.CallsStored -= OnStored;
+        _stored?.Cancel();
+        _stored?.Dispose();
+        _self?.Dispose();
+    }
+}
