@@ -428,3 +428,6 @@ ul.rows form, .dg form { display: inline-flex; }
 .demobar-note { grid-column: 1 / -1; margin: 0; font-size: var(--t-xs); color: var(--fg-3); }
 .demobar-close { position: absolute; top: -38px; right: 6px; }
 @media (max-width: 640px) { .demobar { right: 8px; left: 8px; width: auto; bottom: 8px; } .demobar-body { max-height: 50vh; overflow-y: auto; } }
+/* A call's transcript scrolls in its own box, so a long call doesn't make the page a long one. tw-player.js keeps the
+   line being played in view inside it. */
+.transcript-lines { position: relative; max-height: min(60vh, 560px); overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; }
