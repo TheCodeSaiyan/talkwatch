@@ -61,7 +61,7 @@
                     {
                         var here = flow.At(stage.Id).ToList();
                         <div class="sb-stage" data-stage="@stage.Id" data-from="@stage.From" data-kind="@stage.Kind" data-today="@stage.Today" data-now="@here.Count">
-                            <div class="sb-node"><b>@stage.Label</b><span class="m num">@(here.Count > 0 ? $"{here.Count} now · " : "")@stage.Today today</span></div>
+                            <div class="sb-node"><b>@stage.Label</b><span class="m num">@string.Join(" · ", new[] { here.Count > 0 ? $"{here.Count} now" : null, stage.Counted ? $"{stage.Today} today" : null }.OfType<string>())</span></div>
                             @* The callers here, as a stack of cards: three show, the rest are counted, and pointing at the stack
                                (or tabbing into it) fans it open to scroll through. A card is the caller and how long they
                                have been here; choosing one opens the call beside the page, with what they did. *@

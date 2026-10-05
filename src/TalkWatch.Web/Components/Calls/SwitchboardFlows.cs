@@ -13,7 +13,14 @@ namespace TalkWatch.Web.Components.Calls;
 /// <param name="From">The stage it is reached from, or null for calls coming in.</param>
 /// <param name="Kind">in, menu, option, destination or hungup: how it is drawn.</param>
 /// <param name="Today">Calls through it today, which sets how loud its stream is.</param>
-public sealed record FlowStage(string Id, string? From, int Column, string Label, string Kind, int Today);
+public sealed record FlowStage(string Id, string? From, int Column, string Label, string Kind, int Today)
+{
+    /// <summary>
+    /// Whether <see cref="Today"/> is this stage's own count. Past an opening-hours split Talk logs nothing, so a branch
+    /// and what it leads to only carry the option's traffic on, to set their stream; their count is not shown.
+    /// </summary>
+    public bool Counted { get; init; } = true;
+}
 
 /// <summary>A caller in the switchboard now: the stage they are at, and the step that put them there.</summary>
 /// <param name="Mark">The status mark: routing while in the menu, ringing once an option puts them through.</param>
@@ -82,7 +89,8 @@ public static class SwitchboardFlows
                         : stages.First(s => s.Id == parentStage).Today;
                     var label = isMenu && node.Key is { } key ? $"{key} · {node.Title}" : !string.IsNullOrWhiteSpace(node.Title) ? node.Title! : Kind(node.Type);
                     var kind = nested ? "menu" : isMenu ? "option" : node.Type == "time" ? "hours" : "destination";
-                    stages.Add(new FlowStage(stage, parentStage, column, label, kind, count));
+                    var before = stages.First(s => s.Id == parentStage);
+                    stages.Add(new FlowStage(stage, parentStage, column, label, kind, count) { Counted = isMenu || (before.Counted && before.Kind != "hours" && kind != "hours") });
                     if (node.InternalId is { } nodeId)
                     {
                         byInternal[nodeId] = stage;

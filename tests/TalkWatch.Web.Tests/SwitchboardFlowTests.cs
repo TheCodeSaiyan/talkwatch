@@ -65,8 +65,9 @@ public sealed class SwitchboardFlowTests
         ];
         var flow = SwitchboardFlows.Build(tree, [new(new MenuJourney(15, [new MenuChoice(15, 18, 2, "Support")]), CallOutcome.Answered)], [], null, n => n)[0];
 
-        Assert.Equal([("n:swb_41", "hours", 1), ("n:grp_41_1", "destination", 1)],
-            flow.Stages.Where(s => s.Id is "n:swb_41" or "n:grp_41_1").Select(s => (s.Id, s.Kind, s.Today)));
+        Assert.Equal([("n:swb_41", "hours", 1, false), ("n:grp_41_1", "destination", 1, false)],
+            flow.Stages.Where(s => s.Id is "n:swb_41" or "n:grp_41_1").Select(s => (s.Id, s.Kind, s.Today, s.Counted)));
+        Assert.True(flow.Stages.Single(s => s.Id == "n:swb_18").Counted);
         Assert.Equal("Ring group", flow.Stages.Single(s => s.Id == "n:grp_41_1").Label);
     }
 
