@@ -1,6 +1,6 @@
 # Installing
 
-You need Docker with Compose, a UniFi console running Talk, and a machine on the same network as the console. TalkWatch talks to the console over its LAN address, never through the cloud.
+You need Docker with Compose, a UniFi console running Talk, and a machine on the same network as the console. TalkWatch talks to the console over its LAN address, directly or through a private VPN, never through Ubiquiti's cloud. To run TalkWatch somewhere else, see [Reaching a console from elsewhere](remote-console.md).
 
 To look round before you point it at a console, [try the demo](demo.md):
 the same image, with a capture from a real console replayed in place of yours.
@@ -36,7 +36,7 @@ docker compose up -d
 - `TALK_CONSOLE_URL`, `TALK_USERNAME`, `TALK_PASSWORD` and `TALK_CERTIFICATE_SHA256`.
 - `BOOTSTRAP_ADMIN_USERNAME` and `BOOTSTRAP_ADMIN_PASSWORD` (at least 12 characters) — the first admin account, made on the first start only. Remove the password afterwards.
 
-Every setting is in [Configuration](configuration.md). In production, give the passwords as files rather than environment variables: a file in `/run/secrets` named after the setting, such as `Talk__Password`, overrides the environment, and Docker secrets land there by default.
+The console's address, account and fingerprint can instead be given after the first start, on **Configure → Console**, which wins over these. Every setting is in [Configuration](configuration.md). In production, give the passwords as files rather than environment variables: a file in `/run/secrets` named after the setting, such as `Talk__Password`, overrides the environment, and Docker secrets land there by default.
 
 ## 4. The first start
 

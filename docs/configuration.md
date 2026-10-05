@@ -8,11 +8,15 @@ A setting can also come from a file in `/run/secrets` named after it, such as `/
 
 ## Talk
 
-The console TalkWatch reads from.
+The console TalkWatch reads from, and the way to it. Each of these but PollSeconds and CopyTranscripts can instead be set on the Console page, which wins, field by field.
 
 | Setting | Default | Description |
 |---|---|---|
 | `Talk__ConsoleUrl` | none | The console's LAN address, such as https://10.0.0.1. Polling is off while this is unset. |
+| `Talk__Route` | `Direct` | How TalkWatch reaches the console: Direct, on the same network; WireGuard, through the site gateway's own WireGuard VPN server; or Tailscale, through a tailnet with a subnet router on the site's network. ConsoleUrl stays the console's LAN address whichever it is. |
+| `Talk__WireGuardConfig` | none | For WireGuard: the client's .conf as the gateway's VPN server gives it out, whole. Its endpoint can be the site's dynamic DNS name, which TalkWatch looks up again every few minutes. **Secret:** give it as a file. |
+| `Talk__TailscaleAuthKey` | none | For Tailscale: an auth key, or an OAuth client secret with the auth_keys scope, which does not expire. TalkWatch joins as an ephemeral node each time it starts. **Secret:** give it as a file. |
+| `Talk__TailscaleTags` | none | For Tailscale: the tags TalkWatch's node advertises, comma-separated, such as tag:talkwatch. An OAuth client secret needs at least one. |
 | `Talk__Username` | none | A console user with read-only access to Talk, signed in by username (not e-mail address). |
 | `Talk__Password` | none | That user's password. **Secret:** give it as a file. |
 | `Talk__CertificateSha256` | none | SHA-256 of the console's certificate. Consoles ship a self-signed certificate, so pinning it is how TalkWatch trusts the console without turning certificate checks off. |

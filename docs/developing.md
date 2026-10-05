@@ -80,10 +80,6 @@ keep it and the guide in step. Each value below is what the template holds.
 
 **Postgres**: add Railway's PostgreSQL database.
 
-**Railtail**: add Railway's Railtail template as a service named `Railtail`,
-with `LISTEN_PORT` set to `41641` and `TARGET_ADDR`, `TS_AUTH_KEY` and
-`TS_HOSTNAME` left for the deployer, each with a description.
-
 **TalkWatch**: a service from the Docker image
 `ghcr.io/thecodesaiyan/talkwatch:latest`.
 
@@ -96,20 +92,18 @@ with `LISTEN_PORT` set to `41641` and `TARGET_ADDR`, `TS_AUTH_KEY` and
 ConnectionStrings__TalkWatch=Host=${{Postgres.PGHOST}};Port=${{Postgres.PGPORT}};Database=${{Postgres.PGDATABASE}};Username=${{Postgres.PGUSER}}
 Database__Password=${{Postgres.PGPASSWORD}}
 Site__PublicUrl=https://${{RAILWAY_PUBLIC_DOMAIN}}
-Talk__ConsoleUrl=https://${{Railtail.RAILWAY_PRIVATE_DOMAIN}}:${{Railtail.LISTEN_PORT}}
 Bootstrap__AdminUsername=admin
 Bootstrap__AdminPassword=${{secret(32)}}
 RAILWAY_RUN_UID=0
 Site__Name=
 Site__Region=
 Site__TimeZone=
-Talk__Username=
-Talk__Password=
-Talk__CertificateSha256=
 ```
 
 Give each empty variable the description from [Configuration](configuration.md),
-so the deployer knows what to put there. Publish the template, then replace the
+so the deployer knows what to put there. There are no `Talk__` variables: the
+console and the way to it are set on the Console page after deploying, which
+keeps the WireGuard or Tailscale secrets out of Railway's variables. Publish the template, then replace the
 **Deploy on Railway** link in the README with the template's own link, which
 the template's page in the dashboard gives.
 

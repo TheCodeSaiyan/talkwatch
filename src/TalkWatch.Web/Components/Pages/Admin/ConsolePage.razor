@@ -1,0 +1,209 @@
+@page "/admin/console"
+@* The console, the account TalkWatch signs in with, and the way to it: for admins only. Everyone sees whether the
+   console is connected in the rail; only here are the settings, and the tunnel's own state. *@
+@attribute [Authorize(Policy = Permissions.AdminPolicy)]
+@using Microsoft.EntityFrameworkCore
+@using TalkWatch.Core.Talk
+@using TalkWatch.Data
+@using TalkWatch.Web.Services
+@inject TalkWatchDbContext Db
+@inject ConsoleConnection Connection
+@inject ConsoleTunnel Tunnel
+@inject LiveStatus Live
+@inject IngestionStatus Ingestion
+@inject ChannelSecrets Secrets
+
+<PageTitle>Console · TalkWatch</PageTitle>
+
+<header class="head">
+    <div class="title">
+        <h1>Console</h1>
+        <div class="sub">The console TalkWatch reads, the account it signs in with, and how it gets there.</div>
+    </div>
+</header>
+
+@if (!string.IsNullOrEmpty(Msg))
+{
+    <p class="notice" role="status">@Msg</p>
+}
+
+<section class="plane" aria-label="Connection" data-connection="@_tunnel.State">
+    <div class="plane-body row" style="gap: 14px; align-items: flex-start">
+        <span class="dot-ic" style="width: 32px; height: 32px"><Icon Name="@(Live.Connected ? "check" : "clock")" /></span>
+        <div class="stack" style="gap: 4px">
+            <p style="margin: 0; font-size: 16px">
+                @if (_target.Url is null)
+                {
+                    <text>No console is set yet, so nothing is copied. Give its address below.</text>
+                }
+                else
+                {
+                    <text>@_target.Url.Host, @RouteName(_target.Route).@(Live.Connected ? " The live feed is connected." : "")</text>
+                }
+            </p>
+            @if (_target.Route != ConsoleRoute.Direct)
+            {
+                <span class="muted" style="font-size: 12px" data-tunnel>Tunnel: @StateName(_tunnel.State).@(_tunnel.Detail is { } d ? $" {d.TrimEnd('.')}." : "")@(_tunnel.LastHandshake is { } h ? $" Last handshake {h.ToLocalTime():HH:mm:ss}." : "")</span>
+            }
+            @if (Ingestion.LastSuccess is { } polled)
+            {
+                <span class="muted" style="font-size: 12px">Call log last copied @polled.ToLocalTime().ToString("yyyy-MM-dd HH:mm").</span>
+            }
+            @if (Ingestion.LastError is { } error)
+            {
+                <span class="muted" style="font-size: 12px" data-last-error>Last problem: @error</span>
+            }
+        </div>
+        <form method="post" action="/admin/console/test" style="margin-left: auto"><AntiforgeryToken /><button type="submit" class="btn sm">Test connection</button></form>
+    </div>
+</section>
+
+<form method="post" action="/admin/console" enctype="multipart/form-data" class="plane-body stack" style="gap: 16px; padding: 0">
+    <AntiforgeryToken />
+    <p class="hint" style="margin: 0">A field left empty uses the matching Talk__ setting, shown greyed out when there is one. Passwords, keys and
+        WireGuard settings saved here are stored encrypted and never shown again. Saving reconnects straight away.</p>
+
+    <div class="split" style="gap: 16px">
+        <section class="plane" aria-label="The console">
+            <div class="plane-head"><h2>The console</h2></div>
+            <div class="plane-body stack" style="gap: 10px">
+                <label class="field"><span class="label">Address on its own network</span><input class="input" name="ConsoleUrl" value="@_saved?.ConsoleUrl" placeholder="@(Env.ConsoleUrl?.ToString() ?? "https://192.168.1.1")" /></label>
+                <div class="row" style="gap: 10px">
+                    <label class="field" style="flex: 1"><span class="label">Username</span><input class="input" name="Username" value="@_saved?.Username" placeholder="@Env.Username" autocomplete="off" /></label>
+                    <label class="field" style="flex: 1"><span class="label">Password</span><input class="input" name="Password" type="password" autocomplete="new-password" placeholder="@SecretState(_saved?.ProtectedPassword, Env.Password)" /></label>
+                </div>
+                @if (_saved?.ProtectedPassword is not null)
+                {
+                    <label class="row" style="gap: 6px"><input type="checkbox" name="ClearPassword" value="true" /> Forget the saved password</label>
+                }
+                <label class="field"><span class="label">Certificate fingerprint (SHA-256)</span><input class="input" name="CertificateSha256" value="@_saved?.CertificateSha256" placeholder="@Env.CertificateSha256" autocomplete="off" spellcheck="false" /></label>
+                <p class="hint" style="margin: 0">A console user that can see Talk and change nothing, signed in by username. Get the fingerprint with the
+                    capture tool's <code>cert</code> command on the console's own network, and check it against what your browser shows.</p>
+            </div>
+        </section>
+
+        <section class="plane" aria-label="The way there">
+            <div class="plane-head"><h2>The way there</h2></div>
+            <div class="plane-body stack" style="gap: 8px">
+                <label class="preset"><input type="radio" name="Route" value="" checked="@(_saved?.Route is null)" />
+                    <span class="stack" style="gap: 2px"><strong>As in the settings</strong><span class="muted" style="font-size: 12px">@RouteName(Env.Route), from Talk__Route.</span></span></label>
+                <label class="preset"><input type="radio" name="Route" value="Direct" checked="@(_saved?.Route == ConsoleRoute.Direct)" />
+                    <span class="stack" style="gap: 2px"><strong>Direct</strong><span class="muted" style="font-size: 12px">TalkWatch is on the console's network.</span></span></label>
+                <label class="preset"><input type="radio" name="Route" value="WireGuard" checked="@(_saved?.Route == ConsoleRoute.WireGuard)" />
+                    <span class="stack" style="gap: 2px"><strong>The site gateway's WireGuard VPN</strong><span class="muted" style="font-size: 12px">Free, built into UniFi gateways. Needs the gateway to have a public address, or a forwarded UDP port.</span></span></label>
+                <label class="preset"><input type="radio" name="Route" value="Tailscale" checked="@(_saved?.Route == ConsoleRoute.Tailscale)" />
+                    <span class="stack" style="gap: 2px"><strong>Tailscale</strong><span class="muted" style="font-size: 12px">For a site behind carrier-grade NAT. Needs a subnet router on the site's network.</span></span></label>
+            </div>
+        </section>
+    </div>
+
+    <section class="plane" aria-label="WireGuard" id="wireguard">
+        <div class="plane-head"><h2>WireGuard</h2></div>
+        <div class="plane-body stack" style="gap: 12px">
+            <p class="hint" style="margin: 0">
+                On the gateway, under VPN, turn on the WireGuard VPN server and add a client for TalkWatch. Give TalkWatch the file it offers
+                for download, or the same settings one by one. The gateway's address can be its dynamic DNS name: TalkWatch looks it up again
+                every few minutes and follows it when the site's address changes. Allow the client only to the console's address on port 443.
+            </p>
+            @if (_wireGuard is { } wg)
+            {
+                <p style="margin: 0" data-wireguard-saved>Saved: to <b>@wg.Endpoint</b>@(wg.EndpointIsName ? " (looked up again every few minutes)" : ""), as @string.Join(", ", wg.Addresses), for @string.Join(", ", wg.AllowedIps).</p>
+                <label class="row" style="gap: 6px"><input type="checkbox" name="ClearWireGuard" value="true" /> Forget the saved WireGuard settings</label>
+            }
+            else if (!string.IsNullOrWhiteSpace(Env.WireGuardConfig))
+            {
+                <p class="muted" style="margin: 0">Set in the settings (Talk__WireGuardConfig).</p>
+            }
+            <div class="split" style="gap: 16px">
+                <fieldset class="stack" style="gap: 10px; border: 1px solid var(--line); border-radius: var(--r2); padding: 12px; align-self: start">
+                    <legend class="eyebrow" style="padding: 0 6px">The file from the gateway</legend>
+                    <label class="field"><span class="label">Upload it</span><input class="input" name="WireGuardFile" type="file" accept=".conf,text/plain" /></label>
+                    <label class="field"><span class="label">Or paste it</span><textarea class="input" name="WireGuardConf" rows="9" spellcheck="false" autocomplete="off" placeholder="[Interface]&#10;PrivateKey = …&#10;Address = …&#10;&#10;[Peer]&#10;PublicKey = …&#10;Endpoint = …"></textarea></label>
+                </fieldset>
+                <fieldset class="stack" style="gap: 10px; border: 1px solid var(--line); border-radius: var(--r2); padding: 12px">
+                    <legend class="eyebrow" style="padding: 0 6px">Or one by one</legend>
+                    <label class="field"><span class="label">Gateway address and port</span><input class="input" name="WireGuardEndpoint" placeholder="@(_wireGuard?.Endpoint ?? "site.example.net:51820")" autocomplete="off" /></label>
+                    <label class="field"><span class="label">Gateway's public key</span><input class="input" name="WireGuardPeerPublicKey" placeholder="@(_wireGuard?.PeerPublicKey)" autocomplete="off" spellcheck="false" /></label>
+                    <label class="field"><span class="label">TalkWatch's private key</span><input class="input" name="WireGuardPrivateKey" type="password" autocomplete="new-password" placeholder="@(_wireGuard is null ? "" : "Saved (type a new one to replace it)")" /></label>
+                    <div class="row" style="gap: 10px">
+                        <label class="field" style="flex: 1"><span class="label">TalkWatch's address</span><input class="input" name="WireGuardAddress" placeholder="@(_wireGuard is { } a ? string.Join(", ", a.Addresses) : "192.168.3.2/32")" /></label>
+                        <label class="field" style="flex: 1"><span class="label">Allowed addresses</span><input class="input" name="WireGuardAllowedIps" placeholder="@(_wireGuard is { } b ? string.Join(", ", b.AllowedIps) : "192.168.1.1/32")" /></label>
+                    </div>
+                    <div class="row" style="gap: 10px">
+                        <label class="field" style="flex: 1"><span class="label">Preshared key (if any)</span><input class="input" name="WireGuardPresharedKey" type="password" autocomplete="new-password" /></label>
+                        <label class="field" style="flex: 1"><span class="label">DNS (if any)</span><input class="input" name="WireGuardDns" /></label>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+    </section>
+
+    <section class="plane" aria-label="Tailscale" id="tailscale">
+        <div class="plane-head"><h2>Tailscale</h2></div>
+        <div class="plane-body stack" style="gap: 10px">
+            <p class="hint" style="margin: 0">
+                A machine on the site's network runs Tailscale as a subnet router for the console's network, with the route approved. TalkWatch
+                joins the same tailnet as an ephemeral node each time it starts. Use an OAuth client secret with the auth_keys scope, which
+                doesn't expire, and give it a tag. Tailscale's free plan is for personal use only.
+            </p>
+            <div class="row" style="gap: 10px">
+                <label class="field" style="flex: 2"><span class="label">Auth key or OAuth client secret</span><input class="input" name="TailscaleAuthKey" type="password" autocomplete="new-password" placeholder="@SecretState(_saved?.ProtectedTailscaleAuthKey, Env.TailscaleAuthKey)" /></label>
+                <label class="field" style="flex: 1"><span class="label">Tags</span><input class="input" name="TailscaleTags" value="@_saved?.TailscaleTags" placeholder="@(Env.TailscaleTags ?? "tag:talkwatch")" /></label>
+            </div>
+            @if (_saved?.ProtectedTailscaleAuthKey is not null)
+            {
+                <label class="row" style="gap: 6px"><input type="checkbox" name="ClearTailscaleAuthKey" value="true" /> Forget the saved key</label>
+            }
+        </div>
+    </section>
+
+    <div class="row"><button type="submit" class="btn primary sm">Save and reconnect</button></div>
+</form>
+
+@code {
+    [SupplyParameterFromQuery(Name = "msg")] private string? Msg { get; set; }
+
+    private ConsoleSettings? _saved;
+    private WireGuardConfig? _wireGuard;
+    private ConsoleTarget _target = new();
+    private TunnelStatus _tunnel = null!;
+
+    private TalkOptions Env => Connection.FromEnvironment;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Before the first await: the page can render once while the rest loads.
+        _tunnel = Tunnel.Status;
+        _saved = await Db.ConsoleSettings.AsNoTracking().SingleOrDefaultAsync();
+        _target = await Connection.GetAsync(CancellationToken.None);
+        if (Secrets.Unprotect(_saved?.ProtectedWireGuardConfig) is { } conf)
+        {
+            try
+            {
+                _wireGuard = WireGuardConfig.Parse(conf);
+            }
+            catch (FormatException)
+            {
+                // Saved only after reading cleanly, so this is a config from an older build; the status says what's wrong.
+            }
+        }
+    }
+
+    private static string SecretState(string? saved, string? fromSettings) =>
+        saved is not null ? "Saved here (type a new one to replace it)" : fromSettings is { Length: > 0 } ? "Set in the settings" : "Not set";
+
+    private static string RouteName(ConsoleRoute route) => route switch
+    {
+        ConsoleRoute.WireGuard => "through the site gateway's WireGuard VPN",
+        ConsoleRoute.Tailscale => "through Tailscale",
+        _ => "directly",
+    };
+
+    private static string StateName(TunnelState state) => state switch
+    {
+        TunnelState.Up => "up",
+        TunnelState.Starting => "starting",
+        TunnelState.Down => "down",
+        _ => "off",
+    };
+}

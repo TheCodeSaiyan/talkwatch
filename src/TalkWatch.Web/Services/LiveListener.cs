@@ -12,37 +12,61 @@ namespace TalkWatch.Web.Services;
 /// <see cref="LiveStatus"/>. Polling carries on as the backstop for anything missed while disconnected.
 /// </summary>
 public sealed partial class LiveListener(
-    TalkSession session, LiveStatus live, ConsoleVersionMonitor versions, LineDirectorySync directory, TranscriptSync transcripts, AlertService alerts, IServiceScopeFactory scopes,
+    TalkSession session, ConsoleConnection connection, LiveStatus live, ConsoleVersionMonitor versions, LineDirectorySync directory, TranscriptSync transcripts, AlertService alerts, IServiceScopeFactory scopes,
     Microsoft.Extensions.Options.IOptions<DemoOptions> demo, TimeProvider clock, IngestionStatus ingestion, ILogger<LiveListener> logger) : BackgroundService
 {
     private static readonly TimeSpan FirstRetry = TimeSpan.FromSeconds(5);
     private static readonly TimeSpan LongestRetry = TimeSpan.FromMinutes(5);
 
+    private readonly Lock _lock = new();
+    private CancellationTokenSource? _connection;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // A replayed console in demo mode has no live feed to listen to.
-        if (session.ConsoleUrl is null || demo.Value.Enabled)
+        if (demo.Value.Enabled)
         {
             return;
         }
 
+        connection.Changed += Reconnect;
+        try
+        {
+            await ListenAsync(stoppingToken);
+        }
+        finally
+        {
+            connection.Changed -= Reconnect;
+        }
+    }
+
+    private async Task ListenAsync(CancellationToken stoppingToken)
+    {
         var retry = FirstRetry;
         while (!stoppingToken.IsCancellationRequested)
         {
+            // One connection's life: ended early when the Console page changes the console or the way to it.
+            using var current = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+            lock (_lock)
+            {
+                _connection = current;
+            }
+
             try
             {
-                if (await session.EnsureSignedInAsync(stoppingToken))
+                // The console can be set on the Console page while TalkWatch runs, so an unset one waits rather than stops.
+                if (await session.ConsoleUrlAsync(current.Token) is { } console && await session.EnsureSignedInAsync(current.Token))
                 {
                     // A reconnect often follows a console update or reboot, so the versions are read afresh each time.
-                    await versions.CheckAsync(stoppingToken);
-                    await directory.RefreshAsync(stoppingToken);
+                    await versions.CheckAsync(current.Token);
+                    await directory.RefreshAsync(current.Token);
                     live.SetDirectory(directory.Current);
                     using var invoker = session.CreateInvoker();
                     live.SetConnected(true);
                     LogConnected(logger);
-                    await foreach (var message in TalkLive.ReadAsync(session.ConsoleUrl, invoker, stoppingToken))
+                    await foreach (var message in TalkLive.ReadAsync(console, invoker, current.Token))
                     {
-                        await HandleAsync(message, stoppingToken);
+                        await HandleAsync(message, current.Token);
                         retry = FirstRetry;
                     }
 
@@ -52,6 +76,12 @@ public sealed partial class LiveListener(
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
                 break;
+            }
+            catch (OperationCanceledException) when (current.IsCancellationRequested)
+            {
+                live.SetConnected(false, "The console's settings changed; reconnecting.");
+                retry = FirstRetry;
+                continue;
             }
 #pragma warning disable CA1031 // The listener must outlive any failure; see the class summary.
             catch (Exception e)
@@ -67,8 +97,24 @@ public sealed partial class LiveListener(
                 LogDisconnected(logger, retry.TotalSeconds, e);
             }
 
-            await Task.Delay(retry, clock, stoppingToken).ContinueWith(_ => { }, TaskScheduler.Default);
+            // New settings end the wait too, so a console just set on the Console page is listened to at once.
+            await Task.Delay(retry, clock, current.Token).ContinueWith(_ => { }, TaskScheduler.Default);
             retry = TimeSpan.FromTicks(Math.Min(retry.Ticks * 2, LongestRetry.Ticks));
+        }
+    }
+
+    private void Reconnect()
+    {
+        lock (_lock)
+        {
+            try
+            {
+                _connection?.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Between connections: the next one reads the new settings anyway.
+            }
         }
     }
 

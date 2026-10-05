@@ -76,7 +76,8 @@ builder.AddTelemetry();
 builder.Services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, SiteOrNumberHandler>();
 var authorization = builder.Services.AddAuthorizationBuilder()
     .AddPolicy(Permissions.AlertsPolicy, p => p.AddRequirements(new SiteOrNumberRequirement(Permission.OwnAlerts | Permission.ManageAlerts, Permission.OwnAlerts)))
-    .AddPolicy(Permissions.ReportsPolicy, p => p.AddRequirements(new SiteOrNumberRequirement(Permission.ManageReports, Permission.ManageReports)));
+    .AddPolicy(Permissions.ReportsPolicy, p => p.AddRequirements(new SiteOrNumberRequirement(Permission.ManageReports, Permission.ManageReports)))
+    .AddPolicy(Permissions.AdminPolicy, p => p.RequireRole(Roles.Admin));
 foreach (var permission in Permissions.Each)
 {
     authorization.AddPolicy(Permissions.Policy(permission), p => p.RequireAssertion(c => c.User.Can(permission)));
@@ -93,15 +94,12 @@ builder.Services.AddScoped<AlertFlowStore>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IngestionStatus>();
 builder.Services.AddSingleton(sp => new AudioStore(sp.GetRequiredService<IOptions<AudioOptions>>().Value.Path));
-builder.Services.AddHttpClient(TalkSession.HttpClientName, (sp, client) =>
-    {
-        var talk = sp.GetRequiredService<IOptions<TalkOptions>>().Value;
-        if (talk.ConsoleUrl is not null)
-        {
-            client.BaseAddress = talk.ConsoleUrl;
-        }
-    })
-    .ConfigurePrimaryHttpMessageHandler(sp => ConsoleHttp.CreateHandler(sp.GetRequiredService<IOptions<TalkOptions>>().Value.CertificateSha256))
+// The console, its credentials and the way to it: the Console page over the Talk__ settings, changeable while running.
+builder.Services.AddSingleton<ConsoleConnection>();
+builder.Services.AddSingleton<ConsoleTunnel>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<ConsoleTunnel>());
+builder.Services.AddHttpClient(TalkSession.HttpClientName, client => client.BaseAddress = ConsoleHandler.Placeholder)
+    .ConfigurePrimaryHttpMessageHandler(sp => new ConsoleHandler(sp.GetRequiredService<ConsoleConnection>(), sp.GetRequiredService<ConsoleTunnel>()))
     // The console session's cookie lives in this handler. Kept for the life of the app (the factory otherwise rotates
     // handlers every two minutes), so the poller, downloads and the live WebSocket all share one session.
     .SetHandlerLifetime(Timeout.InfiniteTimeSpan);
@@ -185,6 +183,7 @@ app.MapAdmin();
 app.MapAlertAdmin();
 app.MapAlertLinks();
 app.MapRetention();
+app.MapConsole();
 app.MapApi();
 app.MapExport();
 app.MapCallBacks();
