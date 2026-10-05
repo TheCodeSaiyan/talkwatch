@@ -1,0 +1,11 @@
+{
+  "name": "talkwatch-docs-capture",
+  "private": true,
+  "description": "Screenshots and animations for the documentation, taken in Windows Sandbox. See run.ps1.",
+  "type": "module",
+  "dependencies": {
+    "gifenc": "1.0.3",
+    "jpeg-js": "0.4.4",
+    "playwright-core": "1.63.0"
+  }
+}

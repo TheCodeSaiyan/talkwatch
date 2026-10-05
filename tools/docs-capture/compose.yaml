@@ -1,0 +1,32 @@
+# The demo the documentation's pictures are taken of: the image as built, its own throwaway database, and a new call
+# every minute so Now has something happening. Started and removed by run.ps1; nothing here is kept.
+name: talkwatch-docs-capture
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: talkwatch
+      POSTGRES_USER: talkwatch
+      POSTGRES_PASSWORD: docs-capture
+    tmpfs: [/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U talkwatch -d talkwatch"]
+      interval: 3s
+      retries: 20
+
+  talkwatch:
+    image: ${TALKWATCH_IMAGE:-talkwatch:ci}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${CAPTURE_PORT:-8088}:8080"
+    environment:
+      ConnectionStrings__TalkWatch: Host=db;Database=talkwatch;Username=talkwatch;Password=docs-capture
+      Site__Name: Riverside Surgery
+      Demo__Enabled: "true"
+      Demo__CallEveryMinutes: "1"
+      Demo__ResetMinutes: "0"
+      Bootstrap__AdminUsername: alex.morgan
+      Bootstrap__AdminPassword: docs-capture-passphrase
