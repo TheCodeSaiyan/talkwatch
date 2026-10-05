@@ -62,14 +62,21 @@
                         var here = flow.At(stage.Id).ToList();
                         <div class="sb-stage" data-stage="@stage.Id" data-from="@stage.From" data-kind="@stage.Kind" data-today="@stage.Today" data-now="@here.Count">
                             <div class="sb-node"><b>@stage.Label</b><span class="m num">@(here.Count > 0 ? $"{here.Count} now · " : "")@stage.Today today</span></div>
-                            <div class="sb-callers" role="list" data-stage-list="@stage.Id">
+                            @* The callers here, as a stack of cards: three show, the rest are counted, and pointing at the stack
+                               (or tabbing into it) fans it open to scroll through. A card is the caller and how long they
+                               have been here; choosing one opens the call beside the page, with what they did. *@
+                            <div class="sb-callers" role="list" data-stage-list="@stage.Id" tabindex="-1" aria-label="@here.Count at @stage.Label">
                                 @foreach (var c in here)
                                 {
-                                    <a class="sb-caller" role="listitem" data-key="@c.Key" href="/calls/@c.Key" data-inspect="@c.Key" @key="c.Key">
+                                    <a class="sb-caller" role="listitem" data-key="@c.Key" href="/calls/@c.Key" data-inspect="@c.Key" title="@c.Step" @key="c.Key">
                                         <span class="st" data-s="@c.Mark"><i></i></span>
-                                        <span class="who"><b data-grow>@c.Who</b><span class="n">@c.Step</span></span>
+                                        <b data-grow>@c.Who</b>
                                         <span class="num" data-since="@c.Since.ToUnixTimeMilliseconds()">@CallMarks.Duration(Clock.GetUtcNow() - c.Since)</span>
                                     </a>
+                                }
+                                @if (here.Count > 3)
+                                {
+                                    <span class="sb-more num" aria-hidden="true">+@(here.Count - 3)</span>
                                 }
                             </div>
                         </div>

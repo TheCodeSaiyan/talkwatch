@@ -195,12 +195,24 @@ h1:focus { outline: none; }
 .sb-node b { font-size: var(--t-sm); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sb-node .m { font-size: var(--t-xs); color: var(--fg-3); }
 .sb-stage[data-now="0"] .sb-callers { display: none; }
-.sb-caller { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 10px; border-top: 1px solid var(--line); text-decoration: none; color: inherit; font-size: var(--t-sm); }
-.sb-caller:hover { background: var(--s3); }
-.sb-caller .who b { font-weight: 500; }
-.sb-caller .who .n { font-family: var(--sans); font-size: var(--t-xs); white-space: normal; }
+/* Callers at a stage: a stack of cards, the first three showing, each a step further back. Pointing at the stack, or
+   focus inside it, fans it open into a list that scrolls; the count says how many are behind the three. */
+.sb-callers { position: relative; padding: 6px 8px 14px; display: grid; }
+.sb-caller { grid-area: 1 / 1; position: relative; display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: center; height: 30px; padding: 0 10px; box-sizing: border-box;
+  background: var(--s3); border: 1px solid var(--control-edge); border-radius: var(--r2); text-decoration: none; color: inherit; font-size: var(--t-sm);
+  transition: transform var(--d-structure) var(--ease), opacity var(--d-component), background var(--d-instant); }
+.sb-caller b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sb-caller .num { font-size: var(--t-xs); color: var(--route); }
 .sb-caller:has(.st[data-s="ringing"]) .num { color: var(--live); }
+.sb-caller:nth-child(1) { z-index: 3; }
+.sb-caller:nth-child(2) { z-index: 2; transform: translateY(5px) scale(.96); }
+.sb-caller:nth-child(3) { z-index: 1; transform: translateY(10px) scale(.92); }
+.sb-caller:nth-child(n+4) { opacity: 0; pointer-events: none; transform: translateY(10px) scale(.92); }
+.sb-more { position: absolute; right: 2px; bottom: 0; z-index: 4; font-size: var(--t-xs); padding: 1px 6px; border-radius: 9px; background: var(--live-soft); color: var(--live); }
+.sb-callers:hover, .sb-callers:focus-within { display: flex; flex-direction: column; gap: 4px; max-height: 172px; overflow-y: auto; padding-bottom: 6px; z-index: 5; }
+.sb-callers:hover .sb-caller, .sb-callers:focus-within .sb-caller { transform: none; opacity: 1; pointer-events: auto; flex: none; }
+.sb-callers:hover .sb-more, .sb-callers:focus-within .sb-more { display: none; }
+.sb-caller:hover { background: var(--s4); }
 .team-h { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 16px 6px; border-top: 1px solid var(--line); }
 .team-h:first-of-type { border-top: 0; }
 @media (max-width: 1180px) { .op-grid { grid-template-columns: minmax(0, 1fr); } }
