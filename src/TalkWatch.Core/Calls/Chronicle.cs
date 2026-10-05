@@ -103,10 +103,37 @@ public sealed record Chronicle(IReadOnlyList<ChronicleStep> Steps, IReadOnlyList
                     break;
 
                 case "entered_sa_menu":
+                    // The option the caller chose: Talk logs its key and title (sa_item_key, sa_item_title) as the
+                    // caller enters it. Without either, all that is known is that the menu played.
                     menuAt ??= e.Time;
-                    var menu = Text(d, "smart_attendant_id") ?? Text(d, "to_smart_attendant_id");
+                    var key = Text(d, "sa_item_key");
+                    var option = Text(d, "sa_item_title");
+                    if (key is not null || option is not null)
+                    {
+                        var chose = (key, option) switch
+                        {
+                            ({ } k, { } o) => $"Caller pressed {k} for {o}",
+                            ({ } k, null) => $"Caller pressed {k}",
+                            _ => $"Caller chose {option}",
+                        };
+                        steps.Add(new(e.Time, StepKind.Menu, chose, null, option));
+                        break;
+                    }
+
+                    var menu = Text(d, "sa_id") ?? Text(d, "smart_attendant_id") ?? Text(d, "to_smart_attendant_id");
                     var menuTitle = (menu is null ? null : names.Attendant(menu)) ?? "The switchboard";
                     steps.Add(new(e.Time, StepKind.Menu, $"{menuTitle} played its menu", null, menuTitle));
+                    break;
+
+                case "keypress":
+                    // Talk logs the key, then the option it led to, which already says which key it was. A key that
+                    // led to no option within a few seconds is worth showing: the caller pressed something that isn't
+                    // one.
+                    if (Text(d, "key") is { } pressed && !LedToOption(ordered, e, pressed))
+                    {
+                        steps.Add(new(e.Time, StepKind.Menu, $"Caller pressed {pressed}, which isn't an option", null));
+                    }
+
                     break;
 
                 case "seq_call_trying_endpoints":
@@ -262,6 +289,20 @@ public sealed record Chronicle(IReadOnlyList<ChronicleStep> Steps, IReadOnlyList
         catch (JsonException)
         {
             return null;
+        }
+    }
+
+    // Whether a key press was followed, within a few seconds, by Talk entering the option for that key. On a real
+    // switchboard the option was logged in the same second as the key, or a moment after.
+    private static bool LedToOption(List<ChronicleEvent> ordered, ChronicleEvent press, string key) =>
+        ordered.Any(o => o.Event == "entered_sa_menu" && o.Time >= press.Time && o.Time - press.Time <= TimeSpan.FromSeconds(5)
+            && Parse(o.DataJson) is { } option && Using(option, doc => Text(doc.RootElement, "sa_item_key") == key));
+
+    private static T Using<T>(JsonDocument document, Func<JsonDocument, T> read)
+    {
+        using (document)
+        {
+            return read(document);
         }
     }
 
