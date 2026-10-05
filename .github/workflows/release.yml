@@ -4,7 +4,8 @@ name: Release
 # last release, multi-arch images on GHCR, the documentation on GitHub Pages, and a GitHub release with notes. Day-to-day
 # CI stays on the maintainer's Docker (scripts/ci.sh); this runs only for a tag, so nothing here costs minutes until then.
 #
-# Needs, on the repository: Pages set to deploy from GitHub Actions. GITHUB_TOKEN does the rest, so there are no secrets.
+# Needs, on the repository: Pages set to deploy from GitHub Actions. GITHUB_TOKEN does the rest. Redeploying a TalkWatch on
+# Railway is optional, and needs the RAILWAY_TOKEN secret and RAILWAY_SERVICE variable (docs/developing.md).
 on:
   push:
     tags: ["v*.*.*"]
@@ -104,6 +105,20 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=release
           cache-to: type=gha,mode=max,scope=release
+
+  # Redeploys the maintainer's own TalkWatch on Railway as soon as latest has moved, rather than at its next maintenance
+  # window. Skipped while RAILWAY_SERVICE is unset, and for a pre-release, which doesn't move latest. Copies deployed from
+  # the template follow latest by Railway's own image updates.
+  railway:
+    needs: image
+    if: vars.RAILWAY_SERVICE != '' && !contains(github.ref_name, '-')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Redeploy from the new image
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE: ${{ vars.RAILWAY_SERVICE }}
+        run: npx -y @railway/cli@5.63.1 redeploy --service "$RAILWAY_SERVICE" --from-source --yes
 
   pages:
     needs: image

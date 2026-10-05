@@ -69,3 +69,59 @@ Now are cut from four minutes of the board left running, around the first ride,
 arrival and missed call it catches, so a run that catches none of one kind says
 so rather than inventing it. Everything lands in a staging folder to look over
 before it's copied into `docs/images`.
+
+## The Railway template
+
+[Deploying on Railway](railway.md) is the guide for anyone deploying; this is
+how the template behind it is built. Railway's template composer, in the
+Railway dashboard, builds it once, and each deployment is a copy in the
+deployer's own account. Railway reviews a template before verifying it, so
+keep it and the guide in step. Each value below is what the template holds.
+
+**Postgres**: add Railway's PostgreSQL database.
+
+**Railtail**: add Railway's Railtail template as a service named `Railtail`,
+with `LISTEN_PORT` set to `41641` and `TARGET_ADDR`, `TS_AUTH_KEY` and
+`TS_HOSTNAME` left for the deployer, each with a description.
+
+**TalkWatch**: a service from the Docker image
+`ghcr.io/thecodesaiyan/talkwatch:latest`.
+
+- **Settings**: health check path `/healthz`; public networking over HTTP with
+  target port `8080`.
+- **Volume**: attach one, mounted at `/data/audio`.
+- **Variables**:
+
+```text
+ConnectionStrings__TalkWatch=Host=${{Postgres.PGHOST}};Port=${{Postgres.PGPORT}};Database=${{Postgres.PGDATABASE}};Username=${{Postgres.PGUSER}}
+Database__Password=${{Postgres.PGPASSWORD}}
+Site__PublicUrl=https://${{RAILWAY_PUBLIC_DOMAIN}}
+Talk__ConsoleUrl=https://${{Railtail.RAILWAY_PRIVATE_DOMAIN}}:${{Railtail.LISTEN_PORT}}
+Bootstrap__AdminUsername=admin
+Bootstrap__AdminPassword=${{secret(32)}}
+RAILWAY_RUN_UID=0
+Site__Name=
+Site__Region=
+Site__TimeZone=
+Talk__Username=
+Talk__Password=
+Talk__CertificateSha256=
+```
+
+Give each empty variable the description from [Configuration](configuration.md),
+so the deployer knows what to put there. Publish the template, then replace the
+**Deploy on Railway** link in the README with the template's own link, which
+the template's page in the dashboard gives.
+
+### Redeploying your own Railway instance on a release
+
+The release workflow can redeploy a TalkWatch you run on Railway as soon as
+the new image is on GHCR, without waiting for a maintenance window. On the
+repository, under **Settings → Secrets and variables → Actions**:
+
+- the secret `RAILWAY_TOKEN`: a project token for that project and environment,
+  made in the project's settings;
+- the variable `RAILWAY_SERVICE`: the TalkWatch service's name.
+
+With `RAILWAY_SERVICE` unset, the step is skipped. It runs for a release, not a
+pre-release, since a pre-release doesn't move `latest`.
