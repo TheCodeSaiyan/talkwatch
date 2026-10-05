@@ -269,7 +269,8 @@
     // The call log's port sits directly below Recent activity's archive port, whatever the columns.
     var logPlane = ports.log.parentElement.getBoundingClientRect(), ax = centre(ports.archive).x;
     ports.log.style.left = (ax - logPlane.left - 4.5) + 'px';
-    var narrow = matchMedia('(max-width: 999px)').matches, P = {};
+    // Stacked when the board is one column: the stylesheet decides that from the workspace's width.
+    var narrow = getComputedStyle(root).gridTemplateColumns.trim().split(/\s+/).length === 1, P = {};
     Object.keys(ports).forEach(function (k) { P[k] = centre(ports[k]); });
     var paths = this.paths;
     paths.inlet = poly([{ x: 0, y: P.inlet.y }, P.inlet]);
@@ -540,6 +541,72 @@
       }
     });
   };
+
+  // ---------- the Context Inspector, and names that grow into it ----------
+  // A link marked data-inspect opens its call in the inspector instead of its page; a modified click (a new tab) is left
+  // alone, and so is every click until the inspector's circuit has said it is there. The caller's name grows out of the
+  // row into the inspector's head, drawn in the head's type, and shrinks back into the row when it closes.
+  var inspector = null, growing = null, shrinking = null;
+  function growText(text, from, fromSize, target, onDone) {
+    if (reduced() || !canFly() || !visible(from) || !target.isConnected || !visible(target.getBoundingClientRect())) { onDone(); return; }
+    flying++;
+    var style = getComputedStyle(target), copy = document.createElement('span');
+    copy.className = 'tw-grow'; copy.setAttribute('aria-hidden', 'true'); copy.textContent = text;
+    copy.style.cssText = 'position:fixed;left:0;top:0;z-index:45;pointer-events:none;white-space:nowrap;transform-origin:0 0;margin:0;' +
+      'font-family:' + style.fontFamily + ';font-size:' + style.fontSize + ';font-weight:' + style.fontWeight + ';letter-spacing:' + style.letterSpacing + ';line-height:' + style.lineHeight + ';color:' + style.color;
+    document.body.appendChild(copy);
+    target.style.visibility = 'hidden';
+    var scale = parseFloat(fromSize) / parseFloat(style.fontSize) || 1, t0 = performance.now(), swift = bezier(.3, 0, 0, 1);
+    function step(now) {
+      // The destination is measured every frame: the inspector is still sliding in while the name travels.
+      var q = Math.min(1, (now - t0) / 320), e = swift(q), to = target.getBoundingClientRect();
+      copy.style.transform = 'translate(' + lerp(from.left, to.left, e) + 'px,' + lerp(from.top, to.top, e) + 'px) scale(' + lerp(scale, 1, e) + ')';
+      if (q < 1 && target.isConnected) { requestAnimationFrame(step); return; }
+      copy.remove(); flying--; target.style.visibility = ''; onDone();
+    }
+    requestAnimationFrame(step);
+  }
+  function inspectorChanged() {
+    var insp = document.querySelector('.insp[data-call]');
+    if (growing && insp && insp.getAttribute('data-call') === growing.uuid) {
+      var g = growing, target = insp.querySelector('[data-grow-target]'); growing = null;
+      if (target) growText(target.textContent.trim(), g.rect, g.size, target, function () { });
+    }
+    if (shrinking && !insp) {
+      var s = shrinking; shrinking = null;
+      var back = document.querySelector('a[data-inspect="' + s.uuid + '"] [data-grow]');
+      if (back) growText(back.textContent.trim(), s.rect, s.size, back, function () { });
+    }
+  }
+  document.addEventListener('click', function (e) {
+    if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || !e.target.closest) return;
+    var link = e.target.closest('a[data-inspect]');
+    if (link && inspector) {
+      // Before the page's own link handling, so it neither navigates nor swaps the page.
+      e.preventDefault(); e.stopPropagation();
+      var name = link.querySelector('[data-grow]') || link, uuid = link.getAttribute('data-inspect');
+      growing = { uuid: uuid, rect: name.getBoundingClientRect(), size: getComputedStyle(name).fontSize };
+      // The same call chosen again changes nothing on screen, so nothing grows; don't let it grow later instead.
+      setTimeout(function () { if (growing && growing.uuid === uuid) growing = null; }, 2000);
+      inspector.invokeMethodAsync('Open', uuid).catch(function () { growing = null; location.href = link.href; });
+      return;
+    }
+    var close = e.target.closest('.insp [data-insp-close]');
+    if (close) {
+      var head = document.querySelector('.insp [data-grow-target]');
+      if (head) shrinking = { uuid: close.closest('.insp').getAttribute('data-call'), rect: head.getBoundingClientRect(), size: getComputedStyle(head).fontSize };
+    }
+  }, true);
+  // Esc closes it, unless a menu or the palette is open: Esc is theirs first.
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || document.querySelector('details.menu[open], .palette')) return;
+    var close = document.querySelector('.insp [data-insp-close]');
+    if (close) { e.preventDefault(); close.click(); }
+  }, true);
+  TW.inspector = {
+    connect: function (ref) { inspector = ref; },
+  };
+  new MutationObserver(inspectorChanged).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-call'] });
 
   // ---------- wiring ----------
   var board = null;

@@ -123,10 +123,10 @@
             }
             @foreach (var r in _recent)
             {
-                <a class="ev" href="/calls/@r.TalkUuid" style="text-decoration: none; color: inherit" data-key="@r.TalkUuid" data-stream="@r.Stream" @key="r.TalkUuid">
+                <a class="ev" href="/calls/@r.TalkUuid" data-inspect="@r.TalkUuid" style="text-decoration: none; color: inherit" data-key="@r.TalkUuid" data-stream="@r.Stream" @key="r.TalkUuid">
                     <span class="t">@TimeZoneInfo.ConvertTime(r.Time, _zone).ToString("HH:mm")</span>
                     <span class="g oc" data-o="@CallMarks.Key(r.Outcome)"><Icon Name="@CallMarks.Icon(r.Outcome)" /></span>
-                    <span class="b"><div>@r.Text</div><div class="s">@r.Sub</div></span>
+                    <span class="b"><div>@r.Lead<span data-grow>@r.Party</span>@r.Tail</div><div class="s">@r.Sub</div></span>
                 </a>
             }
         </div>
@@ -149,10 +149,10 @@
             }
             @foreach (var l in _log)
             {
-                <a class="lg" role="listitem" href="/calls/@l.TalkUuid" style="text-decoration: none; color: inherit" data-key="@l.TalkUuid" @key="l.TalkUuid">
+                <a class="lg" role="listitem" href="/calls/@l.TalkUuid" data-inspect="@l.TalkUuid" style="text-decoration: none; color: inherit" data-key="@l.TalkUuid" @key="l.TalkUuid">
                     <span class="t">@TimeZoneInfo.ConvertTime(l.Time, _zone).ToString("HH:mm")</span>
                     <span class="dir" data-d="@CallMarks.DirectionKey(l.Direction)" title="@CallMarks.Direction(l.Direction)"><Icon Name="@CallMarks.DirectionKey(l.Direction)" /><span class="sr">@CallMarks.Direction(l.Direction)</span></span>
-                    <span class="who"><b>@l.Who</b><span class="n">@l.Number</span></span>
+                    <span class="who"><b data-grow>@l.Who</b><span class="n">@l.Number</span></span>
                     <span class="line hide-sm">@l.Line</span>
                     <span class="oc" data-o="@CallMarks.Key(l.Outcome)"><Icon Name="@CallMarks.Icon(l.Outcome)" />@CallMarks.Words(l.Outcome)</span>
                     <span class="num">@CallMarks.Duration(TimeSpan.FromSeconds(l.Seconds))</span>
@@ -214,7 +214,8 @@
 @code {
     [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
 
-    private sealed record Recent(string TalkUuid, DateTimeOffset Time, CallOutcome Outcome, string Text, string Sub, string Stream);
+    // The sentence in three parts, so the caller's name can grow from it into the Context Inspector.
+    private sealed record Recent(string TalkUuid, DateTimeOffset Time, CallOutcome Outcome, string Lead, string Party, string Tail, string Sub, string Stream);
 
     private sealed record Logged(string TalkUuid, DateTimeOffset Time, string Direction, CallOutcome Outcome, string Who, string Number, string Line, int Seconds);
 
@@ -325,15 +326,18 @@
         var onBoard = calls.Where(c => c.Live || c.Call.UpdatedAt >= now - LiveCalls.Linger).Select(c => c.Call.Id).ToHashSet();
         var going = calls.Where(c => c.Live).Select(c => c.Call.Id).ToHashSet();
 
-        _recentTruth = [.. recent.Where(c => !onBoard.Contains(c.Id) && !going.Contains(c.Id)).Take(12).Select(c => new Recent(c.TalkUuid, c.Time, c.Outcome, c.Outcome switch
+        (string Lead, string Tail) Words(CallRow c) => c.Outcome switch
         {
-            CallOutcome.Answered => $"{chronicles[c.Id].Steps.FirstOrDefault(s => s.Kind == StepKind.Answered)?.Subject ?? "Someone"} answered {Party(c)}",
-            CallOutcome.Missed => $"Missed call from {Party(c)}",
-            CallOutcome.Voicemail => $"Voicemail from {Party(c)}",
-            CallOutcome.HungUpAtSwitchboard => $"{Party(c)} hung up in the menu",
-            CallOutcome.Outbound => $"Call to {Party(c)}",
-            _ => $"Call with {Party(c)}",
-        }, (Line(c) is { Length: > 0 } l && c.Direction == "in" ? l + " · " : "") + CallMarks.Duration(TimeSpan.FromSeconds(c.DurationSeconds)), LiveCalls.Stream(c.Outcome)))];
+            CallOutcome.Answered => ($"{chronicles[c.Id].Steps.FirstOrDefault(s => s.Kind == StepKind.Answered)?.Subject ?? "Someone"} answered ", ""),
+            CallOutcome.Missed => ("Missed call from ", ""),
+            CallOutcome.Voicemail => ("Voicemail from ", ""),
+            CallOutcome.HungUpAtSwitchboard => ("", " hung up in the menu"),
+            CallOutcome.Outbound => ("Call to ", ""),
+            _ => ("Call with ", ""),
+        };
+
+        _recentTruth = [.. recent.Where(c => !onBoard.Contains(c.Id) && !going.Contains(c.Id)).Take(12).Select(c => new Recent(c.TalkUuid, c.Time, c.Outcome, Words(c).Lead, Party(c), Words(c).Tail,
+            (Line(c) is { Length: > 0 } l && c.Direction == "in" ? l + " · " : "") + CallMarks.Duration(TimeSpan.FromSeconds(c.DurationSeconds)), LiveCalls.Stream(c.Outcome)))];
 
         _logTruth = [.. logged.Where(c => !onBoard.Contains(c.Id) && !going.Contains(c.Id)).Take(8).Select(c => new Logged(c.TalkUuid, c.Time, c.Direction, c.Outcome, Party(c),
             (c.Direction == "out" ? c.ToRaw : c.FromRaw) is { } n && n != Party(c) ? n : "", c.Direction == "in" ? Line(c) : "", c.DurationSeconds))];

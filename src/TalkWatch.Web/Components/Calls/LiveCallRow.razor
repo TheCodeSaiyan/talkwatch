@@ -6,7 +6,7 @@
 <div class="lc@(Call.Live ? "" : " ended")" data-s="@Call.State" role="listitem" data-live-call="@Call.Call.TalkUuid" data-key="@Call.Call.TalkUuid"
      data-stream="@(Call.Live ? null : LiveCalls.Stream(Call.Call.Outcome))" data-signal="@(!Call.Live && Call.Call.Outcome.IsMissed() ? "missed" : null)">
     <span class="dir" data-d="@CallMarks.DirectionKey(Call.Call.Direction)" title="@CallMarks.Direction(Call.Call.Direction)"><Icon Name="@CallMarks.DirectionKey(Call.Call.Direction)" /></span>
-    <a class="who" href="/calls/@Call.Call.TalkUuid" style="text-decoration: none; color: inherit"><b>@Call.Who</b><span class="n">@Call.Number</span></a>
+    <a class="who" href="/calls/@Call.Call.TalkUuid" data-inspect="@Call.Call.TalkUuid" style="text-decoration: none; color: inherit"><b data-grow>@Call.Who</b><span class="n">@Call.Number</span></a>
     <RouteTrace Chronicle="Call.Chronicle" Last="@Last" />
     <span class="stcol">
         @if (Call.Live)

@@ -196,6 +196,39 @@ public sealed class NowBoardTests(TalkWatchApp talkwatch) : IClassFixture<TalkWa
         Assert.Matches("class=\"num roll\" data-roll=\"missed\"><span class=\"rv\">1</span>", page);
     }
 
+    // Choosing a call opens it in the Context Inspector, its name growing from the row; the link still opens its page.
+    [Fact]
+    public async Task Calls_on_now_and_in_the_call_log_open_in_the_inspector_with_a_name_to_grow_from()
+    {
+        var console = new FixtureConsole(FixtureConsole.DefaultDirectory);
+        var uuid = Guid.NewGuid().ToString();
+        var ended = Guid.NewGuid().ToString();
+        console.AddCall(Ringing(uuid, DateTimeOffset.UtcNow.AddSeconds(-20)));
+        console.AddCall(Missed(ended, DateTimeOffset.UtcNow.AddSeconds(-40)));
+        await using var app = talkwatch.Create(console);
+        await app.Services.GetRequiredService<CallLogPoller>().RunOnceAsync(Ct);
+        using (var scope = app.Services.CreateScope())
+        {
+            // Past its moment on the board, so it is in Recent activity.
+            scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UseSystemScope();
+            await scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>().Calls.Where(c => c.TalkUuid == ended)
+                .ExecuteUpdateAsync(s => s.SetProperty(c => c.UpdatedAt, DateTimeOffset.UtcNow - TimeSpan.FromMinutes(1)), Ct);
+        }
+
+        using var browser = TalkWatchApp.Browser(app);
+        await TalkWatchApp.SignInAsync(browser, TalkWatchApp.AdminUsername, TalkWatchApp.AdminPassword);
+
+        var now = await browser.GetStringAsync(new Uri("/live", UriKind.Relative), Ct);
+        var log = await browser.GetStringAsync(new Uri("/calls", UriKind.Relative), Ct);
+
+        Assert.Matches($"<a class=\"who\" href=\"/calls/{uuid}\" data-inspect=\"{uuid}\"[^>]*><b data-grow>", now);
+        Assert.Matches("<a class=\"ev\" href=\"/calls/([^\"]+)\" data-inspect=\"\\1\"[\\s\\S]*?<span data-grow>", now);
+        Assert.Matches("<a class=\"lg\" role=\"listitem\" href=\"/calls/([^\"]+)\" data-inspect=\"\\1\"[\\s\\S]*?<b data-grow>", now);
+        Assert.Matches("href=\"/calls/([^\"]+)\" class=\"row\" data-inspect=\"\\1\"[\\s\\S]*?<b data-grow>", log);
+        // The workspace has room beside it for the inspector, in every page's layout.
+        Assert.Matches("<div class=\"shell-work\"[^>]*>\\s*<main", log);
+    }
+
     // The rail's line is drawn by script on a canvas whose drawing size the script sets. Changing page merges the new
     // page into this one, which would strip that size and leave the line stretched out of sight; permanent, it is left be.
     [Fact]

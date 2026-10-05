@@ -297,8 +297,10 @@ ul.rows form, .dg form { display: inline-flex; }
 .board-legend [data-stream="missed"]::before { background: var(--bad); }
 /* The canvas the streams are drawn on: the whole window, behind the planes, never in the way of a click. */
 .board-current { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: -1; }
-/* Below 1000px the nodes stack in flow order and the streams run down between them. */
-@media (max-width: 999px) {
+/* Below 1000px of workspace the nodes stack in flow order and the streams run down between them. The workspace's own
+   width, not the window's: an open Context Inspector takes 440px of a wide screen. */
+.page { container: page / inline-size; }
+@container page (max-width: 999px) {
   .board { grid-template-columns: minmax(0, 1fr); }
   .board > * { grid-column: 1 !important; grid-row: auto !important; }
   .board > .m-a { margin-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom: 0; }
@@ -328,6 +330,24 @@ ul.rows form, .dg form { display: inline-flex; }
 /* What a held list is keeping back: choosing it applies the changes at once. */
 .held { font: 500 var(--t-xs) var(--sans); color: var(--live); background: var(--live-soft); border: 1px solid color-mix(in srgb, var(--live) 40%, transparent); border-radius: 999px; padding: 2px 9px; cursor: pointer; white-space: nowrap; }
 .held:hover { border-color: var(--live); }
+
+/* ---------- the Context Inspector ----------
+   One call, opened from the right without leaving the view. Above 1180px it shares the width, so the board or list
+   stays readable beside it; below, it floats over the workspace with a shadow. */
+.shell-work { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.shell-work:has(> .insp) { grid-template-columns: minmax(0, 1fr) var(--insp-w); }
+.shell-work > .insp { position: sticky; top: var(--rail-h); height: calc(100vh - var(--rail-h)); animation: inspIn var(--d-structure) var(--ease); }
+.insp-head .insp-title { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 1px; }
+.insp-name { font-size: var(--t-lg); font-weight: 650; letter-spacing: -.012em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.insp-title .n { font-size: var(--t-xs); color: var(--fg-3); }
+.insp-head .iconbtn[aria-pressed="true"] { color: var(--live); background: var(--live-soft); }
+.insp-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; margin: 0; font-size: var(--t-md); }
+.insp-facts dt { color: var(--fg-3); }
+.insp-facts dd { margin: 0; }
+@media (max-width: 1180px) {
+  .shell-work:has(> .insp) { grid-template-columns: minmax(0, 1fr); }
+  .shell-work > .insp { position: fixed; right: 0; top: var(--rail-h); bottom: 0; height: auto; width: min(var(--insp-w), 100vw); z-index: 40; box-shadow: var(--shadow); }
+}
 
 /* ---------- continuity ---------- */
 /* Rolling counts: the figure stays in the page for screen readers; the odometer beside it is what is seen. */

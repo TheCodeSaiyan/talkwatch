@@ -47,6 +47,18 @@ it. The choice is kept on your account rather than in the browser, so it
 follows you to your phone, and the switcher changes colour while it's
 narrowed so you don't forget either.
 
+## Looking at one call without leaving the page
+
+Choosing a call on Now or in the call log opens it in a panel on the right,
+with the page still there beside it. The panel shows how the call ended (or
+how it's going), its line, how long it lasted and how long it took to answer,
+the route it took and what happened step by step. **Open** goes to the call's
+full page, with its recording and transcript. **Pin** keeps the panel open
+while you move between pages; otherwise it closes when you go somewhere else.
+**Esc** or the cross closes it. On a narrower screen it sits over the page
+instead of beside it. To open a call's full page straight away, open the link
+in a new tab as you normally would.
+
 ## The status strip
 
 When something needs attention, a strip appears under the rail on every page:
