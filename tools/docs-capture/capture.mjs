@@ -65,7 +65,7 @@ async function record(page, name, run, { keep } = {}) {
     frames.push({ file, t: f.metadata.timestamp * 1000 });
     await cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {});
   });
-  await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 88, everyNthFrame: 1 });
+  await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 95, everyNthFrame: 1 });
   const area = keep ? await page.evaluate(keep) : null;
   await run((kind) => marks.push({ kind, t: Date.now() }));
   await cdp.send('Page.stopScreencast');
@@ -92,6 +92,20 @@ async function callDetail(page) {
   }
   log('no answered call with audio; showing the first');
   await visit(page, links[0], 'call-detail', { full: true });
+}
+
+// Now. The demo makes a call a minute, each ringing for 40 seconds and lasting two and a half minutes: wait until Now
+// has one going, so the board shows itself working rather than empty.
+async function nowShots(page) {
+  await page.goto(base + '/live');
+  for (let i = 0; i < 60; i++) {
+    if (await page.locator('[data-hold=live] .lc:not(.ended)').count() >= 2) break;
+    await wait(5000);
+    if (i % 6 === 5) await page.reload();
+  }
+  log('live calls on the board:', await page.locator('[data-hold=live] .lc').count());
+  await visit(page, '/live', 'now');
+  await visit(page, '/live', 'now-full', { full: true });
 }
 
 // A caller going through the main switchboard's menu: they ride from the menu to the option they press, and on to the
@@ -136,6 +150,14 @@ async function lightAndPhone() {
 }
 
 // TW_ONLY names one shot to take again, so a picture that came out badly needn't mean the whole run again.
+if (process.env.TW_ONLY === 'now') {
+  try { await nowShots(await signedIn()); } catch (e) { log('FAILED', e.stack); }
+  await lightAndPhone();
+  await browser.close();
+  log('done');
+  process.exit(0);
+}
+
 if (process.env.TW_ONLY === 'operator-ride') {
   await operatorRide();
   await lightAndPhone();
@@ -162,18 +184,7 @@ try {
 
   const page = await signedIn();
 
-  // The demo makes a call a minute, each ringing for 40 seconds and lasting two and a half minutes: wait until Now has
-  // one going, so the board shows itself working rather than empty.
-  await page.goto(base + '/live');
-  for (let i = 0; i < 60; i++) {
-    if (await page.locator('[data-hold=live] .lc:not(.ended)').count() >= 2) break;
-    await wait(5000);
-    if (i % 6 === 5) await page.reload();
-  }
-  log('live calls on the board:', await page.locator('[data-hold=live] .lc').count());
-
-  await visit(page, '/live', 'now');
-  await visit(page, '/live', 'now-full', { full: true });
+  await nowShots(page);
   // Operator with callers in the main switchboard's menu: three set going a few seconds apart, so they are at different
   // stages when the picture is taken.
   await page.goto(base + '/operator');
