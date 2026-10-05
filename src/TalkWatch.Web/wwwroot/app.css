@@ -412,3 +412,19 @@ ul.rows form, .dg form { display: inline-flex; }
 .tw-await { visibility: hidden; }
 /* Reduced motion: a change arrives in place with a still wash instead of travelling. */
 .tw-wash { background: var(--live-soft) !important; }
+/* The demo's scenarios: a panel floating at the foot of the page, its groups side by side, folding down to its tab. It
+   sits right of the mini player, which keeps the bottom left. */
+.demobar { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 32; width: min(860px, calc(100vw - 32px)); box-sizing: border-box;
+  border: 1px solid var(--line-strong); border-radius: var(--r3); background: color-mix(in srgb, var(--s3) 94%, transparent); backdrop-filter: blur(10px); box-shadow: var(--shadow); animation: miniIn var(--d-structure) var(--ease); }
+.demobar.shut { width: auto; }
+.demobar-tab { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; background: none; border: 0; color: var(--fg); font: 600 var(--t-sm) var(--sans); cursor: pointer; text-align: left; }
+.demobar-tab .ico { fill: var(--live); stroke: none; }
+.demobar:not(.shut) .demobar-tab { border-bottom: 1px solid var(--line); }
+.demobar-body { position: relative; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px 16px; padding: 12px; }
+.demobar-group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.demobar-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.demobar-buttons .btn { display: inline-flex; align-items: center; gap: 6px; }
+.demobar-buttons .btn.playing { border-color: var(--live); color: var(--live); }
+.demobar-note { grid-column: 1 / -1; margin: 0; font-size: var(--t-xs); color: var(--fg-3); }
+.demobar-close { position: absolute; top: -38px; right: 6px; }
+@media (max-width: 640px) { .demobar { right: 8px; left: 8px; width: auto; bottom: 8px; } .demobar-body { max-height: 50vh; overflow-y: auto; } }

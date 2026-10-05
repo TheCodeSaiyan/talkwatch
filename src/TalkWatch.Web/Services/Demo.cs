@@ -77,11 +77,12 @@ public static class Demo
             ["Talk:Password"] = FixtureConsole.Password,
         });
 
-        var console = new FixtureConsole(options.Fixtures);
+        var console = new FixtureConsole(options.Fixtures) { Rewrite = DemoNames.Apply };
         console.ShiftTimes(DateTimeOffset.UtcNow.AddHours(-1));
         builder.Services.AddHttpClient(TalkSession.HttpClientName).ConfigurePrimaryHttpMessageHandler(() => console);
         builder.Services.AddSingleton(console);
         builder.Services.AddSingleton<DemoActivity>();
         builder.Services.AddHostedService(sp => sp.GetRequiredService<DemoActivity>());
+        builder.Services.AddSingleton<DemoScenarios>();
     }
 }

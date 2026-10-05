@@ -23,9 +23,11 @@ public sealed partial class LiveListener(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // A replayed console in demo mode has no live feed to listen to.
+        // A replayed console in demo mode has no live feed to listen to. The people calls can reach still come from its
+        // directory, so People has someone to show and the demo's scenarios someone to make busy.
         if (demo.Value.Enabled)
         {
+            await DemoPeopleAsync(stoppingToken);
             return;
         }
 
@@ -39,6 +41,28 @@ public sealed partial class LiveListener(
         {
             connection.Changed -= Reconnect;
             tunnel.StatusChanged -= TunnelChanged;
+        }
+    }
+
+    private async Task DemoPeopleAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            try
+            {
+                if (await session.EnsureSignedInAsync(stoppingToken))
+                {
+                    await directory.RefreshAsync(stoppingToken);
+                    live.SetDirectory(directory.Current);
+                    return;
+                }
+            }
+            catch (Exception e) when (e is HttpRequestException or TalkApiException or TalkSchemaException)
+            {
+                LogDemoPeople(logger, e);
+            }
+
+            await Task.Delay(FirstRetry, clock, stoppingToken);
         }
     }
 
@@ -234,4 +258,7 @@ public sealed partial class LiveListener(
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "A live {Event} message could not be handled; skipped.")]
     private static partial void LogMessageFailed(ILogger logger, string @event, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Demo: the people could not be read from the replay yet; trying again.")]
+    private static partial void LogDemoPeople(ILogger logger, Exception exception);
 }

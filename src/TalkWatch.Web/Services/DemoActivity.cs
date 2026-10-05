@@ -93,7 +93,7 @@ public sealed partial class DemoActivity(
         };
         if (answered)
         {
-            events.Add(Event(started + RingsFor, "call_accepted", outside ? $$"""{"accepted_by_contact_uuid":"{{ContactWithEmail}}"}""" : "{}"));
+            events.Add(Event(started + RingsFor, "call_accepted", outside ? $$"""{"accepted_by_contact_uuid":"{{ContactWithEmail}}"}""" : AcceptedBy(member)));
         }
 
         if (ended)
@@ -290,7 +290,7 @@ public sealed partial class DemoActivity(
 
     // Contacts in the replayed console: one Talk holds an email for, so a flow can tell them, and one it holds none for,
     // which the flow editor shows would hear nothing.
-    private const string ContactWithEmail = "ac7a4901-2722-4e41-9f20-87f95df72cb2", ContactWithoutEmail = "7624c978-2957-44f4-a42a-93ccd47a0bb8";
+    internal const string ContactWithEmail = "ac7a4901-2722-4e41-9f20-87f95df72cb2", ContactWithoutEmail = "7624c978-2957-44f4-a42a-93ccd47a0bb8";
 
     /// <summary>
     /// On a demo database: alerts in TalkWatch for the first admin, the admin linked to someone in a ring group so
@@ -573,9 +573,9 @@ public sealed partial class DemoActivity(
                 Event(answered, "call_sent_to_voicemail", $$"""{"recipient_user_uuids":["{{member}}"]}"""),
                 Event(ended, "vm_msg_recorded", $$"""{"recipient_user_uuids":["{{member}}"]}"""), Event(ended, "call_hangup"))),
             3 => ("accepted", member.Length == 0 ? "" : $$""","answered_by_user_uuid":"{{member}}" """,
-                Events(Event(t, "call_started"), Event(t, "seq_call_trying_endpoints"), Event(answered, "call_accepted"), Event(ended, "call_hangup"))),
+                Events(Event(t, "call_started"), Event(t, "seq_call_trying_endpoints"), Event(answered, "call_accepted", AcceptedBy(member)), Event(ended, "call_hangup"))),
             4 => ("accepted", (member.Length == 0 ? "" : $$""","answered_by_user_uuid":"{{member}}" """) + ",\"quality_score\":42",
-                Events(Event(t, "call_started"), Event(t, "seq_call_trying_endpoints"), Event(answered, "call_accepted"), Event(ended, "call_hangup"))),
+                Events(Event(t, "call_started"), Event(t, "seq_call_trying_endpoints"), Event(answered, "call_accepted", AcceptedBy(member)), Event(ended, "call_hangup"))),
             _ => ("accepted", ",\"to_smart_attendant_id\":45",
                 Events(Event(t, "call_started", """{"to_smart_attendant_id":45}"""), Event(At(at.AddSeconds(12)), "call_hangup"))),
         };
@@ -586,6 +586,10 @@ public sealed partial class DemoActivity(
             """);
         LogAdded(logger, turn % 6);
     }
+
+    // Who answered, as Talk says it: by their extension, which names them.
+    private string AcceptedBy(string? member) =>
+        directory.Current.Users.FirstOrDefault(u => u.Uuid == member)?.Ext is { } ext ? $$"""{"accepted_by":"{{ext}}"}""" : "{}";
 
     private string? Member() => directory.Current.Groups.FirstOrDefault(g => g.MemberList is { Count: > 0 })?.MemberList?[0];
 

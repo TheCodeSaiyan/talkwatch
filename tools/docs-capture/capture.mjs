@@ -17,6 +17,12 @@ const browser = await chromium.launch({ channel: 'msedge', headless: true });
 async function signedIn({ theme = 'dark', width = 1440, height = 900, mobile = false } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, colorScheme: theme, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: mobile ? 2 : 1 });
   const page = await context.newPage();
+  // The demo's scenario bar stays out of every picture: it floats over the page, and isn't TalkWatch's own.
+  await context.addInitScript(() => addEventListener('DOMContentLoaded', () => {
+    const style = document.createElement('style');
+    style.textContent = '[data-demobar] { visibility: hidden !important; }';
+    document.head.appendChild(style);
+  }));
   await page.goto(base + '/signin');
   await page.fill('input[name=Username]:not([type=hidden])', 'alex.morgan');
   await page.fill('input[name=Password]:not([type=hidden])', 'docs-capture-passphrase');
@@ -31,8 +37,8 @@ async function settle(page, ms = 1800) {
   await page.waitForFunction(() => !document.querySelector('.tw-ghost, .tw-mark, .tw-grow, .tw-await'), null, { timeout: 8000 }).catch(() => {});
 }
 
-async function shot(page, name, { full = false, clip } = {}) {
-  await settle(page);
+async function shot(page, name, { full = false, clip, settleMs } = {}) {
+  await settle(page, settleMs);
   await page.screenshot({ path: path.join(out, 'shots', name + '.png'), fullPage: full, clip, animations: 'allow' });
   log('shot', name);
 }
@@ -66,6 +72,15 @@ async function record(page, name, run, { keep } = {}) {
   fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify({ frames, marks, area }, null, 1));
   log('recorded', name, frames.length, 'frames', marks.length, 'marks');
 }
+
+// Plays one of the demo's scenarios from its bar, hidden or not: the bar answers a click like any button.
+async function scenario(page, label) {
+  await page.locator('[data-demobar] button', { hasText: label }).first().dispatchEvent('click');
+  log('scenario', label);
+}
+
+// The main switchboard, where the scenarios' callers go.
+const mainSwitchboard = () => { const b = document.querySelector('section[aria-label="Main switchboard"]').getBoundingClientRect(); return { x: Math.max(0, b.left), y: Math.max(0, b.top), width: Math.min(innerWidth, b.width), height: Math.min(innerHeight - Math.max(0, b.top), b.height) }; };
 
 // A call's page is shown with one that has the most to show: answered, with its recording or Talk's transcript.
 async function callDetail(page) {
@@ -110,7 +125,20 @@ try {
 
   await visit(page, '/live', 'now');
   await visit(page, '/live', 'now-full', { full: true });
-  await visit(page, '/operator', 'operator');
+  // Operator with callers in the main switchboard's menu: three set going a few seconds apart, so they are at different
+  // stages when the picture is taken.
+  await page.goto(base + '/operator');
+  await settle(page);
+  await scenario(page, 'Presses 1, then 2');
+  await wait(4000);
+  await scenario(page, 'Presses a wrong key');
+  await wait(3000);
+  await scenario(page, 'Hangs up in the menu');
+  await wait(4500);
+  await page.locator('section[aria-label="Main switchboard"]').scrollIntoViewIfNeeded();
+  await shot(page, 'operator', { settleMs: 400 });
+  // Each scenario plays out in about a minute: let them finish before the next pictures.
+  await wait(50000);
   await visit(page, '/calls', 'calls');
   await callDetail(page);
   await visit(page, '/callbacks', 'callbacks');
@@ -190,6 +218,20 @@ try {
     // Four minutes: long enough for a call to arrive and one to end, at a call a minute.
     await wait(240000);
   }, { keep: () => { const b = document.querySelector('[data-board]').getBoundingClientRect(); return { x: 0, y: Math.max(0, b.top - 8), width: innerWidth, height: Math.min(innerHeight - Math.max(0, b.top - 8), 760) }; } });
+
+  // A caller going through the main switchboard's menu: they ride from the menu to the option they press, and on to the
+  // one they press next.
+  await page.goto(base + '/operator');
+  await page.locator('section[aria-label="Main switchboard"]').scrollIntoViewIfNeeded();
+  await settle(page);
+  await record(page, 'operator-ride', async (mark) => {
+    await scenario(page, 'Presses 1, then 2');
+    await wait(4500);
+    mark('start');
+    await wait(9500);
+    mark('end');
+    await wait(1000);
+  }, { keep: mainSwitchboard });
 
   // Light theme, and a phone.
   {
