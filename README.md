@@ -77,13 +77,12 @@ console, follow [Installing](https://thecodesaiyan.github.io/talkwatch/install/)
 ## Deploying on Railway
 
 The template deploys the published image, PostgreSQL and a volume for
-recordings into your own Railway account. TalkWatch reaches the site's console
-through the site gateway's own WireGuard VPN, or Tailscale, set up on its
-Console page.
-[Deploying on Railway](https://thecodesaiyan.github.io/talkwatch/railway/) says
-what to fill in.
+recordings into your own Railway account, on its Hobby plan or above.
+TalkWatch reaches the site's console through the site gateway's own WireGuard
+VPN, or Tailscale, set up on its Console page.
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://thecodesaiyan.github.io/talkwatch/railway/)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/talkwatch?referralCode=Ovpomw&utm_medium=integration&utm_source=template&utm_campaign=generic)
+&nbsp; [The guide: what to fill in, and reaching the console →](https://thecodesaiyan.github.io/talkwatch/railway/)
 
 ## Limits, plainly
 

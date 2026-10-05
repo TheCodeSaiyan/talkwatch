@@ -119,13 +119,23 @@
     draw();
   }
 
-  // A transcript line with data-at seeks the page's player there; the line being spoken is highlighted.
+  // A transcript line with data-at seeks the page's player there; the line being spoken is highlighted, and kept in
+  // view inside the transcript's own scrolling box, never by scrolling the page.
   function sync() {
     var lines = document.querySelectorAll('.transcript [data-at]'); if (!lines.length) return;
     var audio = players.find(function (p) { return !p.paused || p.currentTime > 0; }); if (!audio) return;
     var t = audio.currentTime, k = -1;
     lines.forEach(function (l, i) { if (t >= Number(l.getAttribute('data-at'))) k = i; });
-    lines.forEach(function (l, i) { l.classList.toggle('now', i === k); });
+    lines.forEach(function (l, i) {
+      var was = l.classList.contains('now');
+      l.classList.toggle('now', i === k);
+      if (i === k && !was) follow(l);
+    });
+  }
+  function follow(line) {
+    var box = line.closest('.transcript-lines'); if (!box || box.scrollHeight <= box.clientHeight) return;
+    var top = line.offsetTop, bottom = top + line.offsetHeight;
+    if (top < box.scrollTop || bottom > box.scrollTop + box.clientHeight) box.scrollTo({ top: Math.max(0, top - box.clientHeight / 3), behavior: 'smooth' });
   }
   document.addEventListener('click', function (e) {
     var line = e.target.closest && e.target.closest('.transcript [data-at]');

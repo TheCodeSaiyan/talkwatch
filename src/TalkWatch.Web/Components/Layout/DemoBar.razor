@@ -1,0 +1,74 @@
+@using TalkWatch.Web.Services
+@implements IDisposable
+@inject DemoScenarios Scenarios
+
+@* The demo's scenarios, floating at the foot of every page: pick one and watch it play out on Now and Operator, a step
+   every few seconds, as a real call would. Folds down to a tab. Only in demo mode. *@
+<aside class="demobar@(_open ? "" : " shut")" aria-label="Try a scenario" data-demobar>
+    <button type="button" class="demobar-tab" aria-expanded="@(_open ? "true" : "false")" @onclick="() => _open = !_open">
+        <svg class="ico s" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l9 5-9 5z"></path></svg>
+        <span>Try a scenario</span>
+        @if (Scenarios.Playing > 0)
+        {
+            <span class="tag live">@Scenarios.Playing playing</span>
+        }
+    </button>
+    @if (_open)
+    {
+        <div class="demobar-body">
+            @foreach (var group in DemoScenarios.All.GroupBy(s => s.Category))
+            {
+                <div class="demobar-group" role="group" aria-label="@group.Key">
+                    <span class="eyebrow">@group.Key</span>
+                    <div class="demobar-buttons">
+                        @foreach (var scenario in group)
+                        {
+                            var playing = _mine.Contains(scenario.Id);
+                            <button type="button" class="btn sm@(playing ? " playing" : "")" title="@scenario.Hint"
+                                    disabled="@(playing || Scenarios.Playing >= DemoScenarios.MaxPlaying)" @onclick="() => Play(scenario.Id)">
+                                @if (playing)
+                                {
+                                    <span class="st" data-s="routing"><i></i></span>
+                                }
+                                @scenario.Label
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+            <p class="demobar-note">@(Scenarios.Playing >= DemoScenarios.MaxPlaying ? $"{DemoScenarios.MaxPlaying} are playing, the most at once. One will finish in a moment." : "Each plays out over a minute or so. Watch Now or Operator as it does.")</p>
+            <button type="button" class="iconbtn demobar-close" aria-label="Fold the scenarios away" @onclick="() => _open = false">×</button>
+        </div>
+    }
+</aside>
+
+@code {
+    private bool _open = true;
+
+    // The scenarios this visitor set going that are still playing.
+    private readonly HashSet<string> _mine = new(StringComparer.Ordinal);
+
+    protected override void OnInitialized() => Scenarios.Changed += OnChanged;
+
+    private void OnChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private async Task Play(string id)
+    {
+        if (Scenarios.Start(id) is not { } playing)
+        {
+            return;
+        }
+
+        _mine.Add(id);
+        try
+        {
+            await playing;
+        }
+        finally
+        {
+            _mine.Remove(id);
+        }
+    }
+
+    public void Dispose() => Scenarios.Changed -= OnChanged;
+}

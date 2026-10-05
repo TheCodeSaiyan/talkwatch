@@ -389,8 +389,14 @@ public sealed class FixtureConsole : HttpMessageHandler
         return node.ToJsonString();
     }
 
-    private static HttpResponseMessage Json(string json) =>
-        new(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
+    /// <summary>
+    /// Rewrites every JSON answer before it is sent: a demo gives the capture's pseudonyms readable names this way, with
+    /// the fixtures themselves left as they are.
+    /// </summary>
+    public Func<string, string>? Rewrite { get; set; }
+
+    private HttpResponseMessage Json(string json) =>
+        new(HttpStatusCode.OK) { Content = new StringContent(Rewrite is null ? json : Rewrite(json), Encoding.UTF8, "application/json") };
 
     /// <summary>Every call in the fixtures, deserialised as TalkWatch reads them.</summary>
     public IReadOnlyList<CallLogRecord> Calls() =>

@@ -100,12 +100,18 @@ Site__Region=
 Site__TimeZone=
 ```
 
-Give each empty variable the description from [Configuration](configuration.md),
-so the deployer knows what to put there. There are no `Talk__` variables: the
-console and the way to it are set on the Console page after deploying, which
-keeps the WireGuard or Tailscale secrets out of Railway's variables. Publish the template, then replace the
-**Deploy on Railway** link in the README with the template's own link, which
-the template's page in the dashboard gives.
+Railway wants a description on every variable before it publishes: the empty
+ones take theirs from [Configuration](configuration.md), so the deployer knows
+what to put there, and the rest say they're filled in. The service's icon is
+`https://thecodesaiyan.github.io/talkwatch/assets/mark.svg`. There are no
+`Talk__` variables: the console and the way to it are set on the Console page
+after deploying, which keeps the WireGuard or Tailscale secrets out of
+Railway's variables.
+
+The template is published as
+[TalkWatch](https://railway.com/deploy/talkwatch). The README's **Deploy on
+Railway** button links to it with the maintainer's referral code, from the
+**Share** button on the template's page in the dashboard.
 
 ### Redeploying your own Railway instance on a release
 

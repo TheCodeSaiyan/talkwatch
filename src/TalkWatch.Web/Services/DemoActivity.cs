@@ -290,7 +290,7 @@ public sealed partial class DemoActivity(
 
     // Contacts in the replayed console: one Talk holds an email for, so a flow can tell them, and one it holds none for,
     // which the flow editor shows would hear nothing.
-    private const string ContactWithEmail = "ac7a4901-2722-4e41-9f20-87f95df72cb2", ContactWithoutEmail = "7624c978-2957-44f4-a42a-93ccd47a0bb8";
+    internal const string ContactWithEmail = "ac7a4901-2722-4e41-9f20-87f95df72cb2", ContactWithoutEmail = "7624c978-2957-44f4-a42a-93ccd47a0bb8";
 
     /// <summary>
     /// On a demo database: alerts in TalkWatch for the first admin, the admin linked to someone in a ring group so
