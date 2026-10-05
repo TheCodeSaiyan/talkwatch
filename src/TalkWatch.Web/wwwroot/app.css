@@ -178,6 +178,29 @@ h1:focus { outline: none; }
 .op-grid .lc { grid-template-columns: 22px minmax(0, 1fr) auto 54px; row-gap: 3px; padding-block: 8px; min-height: 0; }
 .op-grid .lc .trace { grid-column: 2 / -1; grid-row: 2; }
 .op-grid .lc .acts { display: none; }
+/* Operator's switchboards: stages in columns, joined by streams drawn on the canvas behind them (tw-switchboard.js).
+   A wide switchboard scrolls inside its plane, never the page. */
+.sb { margin-bottom: 16px; }
+.sb-scroll { overflow-x: auto; }
+.sb-flow { position: relative; display: grid; column-gap: 56px; padding: 16px 16px 18px 40px; align-items: stretch; min-width: min-content; }
+.sb-current { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+.sb-col { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; gap: 14px; min-width: 0; }
+.sb-stage { background: var(--s2); border: 1px solid var(--line-strong); border-radius: var(--r2); min-width: 0; transition: border-color var(--d-component), box-shadow var(--d-component); }
+.sb-stage:not([data-now="0"]) { border-color: var(--live); box-shadow: 0 0 0 3px var(--live-soft); }
+.sb-stage[data-kind="hungup"] { border-style: dashed; }
+.sb-stage[data-kind="hours"] { background: var(--s1); }
+.sb-stage[data-kind="hours"] .sb-node b { font-weight: 500; color: var(--fg-2); }
+.sb-stage[data-kind="hungup"] .sb-node b { color: var(--bad); }
+.sb-node { display: flex; flex-direction: column; gap: 2px; padding: 7px 10px; }
+.sb-node b { font-size: var(--t-sm); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb-node .m { font-size: var(--t-xs); color: var(--fg-3); }
+.sb-stage[data-now="0"] .sb-callers { display: none; }
+.sb-caller { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 10px; border-top: 1px solid var(--line); text-decoration: none; color: inherit; font-size: var(--t-sm); }
+.sb-caller:hover { background: var(--s3); }
+.sb-caller .who b { font-weight: 500; }
+.sb-caller .who .n { font-family: var(--sans); font-size: var(--t-xs); white-space: normal; }
+.sb-caller .num { font-size: var(--t-xs); color: var(--route); }
+.sb-caller:has(.st[data-s="ringing"]) .num { color: var(--live); }
 .team-h { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 16px 6px; border-top: 1px solid var(--line); }
 .team-h:first-of-type { border-top: 0; }
 @media (max-width: 1180px) { .op-grid { grid-template-columns: minmax(0, 1fr); } }

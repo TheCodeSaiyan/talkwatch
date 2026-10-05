@@ -49,7 +49,9 @@ public static class Switchboard
                 property.Name,
                 Int(node, "internal_id"),
                 Text(node, "type"),
-                Text(node, "title"),
+                // Where calls end up carries no title: a ring group has its group's name, a contact or user theirs.
+                Text(node, "title") ?? Text(node, "group_name")
+                    ?? (string.Join(' ', new[] { Text(node, "first_name"), Text(node, "last_name") }.Where(s => !string.IsNullOrWhiteSpace(s))) is { Length: > 0 } person ? person : null),
                 Int(node, "key"),
                 parent is null or "container" ? null : parent,
                 node.TryGetProperty("numbers", out var n) && n.ValueKind == JsonValueKind.Array ? [.. n.EnumerateArray().Select(e => e.GetString()).OfType<string>()] : [],

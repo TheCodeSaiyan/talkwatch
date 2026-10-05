@@ -18,6 +18,7 @@
 @inject LineDirectorySync Directory
 @inject IServiceScopeFactory Scopes
 @inject TimeProvider Clock
+@inject Microsoft.Extensions.Options.IOptions<SiteOptions> SiteSettings
 
 <PageTitle>Operator · TalkWatch</PageTitle>
 
@@ -28,6 +29,57 @@
     </div>
     <div class="tools"><span class="cap" data-c="none" title="TalkWatch reads Talk and never controls calls">Answer and transfer on the handset</span></div>
 </header>
+
+@* Each switchboard the chosen number reaches, as the flow its callers move through: in, the menu, each option, where
+   it puts them through. A caller is drawn at the stage their last step put them, and rides the stream to the next one
+   as Talk reports the step (tw-switchboard.js), as a finished call rides into Recent activity on Now. *@
+@foreach (var flow in _flows)
+{
+    <section class="plane sb" aria-label="@flow.Title" data-switchboard="@flow.Id" @key="flow.Id">
+        <div class="plane-head">
+            <h2>@flow.Title</h2>
+            @if (flow.InTheMenu > 0)
+            {
+                <span class="tag live">@flow.InTheMenu in the menu</span>
+            }
+            @if (flow.Callers.Count(c => c.Mark == "ringing") is > 0 and var ringing)
+            {
+                <span class="tag">@ringing ringing</span>
+            }
+            <div class="end">
+                <span class="mono muted" style="font-size: 12px">@flow.Stages[0].Today today@(flow.HungUpToday > 0 ? $" · {flow.HungUpToday} hung up in the menu" : "")</span>
+                <span class="cap" data-c="derived" title="Worked out from each step Talk reports as it happens">Live from Talk's steps</span>
+            </div>
+        </div>
+        <div class="sb-scroll">
+        <div class="sb-flow" data-sb-flow style="grid-template-columns: repeat(@flow.Columns, minmax(160px, 1fr))">
+            <canvas class="sb-current" aria-hidden="true"></canvas>
+            @for (var column = 0; column < flow.Columns; column++)
+            {
+                <div class="sb-col">
+                    @foreach (var stage in flow.Stages.Where(s => s.Column == column))
+                    {
+                        var here = flow.At(stage.Id).ToList();
+                        <div class="sb-stage" data-stage="@stage.Id" data-from="@stage.From" data-kind="@stage.Kind" data-today="@stage.Today" data-now="@here.Count">
+                            <div class="sb-node"><b>@stage.Label</b><span class="m num">@(here.Count > 0 ? $"{here.Count} now · " : "")@stage.Today today</span></div>
+                            <div class="sb-callers" role="list" data-stage-list="@stage.Id">
+                                @foreach (var c in here)
+                                {
+                                    <a class="sb-caller" role="listitem" data-key="@c.Key" href="/calls/@c.Key" data-inspect="@c.Key" @key="c.Key">
+                                        <span class="st" data-s="@c.Mark"><i></i></span>
+                                        <span class="who"><b data-grow>@c.Who</b><span class="n">@c.Step</span></span>
+                                        <span class="num" data-since="@c.Since.ToUnixTimeMilliseconds()">@CallMarks.Duration(Clock.GetUtcNow() - c.Since)</span>
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        </div>
+    </section>
+}
 
 <div class="op-grid">
     <div class="stack" style="gap: 16px">
@@ -149,6 +201,7 @@
     private List<LiveCall> _waiting = [];
     private List<LiveCall> _talking = [];
     private List<WaitingCaller> _callBacks = [];
+    private List<SwitchboardFlow> _flows = [];
     private CancellationTokenSource? _pending;
     private Timer? _timer;
 
@@ -181,6 +234,22 @@
         var live = current.Select(c => LiveCalls.Of(c, chronicles[c.Id], names)).ToList();
         _waiting = [.. live.Where(c => c.State is "ringing" or "menu" or "routing")];
         _talking = [.. live.Where(c => c.State is "connected" or "voicemail" or "calling")];
+
+        // The switchboards: their tree, where today's callers went, and where each caller in one is now.
+        var ids = current.Select(c => c.Id).ToList();
+        var events = await db.CallEvents.AsNoTracking().Where(e => ids.Contains(e.CallId)).OrderBy(e => e.Sequence)
+            .Select(e => new { e.CallId, e.Event, e.DataJson }).ToListAsync();
+        var journeys = events.GroupBy(e => e.CallId).ToDictionary(g => g.Key, g => TalkWatch.Core.Talk.MenuJourney.Of(g.Select(e => (e.Event, e.DataJson))));
+        var zone = TimeZoneInfo.FindSystemTimeZoneById(SiteSettings.Value.TimeZone);
+        var midnight = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(TimeZoneInfo.ConvertTime(now, zone).Date, zone), TimeSpan.Zero);
+        var today = await db.Calls.AsNoTracking().Where(c => c.Direction == "in" && c.Time >= midnight && c.Outcome != CallOutcome.Blocked)
+            .Select(c => new { c.Outcome, Events = c.Events.OrderBy(e => e.Sequence).Select(e => new { e.Event, e.DataJson }).ToList() }).ToListAsync();
+        var nodes = await db.SwitchboardNodes.AsNoTracking().ToListAsync();
+        var normaliser = new NumberNormaliser(Site.Region);
+        _flows = [.. SwitchboardFlows.Build(nodes,
+            [.. today.Select(c => new FlowHistory(TalkWatch.Core.Talk.MenuJourney.Of(c.Events.Select(e => (e.Event, e.DataJson))), c.Outcome))],
+            [.. live.Select(l => (l, journeys.GetValueOrDefault(l.Call.Id) ?? new TalkWatch.Core.Talk.MenuJourney(null, [])))],
+            _user.FindFirstValue(AccessScopeHolder.DidClaim), normaliser.ToE164)];
 
         // Waiting callers, longest wait first: the same rule as Call-backs, over the same window.
         var since = now - TimeSpan.FromDays(Pages.CallBacks.RecentDays);

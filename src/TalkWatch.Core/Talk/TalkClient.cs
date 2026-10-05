@@ -200,8 +200,27 @@ public sealed class TalkClient(HttpClient http)
     /// </summary>
     public async Task<IReadOnlyList<CallEvent>> GetCallEventsAsync(string callUuid, CancellationToken cancellationToken)
     {
-        var (events, _) = await GetAsync<List<CallEvent>>("/proxy/talk/api/call_log/flow/" + Uri.EscapeDataString(callUuid), cancellationToken);
-        return events ?? [];
+        using var response = await GetResponseAsync("/proxy/talk/api/call_log/flow/" + Uri.EscapeDataString(callUuid), HttpCompletionOption.ResponseContentRead, cancellationToken);
+        // A call Talk has no flow for (gone, or never more than a notice): no steps, not a fault.
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return [];
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new TalkApiException($"GET /proxy/talk/api/call_log/flow returned HTTP {(int)response.StatusCode}.");
+        }
+
+        var raw = await response.Content.ReadAsStringAsync(cancellationToken);
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<List<CallEvent>>(raw, TalkJson.Options) ?? [];
+        }
+        catch (System.Text.Json.JsonException e)
+        {
+            throw new TalkSchemaException($"GET /proxy/talk/api/call_log/flow returned a shape TalkWatch does not recognise: {e.Message}", e);
+        }
     }
 
     /// <summary>
