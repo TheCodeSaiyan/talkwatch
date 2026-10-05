@@ -71,11 +71,17 @@
   --d-instant: 110ms;
   --d-component: 200ms;
   --d-structure: 320ms;
+  --d-travel: 440ms;     /* the middle of a ride: a capsule travelling a Data Current stream between planes */
   --d-ambient: 1000ms;
 
   --rail-h: 42px;
   --nav-w: 56px;
   --insp-w: 440px;
+
+  /* flow board (Now view): planes are nodes joined by Data Current streams */
+  --flow-inlet: 80px;    /* column left of Live calls where calls stream in */
+  --flow-gutter: 216px;  /* result gutter between Live calls and Recent activity */
+  --flow-drop: 72px;     /* gap the archive stream drops through into the call log */
   color-scheme: dark;
 }
 
