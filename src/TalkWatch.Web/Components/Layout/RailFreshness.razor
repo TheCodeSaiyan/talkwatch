@@ -5,24 +5,34 @@
 @inject LiveStatus Live
 @inject IngestionStatus Ingestion
 @inject Microsoft.Extensions.Options.IOptions<DemoOptions> Demo
+@inject ConsoleTunnel Tunnel
 
-<span class="fresh" data-state="@State" data-fresh title="@Title"><span class="dot"></span><span class="txt">@Text</span></span>
+<span class="fresh" data-state="@State" data-fresh data-tunnel="@Tunnel.Status.State" title="@Title"><span class="dot"></span><span class="txt">@Text</span></span>
 
 @code {
     private Timer? _timer;
 
     private string State => Demo.Value.Enabled ? "live" : Live.Connected ? "live" : Ingestion.LastError is null && Ingestion.LastSuccess is not null ? "reconnecting" : "offline";
 
+    // A tunnel that is down is why nothing is arriving: said first, for everyone, so nobody wonders whether calls stopped.
     private string Text => Demo.Value.Enabled ? "Demo" : Live.Connected
         ? "Live"
+        : Tunnel.Status.State == TunnelState.Down ? "VPN down"
         : Ingestion.LastSuccess is { } last ? $"Polled {last.ToLocalTime():HH:mm}" : "Not connected";
 
     private string Title => Demo.Value.Enabled ? "A demo: a replayed console, with a new call every few minutes. Nothing here is real." :
         (Live.Connected ? "Connected to Talk's live feed" + (Live.LastEventAt is { } at ? $"; last event {at.ToLocalTime():HH:mm:ss}" : "") : "Not connected to Talk's live feed")
-        + (Ingestion.LastSuccess is { } polled ? $". Call log up to date as of {polled.ToLocalTime():HH:mm}." : ".");
+        + (Ingestion.LastSuccess is { } polled ? $". Call log up to date as of {polled.ToLocalTime():HH:mm}." : ".")
+        + Tunnel.Status switch
+        {
+            { State: TunnelState.Off } => "",
+            // The state only: the detail can name the site's gateway, which is for the Console page and its admins.
+            var s => $" Reached through {s.Route}: {(s.State == TunnelState.Up ? "connected" : s.State == TunnelState.Down ? "down" : "connecting")}.",
+        };
 
     protected override void OnInitialized()
     {
+        Tunnel.StatusChanged += OnChanged;
         Live.Changed += OnChanged;
         // The poll has no event of its own; a quarter-minute is often enough for "polled 10:42" to stay true.
         _timer = new Timer(_ => OnChanged(), null, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(15));
@@ -33,6 +43,7 @@
     public void Dispose()
     {
         Live.Changed -= OnChanged;
+        Tunnel.StatusChanged -= OnChanged;
         _timer?.Dispose();
     }
 }
