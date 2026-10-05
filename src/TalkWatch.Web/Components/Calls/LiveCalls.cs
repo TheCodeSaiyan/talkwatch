@@ -49,6 +49,20 @@ public static class LiveCalls
         return new LiveCall(c, ch, state, live, since, who, number == who ? (c.Direction == "in" ? "to " + line : "") : number ?? "");
     }
 
+    /// <summary>
+    /// How long a call that has ended stays on the Now board, resolved and dimmed, before it rides its stream into Recent
+    /// activity. Operator keeps ended calls longer; this is the board's own.
+    /// </summary>
+    public static readonly TimeSpan Linger = TimeSpan.FromSeconds(6);
+
+    /// <summary>The Data Current stream a finished call leaves Live calls by: answered, voicemail or missed.</summary>
+    public static string Stream(CallOutcome outcome) => outcome switch
+    {
+        CallOutcome.Answered or CallOutcome.Outbound => "answered",
+        _ when outcome.IsVoicemail() => "voicemail",
+        _ => "missed",
+    };
+
     public static string Words(string state) => state switch
     {
         "menu" => "In the menu",

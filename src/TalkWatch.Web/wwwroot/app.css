@@ -259,3 +259,102 @@ ul.rows form, .dg form { display: inline-flex; }
 .dry-run p { margin: 0 0 6px; }
 .dry-run-hits { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: var(--t-sm); }
 .dry-run-hits .mono { color: var(--fg-3); }
+
+/* ---------- the flow board (Now) ----------
+   The planes are nodes and Data Current streams join them at ports: calls stream in to Live calls from the screen's
+   edge, leave it by how they ended for Recent activity, and drop from there into the call log. The streams are drawn by
+   tw-board.js on a canvas behind the page; everything here is where the nodes and their ports sit. */
+.board { position: relative; display: grid; grid-template-columns: var(--flow-inlet) minmax(0, 1.5fr) var(--flow-gutter) minmax(0, 1fr); align-items: start; }
+.board > .m-a { grid-column: 2; grid-row: 1; margin-bottom: 32px; }
+.board > .m-b { grid-column: 4; grid-row: 1; margin-bottom: 32px; }
+.board > .node-live { grid-column: 2; grid-row: 2; min-height: 180px; }
+/* Below the lowest stream, which leaves Live calls at 148px, so the words never sit on a line. */
+.board > .board-legend { grid-column: 3; grid-row: 2; align-self: start; justify-self: center; margin-top: 176px; }
+.board > .node-recent { grid-column: 4; grid-row: 2; }
+.board > .node-log { grid-column: 2 / -1; grid-row: 3; margin-top: var(--flow-drop); }
+.board .node { position: relative; }
+.board .plane-head { position: relative; }
+/* A node's head: a ring in its stream's colour, and an edge current along its bottom. */
+.board .ring { width: 9px; height: 9px; border-radius: 50%; border: 1.6px solid var(--fg-3); flex: none; box-sizing: border-box; }
+.board .ring[data-tone="live"] { border-color: var(--live); }
+.board .ring[data-tone="ok"] { border-color: var(--ok); }
+.board .ring[data-tone="hist"] { border-color: var(--hist); }
+.board canvas.edge { position: absolute; left: 0; bottom: -4px; width: 100%; height: 8px; pointer-events: none; }
+/* Ports: 9px rings filled with the ground, edged in their stream's colour, sitting on the plane's border. */
+.port { position: absolute; z-index: 2; width: 9px; height: 9px; box-sizing: border-box; border-radius: 50%; background: var(--ground); border: 1.6px solid var(--fg-3); }
+.port[data-port="inlet"] { left: -5px; top: 66px; border-color: var(--live); }
+.port[data-port="answered"] { right: -5px; top: 60px; border-color: var(--ok); }
+.port[data-port="voicemail"] { right: -5px; top: 102px; border-color: var(--route); }
+.port[data-port="missed"] { right: -5px; top: 144px; border-color: var(--bad); }
+.port[data-port="in"] { left: -5px; top: 60px; border-color: var(--ok); }
+.port[data-port="archive"] { left: calc(50% - 4.5px); bottom: -5px; border-color: var(--hist); }
+.port[data-port="log"] { left: calc(50% - 4.5px); top: -5px; border-color: var(--hist); }
+.board-legend { display: flex; flex-direction: column; gap: 6px; font-size: var(--t-xs); color: var(--fg-3); }
+.board-legend span { display: flex; align-items: center; gap: 8px; }
+.board-legend span::before { content: ""; width: 14px; height: 2px; border-radius: 1px; background: var(--fg-3); }
+.board-legend [data-stream="answered"]::before { background: var(--ok); }
+.board-legend [data-stream="voicemail"]::before { background: var(--route); }
+.board-legend [data-stream="missed"]::before { background: var(--bad); }
+/* The canvas the streams are drawn on: the whole window, behind the planes, never in the way of a click. */
+.board-current { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: -1; }
+/* Below 1000px the nodes stack in flow order and the streams run down between them. */
+@media (max-width: 999px) {
+  .board { grid-template-columns: minmax(0, 1fr); }
+  .board > * { grid-column: 1 !important; grid-row: auto !important; }
+  .board > .m-a { margin-bottom: 0; border-bottom-left-radius: 0; border-bottom-right-radius: 0; border-bottom: 0; }
+  .board > .m-b { border-top-left-radius: 0; border-top-right-radius: 0; }
+  /* Left of the answered stream, which leaves a quarter of the way along, so the words stay clear of every line. */
+  .board > .board-legend { flex-direction: column; justify-self: start; align-self: center; margin: 14px 0; gap: 4px; }
+  .port[data-port="answered"], .port[data-port="voicemail"], .port[data-port="missed"] { right: auto; top: auto; bottom: -5px; }
+  .port[data-port="answered"] { left: calc(25% - 4.5px); }
+  .port[data-port="voicemail"] { left: calc(50% - 4.5px); }
+  .port[data-port="missed"] { left: calc(75% - 4.5px); }
+  .port[data-port="in"] { left: calc(50% - 4.5px); top: -5px; }
+}
+
+/* the call log's latest rows, under Recent activity */
+.board .log { display: flex; flex-direction: column; }
+.lg { display: grid; grid-template-columns: 44px 18px minmax(0, 1.4fr) minmax(0, 1fr) minmax(110px, auto) 56px; gap: 12px; align-items: center; padding: 0 var(--pad); min-height: var(--row-tight); border-bottom: 1px solid var(--line); font-size: var(--t-md); transition: background var(--d-instant); }
+.lg:last-child { border-bottom: 0; }
+.lg:hover { background: var(--s2); }
+.lg .t { font: 400 var(--t-xs) var(--mono); color: var(--fg-3); }
+.lg .who { display: flex; gap: 8px; align-items: baseline; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lg .who b { font-weight: 500; }
+.lg .who .n { font: 400 var(--t-xs) var(--mono); color: var(--fg-3); }
+.lg .line { color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lg .num { font: 500 var(--t-sm) var(--mono); font-variant-numeric: tabular-nums; text-align: right; color: var(--fg-2); }
+@media (max-width: 760px) { .lg { grid-template-columns: 40px 18px minmax(0, 1fr) auto; } .lg .num { display: none; } }
+
+/* What a held list is keeping back: choosing it applies the changes at once. */
+.held { font: 500 var(--t-xs) var(--sans); color: var(--live); background: var(--live-soft); border: 1px solid color-mix(in srgb, var(--live) 40%, transparent); border-radius: 999px; padding: 2px 9px; cursor: pointer; white-space: nowrap; }
+.held:hover { border-color: var(--live); }
+
+/* ---------- continuity ---------- */
+/* Rolling counts: the figure stays in the page for screen readers; the odometer beside it is what is seen. */
+.roll { display: inline-flex; align-items: baseline; gap: 6px; }
+.roll.on > .rv { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.odo { display: inline-flex; align-items: flex-start; line-height: 1.15; font-variant-numeric: tabular-nums slashed-zero; }
+.odo .d { display: inline-block; height: 1.15em; overflow: hidden; }
+.odo .d > span, .odo .col > span { display: block; height: 1.15em; line-height: 1.15em; }
+.odo .col { display: flex; flex-direction: column; }
+/* The chip says whether a change is good, not which way it went: "+1 missed" is never green. */
+.delta.good { color: var(--ok); background: var(--ok-soft); }
+.delta.bad { color: var(--bad); background: var(--bad-soft); }
+.delta.neutral { color: var(--fg-2); background: var(--s3); }
+.metric .v .delta { align-self: center; font-size: 11px; letter-spacing: 0; }
+/* Travelling copies: fixed to the window, above the rail, never in the way and never read out. */
+.tw-ghost { position: fixed; left: 0; top: 0; z-index: 35; overflow: hidden; background: var(--s2); border: 1px solid var(--line-strong); border-radius: var(--r2); pointer-events: none; }
+.tw-ghost > * { position: absolute !important; left: 0; top: 0; margin: 0; }
+.tw-ghost > .lc, .tw-ghost > .ev, .tw-ghost > .lg { background: transparent; border-bottom: 0; }
+.tw-cap { height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px 0 7px; font-size: var(--t-sm); font-weight: 500; white-space: nowrap; color: var(--fg); }
+.tw-cap svg { width: 14px; height: 14px; }
+.tw-cap [data-stream="answered"] { color: var(--ok); }
+.tw-cap [data-stream="voicemail"] { color: var(--route); }
+.tw-cap [data-stream="missed"] { color: var(--bad); }
+.tw-mark { position: fixed; left: 0; top: 0; z-index: 35; width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; display: grid; place-items: center; background: var(--s2); border: 1px solid var(--bad); color: var(--bad); pointer-events: none; }
+.tw-mark svg { width: 12px; height: 12px; }
+.tw-leaving { position: absolute !important; pointer-events: none; z-index: 1; }
+/* A row laid out but not yet shown: it is waiting for what is travelling to it. */
+.tw-await { visibility: hidden; }
+/* Reduced motion: a change arrives in place with a still wash instead of travelling. */
+.tw-wash { background: var(--live-soft) !important; }

@@ -1,7 +1,12 @@
 using System.Globalization;
 using System.Net;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using TalkWatch.Data;
 using TalkWatch.Replay;
+using TalkWatch.Web.Components.Calls;
 using TalkWatch.Web.Services;
 
 namespace TalkWatch.Web.Tests;
@@ -101,6 +106,94 @@ public sealed class NowBoardTests(TalkWatchApp talkwatch) : IClassFixture<TalkWa
         var waiting = page[page.IndexOf("data-op-waiting", StringComparison.Ordinal)..page.IndexOf("data-op-talking", StringComparison.Ordinal)];
         Assert.Contains($"data-live-call=\"{uuid}\"", waiting, StringComparison.Ordinal);
         Assert.Equal(1, page.Split($"data-live-call=\"{uuid}\"").Length - 1);
+    }
+
+    // Rang the group and nobody answered.
+    private static string Missed(string uuid, DateTimeOffset at)
+    {
+        var time = at.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
+        return $$"""
+            {"uuid":"{{uuid}}","time":"{{time}}","direction":"in","status":"accepted","duration":30,"from":"+447700900318","to":"+441144960042",
+             "call_events":[
+               {"time":"{{time}}","event":"call_started"},
+               {"time":"{{time}}","event":"seq_call_trying_endpoints"},
+               {"time":"{{time}}","event":"call_hangup"}]}
+            """;
+    }
+
+    // One node of the flow board: from its section to the next, or the end of the board.
+    private static string Node(string page, string node)
+    {
+        var start = page.IndexOf($"class=\"plane node {node}\"", StringComparison.Ordinal);
+        Assert.True(start > 0, $"the board has no {node}");
+        var end = page.IndexOf("<section", start + 10, StringComparison.Ordinal);
+        return page[start..(end > 0 ? end : page.Length)];
+    }
+
+    [Fact]
+    public async Task A_call_that_has_just_ended_stays_on_the_board_resolved_then_is_in_recent_activity_and_the_call_log()
+    {
+        var console = new FixtureConsole(FixtureConsole.DefaultDirectory);
+        var uuid = Guid.NewGuid().ToString();
+        console.AddCall(Missed(uuid, DateTimeOffset.UtcNow.AddSeconds(-40)));
+        await using var app = talkwatch.Create(console);
+        await app.Services.GetRequiredService<CallLogPoller>().RunOnceAsync(Ct);
+        using var browser = TalkWatchApp.Browser(app);
+        await TalkWatchApp.SignInAsync(browser, TalkWatchApp.AdminUsername, TalkWatchApp.AdminPassword);
+
+        // Just ended: still on Live calls, resolved, saying which stream it leaves by and carrying its mark for the rail.
+        var page = WebUtility.HtmlDecode(await browser.GetStringAsync(new Uri("/live", UriKind.Relative), Ct));
+        var live = Node(page, "node-live");
+        var at = live.IndexOf($"data-live-call=\"{uuid}\"", StringComparison.Ordinal);
+        Assert.True(at > 0, "the call that has just ended is not on the board");
+        var row = live[live.LastIndexOf("<div class=\"lc", at, StringComparison.Ordinal)..live.IndexOf('>', at)];
+        Assert.Contains(" ended", row, StringComparison.Ordinal);
+        Assert.Contains("data-stream=\"missed\"", row, StringComparison.Ordinal);
+        Assert.Contains("data-signal=\"missed\"", row, StringComparison.Ordinal);
+        Assert.DoesNotContain(uuid, Node(page, "node-recent"), StringComparison.Ordinal);
+        Assert.DoesNotContain(uuid, Node(page, "node-log"), StringComparison.Ordinal);
+
+        // Its moment on the board is up: it has ridden into Recent activity, and on into the call log.
+        using (var scope = app.Services.CreateScope())
+        {
+            scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UseSystemScope();
+            Assert.Equal(1, await scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>().Calls.Where(c => c.TalkUuid == uuid)
+                .ExecuteUpdateAsync(s => s.SetProperty(c => c.UpdatedAt, DateTimeOffset.UtcNow - LiveCalls.Linger - TimeSpan.FromSeconds(1)), Ct));
+        }
+
+        page = WebUtility.HtmlDecode(await browser.GetStringAsync(new Uri("/live", UriKind.Relative), Ct));
+        Assert.DoesNotContain(uuid, Node(page, "node-live"), StringComparison.Ordinal);
+        Assert.Contains($"data-key=\"{uuid}\" data-stream=\"missed\"", Node(page, "node-recent"), StringComparison.Ordinal);
+        Assert.Contains($"data-key=\"{uuid}\"", Node(page, "node-log"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task The_board_joins_its_nodes_at_ports_and_its_streams_are_as_loud_as_the_last_five_minutes()
+    {
+        var console = new FixtureConsole(FixtureConsole.DefaultDirectory);
+        console.AddCall(Missed(Guid.NewGuid().ToString(), DateTimeOffset.UtcNow.AddSeconds(-40)));
+        await using var app = talkwatch.Create(console);
+        await app.Services.GetRequiredService<CallLogPoller>().RunOnceAsync(Ct);
+        using var browser = TalkWatchApp.Browser(app);
+        await TalkWatchApp.SignInAsync(browser, TalkWatchApp.AdminUsername, TalkWatchApp.AdminPassword);
+
+        var raw = await browser.GetStringAsync(new Uri("/live", UriKind.Relative), Ct);
+        var page = WebUtility.HtmlDecode(raw);
+
+        foreach (var port in new[] { "inlet", "answered", "voicemail", "missed", "in", "archive", "log" })
+        {
+            Assert.Contains($"data-port=\"{port}\"", page, StringComparison.Ordinal);
+        }
+
+        // One call came in and was missed in the last five minutes: a fifth of a call a minute on the inlet and the missed
+        // stream, and nothing answered. The captured calls were all stored just now too, but ended days ago.
+        var rates = JsonDocument.Parse(WebUtility.HtmlDecode(Regex.Match(raw, "data-rates=\"([^\"]*)\"").Groups[1].Value)).RootElement;
+        Assert.Equal(0.2, rates.GetProperty("inlet").GetDouble());
+        Assert.Equal(0.2, rates.GetProperty("missed").GetDouble());
+        Assert.Equal(0, rates.GetProperty("answered").GetDouble());
+
+        // The rail's count rolls from the figure it carries, which stays in the page for screen readers.
+        Assert.Matches("class=\"num roll\" data-roll=\"missed\"><span class=\"rv\">1</span>", page);
     }
 
     // The rail's line is drawn by script on a canvas whose drawing size the script sets. Changing page merges the new

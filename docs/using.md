@@ -65,10 +65,21 @@ When all's well there's no strip. The freshness dot on the rail says so instead.
 ## Now
 
 TalkWatch opens on **Now**: what the phone system is doing at this moment.
-Calls in progress, from ringing through to connected; where inbound calls went
-over the last two hours; recent activity, outbound calls included; today's
-inbound and unanswered counts; who's on a call; and which handsets are online.
-The page stays live, so you can leave it open.
+It's laid out as the calls move through it. Calls stream in to **Live calls**,
+from ringing through to connected. When one ends it stays a few seconds,
+faded, with how it ended, then travels along its stream (answered, voicemail
+or missed) into **Recent activity**, and from there into the **call log** at
+the bottom. A missed call's mark also climbs to the rail's "missed today",
+which changes when it lands. The streams get busier the more calls took that
+path in the last five minutes. Above the lists are today's calls, calls in
+progress, the answer rate and missed calls; below them, who's on a call and
+which handsets are online. The page stays live, so you can leave it open.
+
+A list holds still while your pointer is over it, or you're tabbing through
+it, so nothing moves under a click. Its heading counts what's waiting
+("2 waiting · Show"); choose that to catch up at once, or move away and it
+catches up half a second later. The figures above never wait. If your system
+is set to reduce motion, nothing travels: changes just appear where they land.
 
 The people and handsets come from Talk's live feed. If that's down, the
 heading says so and what went wrong, and calls carry on being copied from the
