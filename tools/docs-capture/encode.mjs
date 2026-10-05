@@ -55,18 +55,28 @@ function encode(dir, index, from, to, file) {
   palette.push([0, 0, 0]);
   const CLEAR = 255;
   // Most of the screen stands still between frames, so after the first only the pixels that changed are stored;
-  // the rest are left transparent over the frame before, which is where nearly all the saving comes from.
+  // the rest are left transparent over the frame before, which is where nearly all the saving comes from. "Changed"
+  // is measured against what the viewer is already seeing, and only by more than the frames' JPEG noise: comparing
+  // palette indexes alone redrew every pixel whose noise tipped it into a neighbouring colour, and the still parts of
+  // the screen shimmered.
+  const NOISE = 20;
   const gif = GIFEncoder();
-  let previous = null;
+  let shown = null; // the source colour of each pixel as last drawn
   images.forEach((img, i) => {
     const indexed = applyPalette(img.data, palette.slice(0, 255));
+    const px = indexed.length;
     let out = indexed;
-    if (previous) {
-      out = new Uint8Array(indexed.length);
-      for (let k = 0; k < indexed.length; k++) out[k] = indexed[k] === previous[k] ? CLEAR : indexed[k];
+    if (!shown) {
+      shown = new Uint8Array(img.data);
+    } else {
+      out = new Uint8Array(px);
+      for (let k = 0; k < px; k++) {
+        const o = k * 4, d = img.data;
+        const moved = Math.abs(d[o] - shown[o]) + Math.abs(d[o + 1] - shown[o + 1]) + Math.abs(d[o + 2] - shown[o + 2]) > NOISE;
+        if (moved) { out[k] = indexed[k]; shown[o] = d[o]; shown[o + 1] = d[o + 1]; shown[o + 2] = d[o + 2]; } else out[k] = CLEAR;
+      }
     }
-    gif.writeFrame(out, img.width, img.height, { palette: i ? undefined : palette, delay: Math.round(picked[i].ticks * 1000 / FPS), transparent: !!previous, transparentIndex: CLEAR, dispose: 1 });
-    previous = indexed;
+    gif.writeFrame(out, img.width, img.height, { palette: i ? undefined : palette, delay: Math.round(picked[i].ticks * 1000 / FPS), transparent: i > 0, transparentIndex: CLEAR, dispose: 1 });
   });
   gif.finish();
   fs.writeFileSync(file, gif.bytes());
