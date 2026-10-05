@@ -44,6 +44,9 @@ Console page.
 2. If the site's public address changes, set up **Dynamic DNS** on the gateway
    and use that name as the client's server address. TalkWatch looks the name
    up again every few minutes, and reconnects when the site's address moves.
+   If the name is kept in Cloudflare, set its record to **DNS only** (the grey
+   cloud): Cloudflare's proxy passes web traffic, not WireGuard, and the
+   Console page says so when the name points at it.
 3. Add a firewall rule so the VPN client can reach only the console's address
    on port 443. By default a VPN client reaches the whole network.
 4. Download the client's configuration file.

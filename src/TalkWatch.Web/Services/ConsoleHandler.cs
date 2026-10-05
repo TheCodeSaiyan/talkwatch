@@ -28,7 +28,22 @@ public sealed class ConsoleHandler(ConsoleConnection connection, ConsoleTunnel t
         }
 
         request.RequestUri = Retarget(request.RequestUri, target.Url);
-        return await Current(target).SendAsync(request, cancellationToken);
+        var invoker = Current(target);
+        if (tunnel.ProxyFor(target) is null)
+        {
+            return await invoker.SendAsync(request, cancellationToken);
+        }
+
+        try
+        {
+            return await invoker.SendAsync(request, cancellationToken);
+        }
+        catch (HttpRequestException e) when (tunnel.Status.State != TunnelState.Up)
+        {
+            // Through the tunnel, a failure says only that the proxy on loopback refused, or couldn't connect onward:
+            // "Connection refused (127.0.0.1:38699)" was what the first real try showed. Say what is actually wrong.
+            throw new HttpRequestException($"The VPN to the site isn't up yet{(tunnel.Status.Detail is { } why ? ": " + why : ".")}", e);
+        }
     }
 
     /// <summary>The same path and query on the console's address; ws and wss for the live feed's WebSocket.</summary>
