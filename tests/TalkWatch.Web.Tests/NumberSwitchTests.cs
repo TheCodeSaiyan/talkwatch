@@ -105,6 +105,40 @@ public sealed partial class NumberSwitchTests(TalkWatchApp talkwatch) : IClassFi
         Assert.Null(await AsSystemAsync(app, db => db.Users.Where(u => u.UserName == "viewer").Select(u => u.ContextDid).SingleAsync(Ct)));
     }
 
+    // Rang a number and nobody answered, a moment ago.
+    private static string MissedJustNow(string uuid, string to)
+    {
+        var time = DateTimeOffset.UtcNow.AddSeconds(-40).UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture);
+        return $$"""
+            {"uuid":"{{uuid}}","time":"{{time}}","direction":"in","status":"accepted","duration":30,"from":"+447700900318","to":"{{to}}",
+             "call_events":[{"time":"{{time}}","event":"call_started"},{"time":"{{time}}","event":"seq_call_trying_endpoints"},{"time":"{{time}}","event":"call_hangup"}]}
+            """;
+    }
+
+    [Fact]
+    public async Task Now_follows_the_chosen_number_its_calls_and_how_busy_its_streams_are()
+    {
+        var console = new FixtureConsole(FixtureConsole.DefaultDirectory);
+        await using var app = talkwatch.Create(console);
+        await app.Services.GetRequiredService<CallLogPoller>().RunOnceAsync(Ct);
+        var other = await AsSystemAsync(app, db => db.Lines.Where(l => l.Kind == LineKind.Did && l.Key != Did).Select(l => l.Key).FirstAsync(Ct));
+        string mine = Guid.NewGuid().ToString(), theirs = Guid.NewGuid().ToString();
+        console.AddCall(MissedJustNow(mine, Did));
+        console.AddCall(MissedJustNow(theirs, other));
+        await app.Services.GetRequiredService<CallLogPoller>().RunOnceAsync(Ct);
+        using var browser = TalkWatchApp.Browser(app);
+        await TalkWatchApp.SignInAsync(browser, TalkWatchApp.AdminUsername, TalkWatchApp.AdminPassword);
+
+        await ChooseAsync(browser, Did, "/live");
+        var raw = await browser.GetStringAsync(new Uri("/live", UriKind.Relative), Ct);
+
+        Assert.Contains($"data-live-call=\"{mine}\"", raw, StringComparison.Ordinal);
+        Assert.DoesNotContain(theirs, raw, StringComparison.Ordinal);
+        var rates = System.Text.Json.JsonDocument.Parse(WebUtility.HtmlDecode(Regex.Match(raw, "data-rates=\"([^\"]*)\"").Groups[1].Value)).RootElement;
+        Assert.Equal(0.2, rates.GetProperty("missed").GetDouble());
+        Assert.Equal(0.2, rates.GetProperty("inlet").GetDouble());
+    }
+
     [GeneratedRegex(@"<form[^>]*action=""/account/number""[\s\S]*?</form>")]
     private static partial Regex SwitchForm();
 
