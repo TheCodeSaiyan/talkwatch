@@ -180,6 +180,10 @@ public sealed partial class ConsoleTunnel(ConsoleConnection connection, TimeProv
     {
         SetStatus(ConsoleRoute.WireGuard, TunnelState.Starting, $"Looking up {config.EndpointHost}");
         var address = await LookUpAsync(config, cancellationToken);
+        if (IsCloudflareProxy(address))
+        {
+            LogBehindCloudflare(logger, config.EndpointHost, address);
+        }
         var conf = Path.Combine(folder, "wireproxy.conf");
         await WritePrivateAsync(conf, config.ToWireproxy(address, SocksPort), cancellationToken);
 
@@ -203,10 +207,18 @@ public sealed partial class ConsoleTunnel(ConsoleConnection connection, TimeProv
             {
                 SetStatus(ConsoleRoute.WireGuard, TunnelState.Up, $"Through {config.Endpoint}", at);
             }
+            else if (IsCloudflareProxy(address))
+            {
+                // A dynamic DNS name kept in Cloudflare with its proxy on: the name answers with Cloudflare's address,
+                // and Cloudflare's proxy carries web traffic, not WireGuard. It happened on the first real gateway tried.
+                SetStatus(ConsoleRoute.WireGuard, TunnelState.Starting,
+                    $"{config.EndpointHost} points at Cloudflare's proxy ({address}), which doesn't carry WireGuard. In Cloudflare, set the record to DNS only (the grey cloud); TalkWatch looks the name up again every few minutes.",
+                    handshake);
+            }
             else
             {
                 SetStatus(ConsoleRoute.WireGuard, TunnelState.Starting,
-                    $"The gateway at {config.Endpoint} hasn't answered{(handshake is { } last ? " since " + last.ToString("u", CultureInfo.InvariantCulture) : " yet")}. Is UDP {config.EndpointPort.ToString(CultureInfo.InvariantCulture)} open to it?",
+                    $"The gateway at {config.Endpoint} ({address}) hasn't answered{(handshake is { } last ? " since " + last.ToString("u", CultureInfo.InvariantCulture) : " yet")}. Is UDP {config.EndpointPort.ToString(CultureInfo.InvariantCulture)} open to it?",
                     handshake);
             }
 
@@ -293,6 +305,24 @@ public sealed partial class ConsoleTunnel(ConsoleConnection connection, TimeProv
             ? key + "?ephemeral=true&preauthorized=true"
             : key;
     }
+
+    // Cloudflare's proxy addresses, as it publishes them at cloudflare.com/ips-v4 and /ips-v6.
+    private static readonly IPNetwork[] Cloudflare =
+    [
+        .. new[]
+        {
+            "173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22", "141.101.64.0/18", "108.162.192.0/18",
+            "190.93.240.0/20", "188.114.96.0/20", "197.234.240.0/22", "198.41.128.0/17", "162.158.0.0/15", "104.16.0.0/13",
+            "104.24.0.0/14", "172.64.0.0/13", "131.0.72.0/22",
+            "2400:cb00::/32", "2606:4700::/32", "2803:f800::/32", "2405:b500::/32", "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32",
+        }.Select(r => IPNetwork.Parse(r)),
+    ];
+
+    /// <summary>
+    /// Whether an address is Cloudflare's proxy, which a gateway's dynamic DNS name answers with when its record is
+    /// proxied (the orange cloud): web traffic gets through, WireGuard's UDP never reaches the gateway.
+    /// </summary>
+    public static bool IsCloudflareProxy(IPAddress address) => Cloudflare.Any(n => n.Contains(address));
 
     /// <summary>The latest handshake in wireproxy's metrics, which are WireGuard's own: last_handshake_time_sec=…</summary>
     public static DateTimeOffset? LastHandshake(string metrics)
@@ -508,6 +538,9 @@ public sealed partial class ConsoleTunnel(ConsoleConnection connection, TimeProv
 
     [LoggerMessage(Level = LogLevel.Information, Message = "{Name} moved from {Old} to {New}; restarting the tunnel.")]
     private static partial void LogMoved(ILogger logger, string name, IPAddress old, IPAddress @new);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "{Name} points at Cloudflare's proxy ({Address}), which doesn't carry WireGuard: set its record to DNS only.")]
+    private static partial void LogBehindCloudflare(ILogger logger, string name, IPAddress address);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Tunnel to the console down; trying again in {Seconds:0} s: {Why}")]
     private static partial void LogDown(ILogger logger, double seconds, string why);

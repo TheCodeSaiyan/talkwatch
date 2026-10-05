@@ -12,7 +12,7 @@ namespace TalkWatch.Web.Services;
 /// <see cref="LiveStatus"/>. Polling carries on as the backstop for anything missed while disconnected.
 /// </summary>
 public sealed partial class LiveListener(
-    TalkSession session, ConsoleConnection connection, LiveStatus live, ConsoleVersionMonitor versions, LineDirectorySync directory, TranscriptSync transcripts, AlertService alerts, IServiceScopeFactory scopes,
+    TalkSession session, ConsoleConnection connection, ConsoleTunnel tunnel, LiveStatus live, ConsoleVersionMonitor versions, LineDirectorySync directory, TranscriptSync transcripts, AlertService alerts, IServiceScopeFactory scopes,
     Microsoft.Extensions.Options.IOptions<DemoOptions> demo, TimeProvider clock, IngestionStatus ingestion, ILogger<LiveListener> logger) : BackgroundService
 {
     private static readonly TimeSpan FirstRetry = TimeSpan.FromSeconds(5);
@@ -30,6 +30,7 @@ public sealed partial class LiveListener(
         }
 
         connection.Changed += Reconnect;
+        tunnel.StatusChanged += TunnelChanged;
         try
         {
             await ListenAsync(stoppingToken);
@@ -37,6 +38,17 @@ public sealed partial class LiveListener(
         finally
         {
             connection.Changed -= Reconnect;
+            tunnel.StatusChanged -= TunnelChanged;
+        }
+    }
+
+    // While the tunnel was down, each try failed and the wait grew to five minutes; on a real gateway that left calls
+    // arriving only with the next poll long after the tunnel came up. A tunnel coming up ends the wait.
+    private void TunnelChanged()
+    {
+        if (tunnel.Status.State == TunnelState.Up && !live.Connected)
+        {
+            Reconnect();
         }
     }
 

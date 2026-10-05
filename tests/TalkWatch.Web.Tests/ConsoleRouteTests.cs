@@ -89,6 +89,17 @@ public sealed class ConsoleRouteTests
     public void An_OAuth_client_secret_registers_an_ephemeral_approved_node(string given, string used) =>
         Assert.Equal(used, ConsoleTunnel.TailscaleAuthKey(given));
 
+    // A gateway's dynamic DNS name kept in Cloudflare with the proxy on answers with Cloudflare's address, which never
+    // passes WireGuard on: the first real gateway tried was set up that way.
+    [Theory]
+    [InlineData("104.21.42.106", true)]
+    [InlineData("172.67.161.62", true)]
+    [InlineData("2606:4700::6810:2a6a", true)]
+    [InlineData("92.237.165.255", false)]
+    [InlineData("203.0.113.7", false)]
+    public void A_gateway_name_pointing_at_Cloudflares_proxy_is_recognised(string address, bool cloudflare) =>
+        Assert.Equal(cloudflare, ConsoleTunnel.IsCloudflareProxy(System.Net.IPAddress.Parse(address)));
+
     [Fact]
     public void The_latest_handshake_is_read_from_WireGuards_own_figures()
     {
