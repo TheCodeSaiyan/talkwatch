@@ -2,6 +2,8 @@
 
 Channels say where alerts go, and are set up under **Configure → Alert channels**. Flows say what happens when something is alerted on: who hears of it first, and who next if nobody picks it up; they have their own **Flows** workspace in the rail. The **Alerts** workspace is your inbox: what flows have sent to you in TalkWatch, newest first. Admins set up anything; anyone else whose role lets them set up their own alerts sets up their own, as a later section explains.
 
+![The Alerts inbox](images/alerts-inbox.png)
+
 ## What can raise an alert
 
 | Event | When |
@@ -87,6 +89,10 @@ A channel can be given to one person. It then hears only of calls on that person
 ## Flows
 
 A flow starts on one kind of alert, checks its conditions, then runs its steps top to bottom. The **Flows** workspace draws each one as the diagram it runs, with how often it fired each day of the last week and when it last did. **New flow** builds one; a **+** on the line puts a step or condition anywhere in it.
+
+![The Flows workspace: each flow drawn as the diagram it runs](images/flows.png)
+
+![Editing a flow: a trigger, a condition, then who to notify and with what](images/flow-editor.png)
 
 - **When** — the kind of alert it starts on.
 - **If** — conditions that must all hold, or the flow doesn't start. They're listed [below](#conditions).

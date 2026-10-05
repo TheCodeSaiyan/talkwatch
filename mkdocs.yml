@@ -23,24 +23,32 @@ markdown_extensions:
   - tables
   - toc: { permalink: true }
   - pymdownx.superfences
+  - attr_list
+  - md_in_html
 
 nav:
   - Home: index.md
-  - Setting up:
+  - Getting started:
+      - Trying the demo: demo.md
       - Installing: install.md
       - Behind a reverse proxy: proxy.md
       - Configuration: configuration.md
       - Upgrading: upgrading.md
-  - Using it:
+  - A tour:
       - Finding your way round: using.md
-      - Signing in and access: access.md
+      - Now: now.md
+      - Operator: operator.md
+      - Calls and call-backs: calls.md
+      - Analytics and Switchboards: analytics.md
       - Alerts: alerts.md
       - Reports: reports.md
+  - Looking after it:
+      - Signing in and access: access.md
       - Retention: retention.md
       - Export and API: api.md
-  - Running it:
       - Backups: backup.md
       - Traces and metrics: observability.md
       - Data protection and recording: data-protection.md
   - Developing:
+      - Building and testing: developing.md
       - Capturing the Talk API: capture.md

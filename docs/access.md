@@ -46,6 +46,8 @@ There is one exception, and it's deliberate. Someone who carries an outside phon
 
 A site with more than one number often has someone who looks after each: the sales line's manager shouldn't need a grant on every extension behind it, and shouldn't see the support line at all. So someone can hold a role on a number, Manager on one and Viewer on another, as well as the role they hold site-wide. **Configure → Numbers** lists who holds which role on each number.
 
+![Configure → Numbers: who holds which role on each number](images/numbers.png)
+
 A role on a number shows that number's calls: those that came in on it, and those through the switchboards and ring groups it routes calls to, as the console's configuration says. People aren't followed, on purpose. One person can take calls from several numbers, and following them would carry one number's calls into another's.
 
 On a number, a role only does what's about that number's calls: hearing recordings and voicemail, reading transcripts, exporting, marking and assigning call-backs, setting up their own alerts and flows, setting up reports for it, and choosing who holds which role on it. Anything else the role holds, such as managing people or retention, is ignored there, so a role on a number can never reach the rest of the site. Site-wide permissions stay site-wide.

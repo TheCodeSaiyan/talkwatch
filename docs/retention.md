@@ -2,6 +2,8 @@
 
 An admin sets how long calls and audio are kept, under **Retention**. The default keeps everything, so installing TalkWatch never deletes anything until someone chooses a policy.
 
+![Retention: how long calls and audio are kept](images/retention.png)
+
 | Policy | Calls | Recordings and voicemail | Minimum |
 |---|---|---|---|
 | Keep everything | kept | kept | none |

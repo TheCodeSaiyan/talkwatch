@@ -58,6 +58,8 @@ A report is laid out in TalkWatch's own look, headed with the site's name (`Site
 
 It's built for mail clients rather than browsers, because that's where most copies are read: tables for the layout, every style inline, no web fonts and no SVG, which Gmail drops, so the mark and the bars are coloured table cells. The line a mail client shows beside the subject carries the headline figures, so the inbox alone says how the period went. Inside TalkWatch a copy is shown on a light page even in the dark theme, as it looks in the email. A copy made before a change to the layout keeps the layout it was made with.
 
+![A report's copy, laid out as it's emailed](images/report.png)
+
 ## Reports on a number
 
 *Set up reports* can be held on a number rather than site-wide, through a role on that number (see [Signing in and access](access.md)). Someone holding it that way:
