@@ -194,6 +194,17 @@ public sealed class TalkClient(HttpClient http)
     }
 
     /// <summary>
+    /// A call's routing events as they stand now, while it is still going: the call started, the menu played, a key
+    /// pressed, an option entered, who rang. Talk announces each change as CALL_EVENTS_UPDATED with only the call's id;
+    /// this is how the change itself is read. Empty when Talk has none for the call.
+    /// </summary>
+    public async Task<IReadOnlyList<CallEvent>> GetCallEventsAsync(string callUuid, CancellationToken cancellationToken)
+    {
+        var (events, _) = await GetAsync<List<CallEvent>>("/proxy/talk/api/call_log/flow/" + Uri.EscapeDataString(callUuid), cancellationToken);
+        return events ?? [];
+    }
+
+    /// <summary>
     /// Where a call's voicemail message is kept on the console and how long it is, or null when the call has none. Read
     /// before <see cref="GetVoicemailAudioAsync"/>, which fetches the message by that path.
     /// </summary>
