@@ -38,6 +38,50 @@ public class ChronicleTests
         Assert.Equal(TimeSpan.FromSeconds(7), c.TimeToAnswer);
     }
 
+    // Talk logs the option the caller chose as entered_sa_menu, with the key and the option's title (sa_item_key,
+    // sa_item_title); the route read it as the menu playing again, so which option was chosen never showed.
+    [Fact]
+    public void The_option_the_caller_chose_in_the_menu_is_named()
+    {
+        var c = Chronicle.Build(
+        [
+            At(0, "call_started", """{"to":"+441144960042","from":"+447700900083","to_smart_attendant_id":45}"""),
+            At(9, "entered_sa_menu", """{"sa_id":45,"sa_item_id":18,"sa_item_key":2,"sa_item_type":"ivr","sa_item_title":"Sales"}"""),
+            At(12, "seq_call_trying_endpoints", """{"contact_uuids":["c-alex"]}"""),
+            At(20, "call_hangup", """{"hangup_cause":"originator_cancel"}"""),
+        ], "in", Names);
+
+        Assert.Equal(["Call came in on Main Office", "Main Attendant played its menu", "Caller pressed 2 for Sales", "Ringing Alex Morgan", "Caller hung up before anyone answered"],
+            c.Steps.Select(s => s.Text));
+        Assert.Equal("Sales", c.Steps[2].Subject);
+        Assert.Equal([(SegmentKind.Menu, 12.0), (SegmentKind.Ringing, 8.0)], c.Band.Select(b => (b.Kind, b.Length.TotalSeconds)));
+    }
+
+    // Talk logs each key the caller presses (keypress, with the key), then the option it led to. The option already says
+    // which key was pressed, so a key shows on its own only when it led nowhere: a wrong key, say.
+    [Fact]
+    public void A_key_that_chose_an_option_is_said_once_and_one_that_led_nowhere_is_shown()
+    {
+        var c = Chronicle.Build(
+        [
+            At(0, "call_started", """{"to":"+441144960042","to_smart_attendant_id":45}"""),
+            At(6, "keypress", """{"key":"7"}"""),
+            At(11, "keypress", """{"key":"1"}"""),
+            At(11, "entered_sa_menu", """{"sa_id":45,"sa_item_key":1,"sa_item_title":"Sales"}"""),
+            At(15, "call_hangup", """{"hangup_cause":"originator_cancel"}"""),
+        ], "in", Names);
+
+        Assert.Equal(["Call came in on Main Office", "Main Attendant played its menu", "Caller pressed 7, which isn't an option", "Caller pressed 1 for Sales"],
+            c.Steps.Take(4).Select(s => s.Text));
+    }
+
+    [Theory]
+    [InlineData("""{"sa_id":45,"sa_item_title":"Sales"}""", "Caller chose Sales")]
+    [InlineData("""{"sa_id":45,"sa_item_key":3}""", "Caller pressed 3")]
+    [InlineData("""{"sa_id":45}""", "Main Attendant played its menu")]
+    public void An_option_with_only_part_of_its_name_says_what_is_known(string data, string text) =>
+        Assert.Equal(text, Chronicle.Build([At(0, "call_started", """{"to":"+441144960042"}"""), At(5, "entered_sa_menu", data)], "in", Names).Steps[1].Text);
+
     [Fact]
     public void A_missed_call_says_nobody_answered_and_has_no_talking()
     {

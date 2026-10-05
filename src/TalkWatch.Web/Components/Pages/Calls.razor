@@ -132,7 +132,8 @@ else
                                     <span class="who"><b data-grow>@Party(call)</b><span class="n">@Number(call)</span></span>
                                 </a>
                             </td>
-                            <td><span class="who"><b style="font-weight: 500">@LineName(call)</b>@if (call.Direction != "out" && LineName(call) != call.ToRaw)
+                            @* A line with no name shows its number, set like every other number so the digits line up down the column. *@
+                            <td><span class="who"><b class="@(CallMarks.IsNumber(LineName(call)) ? "tel" : null)" style="font-weight: 500">@LineName(call)</b>@if (call.Direction != "out" && LineName(call) != call.ToRaw)
                                 {
                                     <span class="n">@call.ToRaw</span>
                                 }</span></td>

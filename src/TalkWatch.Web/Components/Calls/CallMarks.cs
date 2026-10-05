@@ -5,6 +5,13 @@ namespace TalkWatch.Web.Components.Calls;
 /// <summary>How a call reads at a glance: its outcome in words and the design system's mark for it.</summary>
 public static class CallMarks
 {
+    /// <summary>
+    /// Whether what stands in a name's place is a phone number (a line nobody has named), which is set in the number
+    /// font so a column of them lines up digit for digit.
+    /// </summary>
+    public static bool IsNumber(string? text) =>
+        !string.IsNullOrWhiteSpace(text) && text.Any(char.IsDigit) && text.All(c => char.IsDigit(c) || c is '+' or ' ' or '-' or '(' or ')');
+
     /// <summary>The outcome as people say it.</summary>
     public static string Words(CallOutcome outcome) => outcome switch
     {

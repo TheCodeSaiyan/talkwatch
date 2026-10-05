@@ -316,16 +316,20 @@ ul.rows form, .dg form { display: inline-flex; }
 
 /* the call log's latest rows, under Recent activity */
 .board .log { display: flex; flex-direction: column; }
-.lg { display: grid; grid-template-columns: 44px 18px minmax(0, 1.4fr) minmax(0, 1fr) minmax(110px, auto) 56px; gap: 12px; align-items: center; padding: 0 var(--pad); min-height: var(--row-tight); border-bottom: 1px solid var(--line); font-size: var(--t-md); transition: background var(--d-instant); }
+/* Each row is its own grid, so every track is the same width on every row: an auto-sized result column ("Hung up in
+   the menu" wider than "Missed") moved the line's number left and right from row to row. 140px holds the longest. */
+.lg { display: grid; grid-template-columns: 44px 18px minmax(0, 1.4fr) minmax(0, 1fr) 140px 56px; gap: 12px; align-items: center; padding: 0 var(--pad); min-height: var(--row-tight); border-bottom: 1px solid var(--line); font-size: var(--t-md); transition: background var(--d-instant); }
 .lg:last-child { border-bottom: 0; }
 .lg:hover { background: var(--s2); }
 .lg .t { font: 400 var(--t-xs) var(--mono); color: var(--fg-3); }
-.lg .who { display: flex; gap: 8px; align-items: baseline; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Name then number on one line: the shared .who stacks them, which a tight log row clipped. */
+.lg .who { display: flex; flex-direction: row; gap: 8px; align-items: baseline; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lg .who b { font-weight: 500; }
 .lg .who .n { font: 400 var(--t-xs) var(--mono); color: var(--fg-3); }
 .lg .line { color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lg .line.tel { font: 400 var(--t-sm) var(--mono); font-feature-settings: "tnum", "zero"; }
 .lg .num { font: 500 var(--t-sm) var(--mono); font-variant-numeric: tabular-nums; text-align: right; color: var(--fg-2); }
-@media (max-width: 760px) { .lg { grid-template-columns: 40px 18px minmax(0, 1fr) auto; } .lg .num { display: none; } }
+@media (max-width: 760px) { .lg { grid-template-columns: 40px 18px minmax(0, 1fr) 140px; } .lg .num { display: none; } }
 
 /* What a held list is keeping back: choosing it applies the changes at once. */
 .held { font: 500 var(--t-xs) var(--sans); color: var(--live); background: var(--live-soft); border: 1px solid color-mix(in srgb, var(--live) 40%, transparent); border-radius: 999px; padding: 2px 9px; cursor: pointer; white-space: nowrap; }

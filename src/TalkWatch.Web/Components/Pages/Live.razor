@@ -153,7 +153,7 @@
                     <span class="t">@TimeZoneInfo.ConvertTime(l.Time, _zone).ToString("HH:mm")</span>
                     <span class="dir" data-d="@CallMarks.DirectionKey(l.Direction)" title="@CallMarks.Direction(l.Direction)"><Icon Name="@CallMarks.DirectionKey(l.Direction)" /><span class="sr">@CallMarks.Direction(l.Direction)</span></span>
                     <span class="who"><b data-grow>@l.Who</b><span class="n">@l.Number</span></span>
-                    <span class="line hide-sm">@l.Line</span>
+                    <span class="line hide-sm @(CallMarks.IsNumber(l.Line) ? "tel" : null)">@l.Line</span>
                     <span class="oc" data-o="@CallMarks.Key(l.Outcome)"><Icon Name="@CallMarks.Icon(l.Outcome)" />@CallMarks.Words(l.Outcome)</span>
                     <span class="num">@CallMarks.Duration(TimeSpan.FromSeconds(l.Seconds))</span>
                 </a>
