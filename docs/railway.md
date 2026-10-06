@@ -80,7 +80,7 @@ automatic updates in the service's **Settings**, under **Source**, with a
 maintenance window out of the site's working hours: Railway then redeploys
 when a release moves `latest`. A pre-release never moves `latest`. To take only
 fixes, change the image to the minor version, such as
-`ghcr.io/thecodesaiyan/talkwatch:0.2`; see [Upgrading](upgrading.md).
+`ghcr.io/thecodesaiyan/talkwatch:1.2` for the 1.2 releases; see [Upgrading](upgrading.md).
 
 A redeploy has a short gap, under two minutes, because a service with a volume
 can't run two deployments at once. The console keeps its log, so TalkWatch
