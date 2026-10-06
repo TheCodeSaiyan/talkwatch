@@ -1,0 +1,8 @@
+# The workflows' actions are pinned to commits, so a tag moved upstream can't change what runs with the release's
+# write access. Dependabot keeps the pins current, each as a pull request to read before it merges.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
