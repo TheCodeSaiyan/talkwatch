@@ -80,6 +80,10 @@ public sealed partial class DemoGuardTests(TalkWatchApp talkwatch) : IClassFixtu
         Assert.Contains(Uri.EscapeDataString("The demo sends no email"), test.Headers.Location!.OriginalString, StringComparison.Ordinal);
         await PostAsync(browser, token, "/admin/alerts/channels", "/admin/alerts", ("Name", "Out"), ("Kind", nameof(ChannelKind.Webhook)), ("Target", "https://example.invalid/hook"));
         await PostAsync(browser, token, "/admin/alerts/channels", "/admin/alerts", ("Name", "Mine"), ("Kind", nameof(ChannelKind.Browser)), ("Target", ""), ("Owner", guest.ToString()));
+        // The kind sent twice: the guard read them together as Browser, the endpoint the first alone.
+        await PostAsync(browser, token, "/admin/alerts/channels", "/admin/alerts", ("Name", "Twice"), ("Kind", nameof(ChannelKind.Ntfy)), ("Kind", nameof(ChannelKind.Browser)),
+            ("Target", "https://ntfy.example.invalid/t"), ("Owner", guest.ToString()));
+        Assert.False(await AsSystemAsync(app, db => db.AlertChannels.AnyAsync(c => c.Name == "Twice", Ct)));
 
         var channels = await AsSystemAsync(app, db => db.AlertChannels.Select(c => new { c.Name, c.Kind }).ToListAsync(Ct));
         Assert.DoesNotContain(channels, c => c.Kind == ChannelKind.Webhook);

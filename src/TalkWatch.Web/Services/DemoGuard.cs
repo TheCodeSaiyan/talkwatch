@@ -44,7 +44,8 @@ public static class DemoGuard
             if (path.Equals("/admin/alerts/channels", StringComparison.OrdinalIgnoreCase) && request.HasFormContentType)
             {
                 var form = await request.ReadFormAsync();
-                return Enum.TryParse<ChannelKind>(form["Kind"], ignoreCase: true, out var kind) && kind == ChannelKind.Browser
+                // One kind only: sent twice, the values read together as one kind here and the first alone at the endpoint.
+                return form["Kind"] is { Count: 1 } kinds && Enum.TryParse<ChannelKind>(kinds[0], ignoreCase: true, out var kind) && kind == ChannelKind.Browser
                     ? null
                     : "The demo sends alerts only to the browser: add a browser channel to see them arrive.";
             }
