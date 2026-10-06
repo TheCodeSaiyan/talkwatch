@@ -45,7 +45,9 @@ public sealed class ReportBuilder(IServiceScopeFactory scopes, IOptions<SiteOpti
     public TimeZoneInfo Zone { get; } = TimeZoneInfo.FindSystemTimeZoneById(site.Value.TimeZone);
 
     /// <summary>Runs a report for the period that ends at the start of <paramref name="runAt"/>'s day, keeping a copy for each audience.</summary>
-    public async Task<IReadOnlyList<ReportRun>> RunAsync(Guid reportId, DateTimeOffset runAt, CancellationToken cancellationToken)
+    /// <param name="runBy">Who ran it by hand, if anyone: a report with no recipients is built for them, as they may see it,
+    /// rather than for the whole site.</param>
+    public async Task<IReadOnlyList<ReportRun>> RunAsync(Guid reportId, DateTimeOffset runAt, CancellationToken cancellationToken, Guid? runBy = null)
     {
         using var scope = scopes.CreateScope();
         scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UseSystemScope();
@@ -60,7 +62,7 @@ public sealed class ReportBuilder(IServiceScopeFactory scopes, IOptions<SiteOpti
         var audiences = userIds.Select(id => (Guid?)id).Concat(channels.Select(c => c.OwnerUserId)).Distinct().ToList();
         if (audiences.Count == 0)
         {
-            audiences.Add(null);
+            audiences.Add(runBy);
         }
 
         var runs = new List<ReportRun>();
