@@ -15,6 +15,8 @@
 - **Report copies**, each as it was when it ran, with the callers' numbers it mentions and, when the report includes it, the period's call list.
 - **An audit log** of who changed what, who played which recording, who read which transcript, and who exported what.
 
+Credentials TalkWatch keeps (the console's password, the mail password, bot and channel tokens, tunnel keys, and each person's two-factor key and recovery codes) are encrypted at rest, with keys that are themselves encrypted with a key kept outside the database (`DataProtection__Key`, or a key file on the data volume). Passwords people sign in with, and API tokens, are kept only as hashes. Credentials go over the network only encrypted: the console's password over TLS to an https address, the mail password only over STARTTLS or port 465, and an ntfy token only to an https topic.
+
 It all stays on your server. TalkWatch sends data out only where you point it:
 
 - **alerts** to the channels you set up, including what a flow's notify step adds (Talk's summary, the transcript, the voicemail) where the channel's owner may read or hear it themselves;

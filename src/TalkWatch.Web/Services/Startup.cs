@@ -19,6 +19,7 @@ public static partial class DatabaseStartup
         var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(DatabaseStartup));
 
         await db.Database.MigrateAsync(cancellationToken);
+        await KeyRing.EncryptStoredAsync(scope.ServiceProvider, db, cancellationToken);
 
         var siteOptions = scope.ServiceProvider.GetRequiredService<IOptions<SiteOptions>>().Value;
         var current = scope.ServiceProvider.GetRequiredService<CurrentSite>();

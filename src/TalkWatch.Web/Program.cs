@@ -37,9 +37,7 @@ builder.Services.AddScoped<AccessScopeHolder>();
 builder.Services.AddScoped<IAccessScopeSource>(sp => sp.GetRequiredService<AccessScopeHolder>());
 builder.Services.AddDbContext<TalkWatchDbContext>(o => o.UseNpgsql(connectionString));
 
-builder.Services.AddDataProtection()
-    .SetApplicationName("TalkWatch")
-    .PersistKeysToDbContext<TalkWatchDbContext>();
+builder.AddKeyRing();
 
 builder.Services.AddIdentity<AppUser, IdentityRole<Guid>>(o =>
     {
@@ -56,7 +54,9 @@ builder.Services.AddIdentity<AppUser, IdentityRole<Guid>>(o =>
     .AddEntityFrameworkStores<TalkWatchDbContext>()
     // Password resets by an admin need a token provider; without one, setting a password failed with a server error.
     .AddDefaultTokenProviders()
-    .AddClaimsPrincipalFactory<SiteClaimsFactory>();
+    .AddClaimsPrincipalFactory<SiteClaimsFactory>()
+    // Two-factor keys and recovery codes are credentials too: kept encrypted, as everything else is.
+    .AddUserStore<ProtectedTokenUserStore>();
 builder.Services.ConfigureApplicationCookie(o =>
 {
     o.LoginPath = "/signin";

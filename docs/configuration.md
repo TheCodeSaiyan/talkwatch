@@ -57,7 +57,16 @@ Where copied recordings and voicemail live.
 
 | Setting | Default | Description |
 |---|---|---|
-| `Audio__Path` | `/data/audio` | The folder audio is copied to; mount a volume there, and back it up with the database. |
+| `Audio__Path` | `/data/audio` | The folder audio is copied to; mount a volume there, and back it up with the database. It also holds the key in DataProtection__KeyFile, unless that says otherwise. |
+
+## DataProtection
+
+The key that encrypts the keys TalkWatch encrypts its stored credentials with: the console's and mail passwords, tokens, tunnel keys and two-factor keys. Those keys are kept in the database, so this one never is, and a copy of the database alone reads none of the credentials. Back the key up apart from the database: without it, saved passwords have to be typed again and everyone signs in again.
+
+| Setting | Default | Description |
+|---|---|---|
+| `DataProtection__Key` | none | The key, as any secret of at least 16 characters, such as the output of openssl rand -base64 32. Unset, TalkWatch makes one on first start and keeps it in KeyFile. Changing it makes the stored credentials unreadable. **Secret:** give it as a file. |
+| `DataProtection__KeyFile` | none | Where TalkWatch keeps the key it made, when Key is unset: by default .keys/data-protection.key in Audio__Path, on its volume. |
 
 ## Proxy
 
@@ -77,7 +86,7 @@ Limits on signing in, on top of locking an account after five wrong passwords.
 
 ## Smtp
 
-The mail server for email alerts and reports; each field can instead be set on the Alert channels page, which wins. Port 465 uses TLS from the first byte; any other port uses STARTTLS when StartTls says so. The ports for reading mail (993, 143, 995, 110) are refused, because a mail server never listens there and the attempt would only time out. TalkWatch greets the server by the host of Site__PublicUrl, or the From address's domain, never the machine's own name: in a container that is a bare id, which strict servers refuse as an invalid HELO name. With a username set and a server that offers sign-in only over TLS, a send fails saying so: turn StartTls on, or clear the username for a server that takes mail without signing in. A failed send is recorded on the alert or report copy and tried again; it never stops TalkWatch. Send test email, on the Alert channels page, sends one at once and shows the server's answer.
+The mail server for email alerts and reports; each field can instead be set on the Alert channels page, which wins. Port 465 uses TLS from the first byte; any other port uses STARTTLS when StartTls says so. The ports for reading mail (993, 143, 995, 110) are refused, because a mail server never listens there and the attempt would only time out. TalkWatch greets the server by the host of Site__PublicUrl, or the From address's domain, never the machine's own name: in a container that is a bare id, which strict servers refuse as an invalid HELO name. With a username set, TalkWatch signs in only over TLS, port 465 or StartTls, so the password never crosses the network readable; otherwise a send fails saying so: turn StartTls on, or clear the username for a server that takes mail without signing in. Changing the server on the Alert channels page needs its password typed again. A failed send is recorded on the alert or report copy and tried again; it never stops TalkWatch. Send test email, on the Alert channels page, sends one at once and shows the server's answer.
 
 | Setting | Default | Description |
 |---|---|---|

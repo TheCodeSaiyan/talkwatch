@@ -15,6 +15,7 @@ TalkWatch itself: the web app, its API, the image, and the capture tool. Problem
 - **It runs behind a reverse proxy with TLS.** It serves plain HTTP on port 8080 and should not be exposed without one. See the proxy guide in the docs.
 - **The console is trusted by its pinned certificate** (`Talk__CertificateSha256`), not by turning certificate checks off.
 - **Secrets are given as files** in `/run/secrets` in production, not as environment variables, which leak into process listings and container inspection.
+- **Stored credentials are encrypted** with keys that are themselves encrypted with `DataProtection__Key`, or a key TalkWatch makes on the data volume, never kept in the database. A copy of the database alone reads no credential; keep that key apart from database backups.
 - **The console account is read only.** TalkWatch never writes to the console, and doesn't need an account that can.
 
 Supported versions: only the newest release, and `edge` until the first one.

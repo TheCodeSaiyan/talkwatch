@@ -11,7 +11,11 @@ public sealed class TalkOptions
 {
     public const string Section = "Talk";
 
-    /// <summary>The console's LAN address, such as https://10.0.0.1. Polling is off while this is unset.</summary>
+    /// <summary>
+    /// The console's LAN address, such as https://10.0.0.1. Polling is off while this is unset. It must be https: the
+    /// console's password goes only over TLS. Changing it on the Console page needs the password typed again, so a saved
+    /// password never goes to an address it wasn't given for.
+    /// </summary>
     public Uri? ConsoleUrl { get; set; }
 
     /// <summary>
@@ -100,12 +104,32 @@ public sealed class DatabaseOptions
     public string? Password { get; set; }
 }
 
+/// <summary>
+/// The key that encrypts the keys TalkWatch encrypts its stored credentials with: the console's and mail passwords,
+/// tokens, tunnel keys and two-factor keys. Those keys are kept in the database, so this one never is, and a copy of the
+/// database alone reads none of the credentials. Back the key up apart from the database: without it, saved passwords
+/// have to be typed again and everyone signs in again.
+/// </summary>
+public sealed class KeyRingOptions
+{
+    public const string Section = "DataProtection";
+
+    /// <summary>
+    /// The key, as any secret of at least 16 characters, such as the output of openssl rand -base64 32. Unset, TalkWatch
+    /// makes one on first start and keeps it in KeyFile. Changing it makes the stored credentials unreadable.
+    /// </summary>
+    public string? Key { get; set; }
+
+    /// <summary>Where TalkWatch keeps the key it made, when Key is unset: by default .keys/data-protection.key in Audio__Path, on its volume.</summary>
+    public string? KeyFile { get; set; }
+}
+
 /// <summary>Where copied recordings and voicemail live.</summary>
 public sealed class AudioOptions
 {
     public const string Section = "Audio";
 
-    /// <summary>The folder audio is copied to; mount a volume there, and back it up with the database.</summary>
+    /// <summary>The folder audio is copied to; mount a volume there, and back it up with the database. It also holds the key in DataProtection__KeyFile, unless that says otherwise.</summary>
     public string Path { get; set; } = "/data/audio";
 }
 
@@ -136,9 +160,11 @@ public sealed class SignInLimitOptions
 /// Port 465 uses TLS from the first byte; any other port uses STARTTLS when StartTls says so. The ports for reading mail
 /// (993, 143, 995, 110) are refused, because a mail server never listens there and the attempt would only time out.
 /// TalkWatch greets the server by the host of Site__PublicUrl, or the From address's domain, never the machine's own
-/// name: in a container that is a bare id, which strict servers refuse as an invalid HELO name. With a username set and
-/// a server that offers sign-in only over TLS, a send fails saying so: turn StartTls on, or clear the username for a
-/// server that takes mail without signing in. A failed send is recorded on the alert or report copy and tried again; it
+/// name: in a container that is a bare id, which strict servers refuse as an invalid HELO name. With a username set,
+/// TalkWatch signs in only over TLS, port 465 or StartTls, so the password never crosses the network readable; otherwise
+/// a send fails saying so: turn StartTls on, or clear the username for a server that takes mail without signing in.
+/// Changing the server on the Alert channels page needs its password typed again. A failed send is recorded on the
+/// alert or report copy and tried again; it
 /// never stops TalkWatch. Send test email, on the Alert channels page, sends one at once and shows the server's answer.
 /// </summary>
 public sealed class SmtpOptions
