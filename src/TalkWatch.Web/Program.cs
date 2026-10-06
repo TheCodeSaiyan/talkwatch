@@ -178,6 +178,7 @@ app.MapHealthChecks("/healthz");
 app.MapStaticAssets();
 app.MapAccount();
 app.MapOidc();
+app.MapOidcLink();
 app.MapAudio();
 app.MapAdmin();
 app.MapAlertAdmin();

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Identity;
@@ -147,6 +148,59 @@ public static partial class Oidc
     private sealed record Outcome(AppUser? User, string? Refusal);
 
     /// <summary>
+    /// Links the provider to the signed-in person's own account: how an account that signs in with a password comes to
+    /// sign in through the provider too. A form post with its antiforgery token, so another site cannot start it.
+    /// </summary>
+    public static void MapOidcLink(this IEndpointRouteBuilder app)
+    {
+        app.MapPost("/account/link/oidc", async (HttpContext http, SignInManager<AppUser> signIn, UserManager<AppUser> users, IOptions<OidcOptions> options, IAntiforgery antiforgery) =>
+        {
+            if (!options.Value.Enabled)
+            {
+                return Results.NotFound();
+            }
+
+            // Checked here: a minimal API checks the token only when it binds a form, and this one binds none.
+            if (!await antiforgery.IsRequestValidAsync(http))
+            {
+                return Results.BadRequest();
+            }
+
+            // The account's id goes with the round trip and must come back with it, so the link is to this account only.
+            return Results.Challenge(
+                signIn.ConfigureExternalAuthenticationProperties(OidcOptions.Scheme, "/account/link/oidc/done", users.GetUserId(http.User)), [OidcOptions.Scheme]);
+        }).RequireAuthorization();
+
+        app.MapGet("/account/link/oidc/done", async (HttpContext http, SignInManager<AppUser> signIn, UserManager<AppUser> users, Audit audit) =>
+        {
+            if (await users.GetUserAsync(http.User) is not { } user)
+            {
+                return Results.Redirect("/signin");
+            }
+
+            var info = await signIn.GetExternalLoginInfoAsync(user.Id.ToString());
+            await http.SignOutAsync(IdentityConstants.ExternalScheme);
+            if (info is null)
+            {
+                return Results.Redirect("/account?oidc=failed");
+            }
+
+            if (await users.FindByLoginAsync(info.LoginProvider, info.ProviderKey) is { } linked)
+            {
+                return Results.Redirect(linked.Id == user.Id ? "/account?oidc=linked" : "/account?oidc=taken");
+            }
+
+            if (!(await users.AddLoginAsync(user, new UserLoginInfo(info.LoginProvider, info.ProviderKey, info.ProviderDisplayName))).Succeeded)
+            {
+                return Results.Redirect("/account?oidc=failed");
+            }
+
+            await audit.WriteAsync("oidc.link", "user", user.Id, info.ProviderDisplayName);
+            return Results.Redirect("/account?oidc=linked");
+        }).RequireAuthorization();
+    }
+
+    /// <summary>
     /// What the provider says of the person, kept on their account at every sign-in: their email, so reports and email
     /// alerts reach them and follow a change made in the provider. And, when nobody has linked them to a Talk user yet,
     /// the Talk user with that same email, so a flow's "whoever it rang" and "whoever is free" reach them too; a Talk user
@@ -204,11 +258,13 @@ public static partial class Oidc
                 return new Outcome(null, "no-username");
             }
 
-            // An account of the same name is theirs: the provider is the one this site's admin chose to trust.
+            // An account of the same name is not theirs for the asking: some providers let people choose their own
+            // username, and linking by it would hand them an account, an admin's say, and skip its password and second
+            // factor. One with a password is linked only by its owner, signed in with it, from their account page.
             user = await users.FindByNameAsync(username);
-            if (user is not null && user.SiteId != site.Id)
+            if (user is not null && (user.SiteId != site.Id || await users.HasPasswordAsync(user)))
             {
-                return new Outcome(null, "not-allowed");
+                return new Outcome(null, user.SiteId != site.Id ? "not-allowed" : "link-first");
             }
 
             if (user is null)
