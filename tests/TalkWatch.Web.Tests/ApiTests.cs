@@ -175,6 +175,26 @@ public sealed partial class ApiTests(TalkWatchApp talkwatch) : IClassFixture<Tal
         Assert.DoesNotContain(kept, await AsSystemAsync(app, (db, _) => db.ApiTokens.Select(t => t.Hash).FirstAsync(Ct)), StringComparison.Ordinal);
     }
 
+    // Making tokens is a permission: taken from a role, its members' tokens stop working too, not just new ones.
+    [Fact]
+    public async Task A_token_stops_working_when_its_owners_role_no_longer_allows_tokens()
+    {
+        await using var app = await ImportedAsync();
+        var (browser, _) = await ViewerAsync(app);
+        using var __ = browser;
+        using var api = Api(app, await MakeTokenAsync(browser));
+        Assert.Equal(HttpStatusCode.OK, (await api.GetAsync(new Uri("/api/v1/lines", UriKind.Relative), Ct)).StatusCode);
+
+        using (var scope = app.Services.CreateScope())
+        {
+            scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UseSystemScope();
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+            await RolePermissions.ChangeAsync(roles, (await roles.FindByNameAsync(Roles.Viewer))!, Permission.Export | Permission.MarkCallBacks);
+        }
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await api.GetAsync(new Uri("/api/v1/lines", UriKind.Relative), Ct)).StatusCode);
+    }
+
     [Fact]
     public async Task The_csv_export_holds_the_signed_in_persons_calls_and_is_audited()
     {

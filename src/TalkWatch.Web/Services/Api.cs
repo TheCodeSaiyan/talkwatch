@@ -84,7 +84,9 @@ public static class ApiEndpoints
     public static void AddApi(this WebApplicationBuilder builder)
     {
         builder.Services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ApiTokenHandler>(ApiTokens.Scheme, null);
-        builder.Services.AddAuthorizationBuilder().AddPolicy(ApiTokens.Policy, p => p.AddAuthenticationSchemes(ApiTokens.Scheme).RequireAuthenticatedUser());
+        // Making tokens is a permission: taken from a role, its members' tokens stop working, not just new ones being made.
+        builder.Services.AddAuthorizationBuilder().AddPolicy(ApiTokens.Policy, p => p.AddAuthenticationSchemes(ApiTokens.Scheme).RequireAuthenticatedUser()
+            .RequireAssertion(c => c.User.Can(Permission.ApiTokens)));
     }
 
     public static void MapApi(this IEndpointRouteBuilder app)
