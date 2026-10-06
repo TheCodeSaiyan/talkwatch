@@ -134,6 +134,33 @@ public sealed class CallStatisticsTests(PostgresFixture postgres) : IClassFixtur
         Assert.Equal([new LineRef(LineKind.Did, did)], stats.ByLine.Select(l => new LineRef(l.Kind, l.Key)));
     }
 
+    // Talk names one contact by its numeric id on some calls and by its uuid on others. Counted per line, that was two
+    // rows of the same name, and a call carrying both names counted on each; counted as one contact, it's one row with
+    // each call once.
+    [Fact]
+    public async Task A_contact_talk_names_two_ways_is_one_line_with_each_call_counted_once()
+    {
+        var (db, records) = await ImportedAsync();
+        var siteId = await db.Sites.Select(s => s.Id).SingleAsync(Ct);
+        var end = records.Max(c => c.Time).AddSeconds(1);
+        var start = end.AddDays(-CallStatistics.LongestPeriodDays);
+        var calls = await db.Calls.Where(c => c.Time >= start && c.Time < end && c.Direction == "in").OrderBy(c => c.Time).Take(2).ToListAsync(Ct);
+        db.Lines.AddRange(
+            new LineRecord { SiteId = siteId, Kind = LineKind.Contact, Key = "9001", Name = "Morgan Nico", Present = true, UpdatedAt = DateTimeOffset.UtcNow },
+            new LineRecord { SiteId = siteId, Kind = LineKind.Contact, Key = "contact-uuid-9001", Name = "Morgan Nico", Present = true, UpdatedAt = DateTimeOffset.UtcNow, SameAs = "9001" });
+        // The first call names the contact both ways, the second only by its uuid.
+        db.CallLines.AddRange(
+            new CallLine { SiteId = siteId, CallId = calls[0].Id, Kind = LineKind.Contact, Key = "9001" },
+            new CallLine { SiteId = siteId, CallId = calls[0].Id, Kind = LineKind.Contact, Key = "contact-uuid-9001" },
+            new CallLine { SiteId = siteId, CallId = calls[1].Id, Kind = LineKind.Contact, Key = "contact-uuid-9001" });
+        await db.SaveChangesAsync(Ct);
+
+        var stats = await CallStatistics.ComputeAsync(db, start, end, London, Ct);
+
+        var contact = Assert.Single(stats.ByLine, l => l.Name == "Morgan Nico");
+        Assert.Equal((LineKind.Contact, "9001", 2), (contact.Kind, contact.Key, contact.Inbound));
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]

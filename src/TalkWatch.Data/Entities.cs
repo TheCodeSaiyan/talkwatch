@@ -130,6 +130,12 @@ public sealed class LineRecord
     public string? Ext { get; set; }
     public bool Present { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
+
+    /// <summary>
+    /// The key of the line of the same kind that this one is another name for, when there is one: Talk names a contact
+    /// by its numeric id on some calls and by its uuid on others, and both are the same contact. Counted as that line.
+    /// </summary>
+    public string? SameAs { get; set; }
 }
 
 /// <summary>
