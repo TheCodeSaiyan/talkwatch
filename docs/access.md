@@ -56,7 +56,7 @@ A role on a number shows that number's calls: those that came in on it, and thos
 
 On a number, a role only does what's about that number's calls: hearing recordings and voicemail, reading transcripts, exporting, marking and assigning call-backs, setting up their own alerts and flows, setting up reports for it, and choosing who holds which role on it. Anything else the role holds, such as managing people or retention, is ignored there, so a role on a number can never reach the rest of the site. Site-wide permissions stay site-wide.
 
-Someone may give roles on a number if they manage people, or if a role of theirs, on that number or site-wide, lets them choose who holds roles. Without managing people, they can only give or take away roles that are within what they hold there themselves, so nobody can raise anyone, themselves included, above their own reach.
+Someone may give roles on a number if they manage people, or if a role of theirs, on that number or site-wide, lets them choose who holds roles. They can only give or take away roles that are within what they hold there themselves, and only on a number whose calls they see themselves, by seeing every call or holding a role on it, so nobody can raise anyone, themselves included, above their own reach. Only an Admin gives any role on any number.
 
 Roles on numbers are read on every page, as grants are, so taking one away holds from the next page. They start empty: an upgrade changes nobody's access.
 

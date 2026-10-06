@@ -225,6 +225,32 @@ public sealed partial class NumberRoleTests(TalkWatchApp talkwatch) : IClassFixt
         Assert.Equal(0, Total(await newcomerBrowser.GetStringAsync(new Uri("/calls", UriKind.Relative), Ct)));
     }
 
+    // Choosing who holds roles on every number is not seeing every number's calls: a role on a number shows its calls,
+    // so giving one, to themselves or anyone else, on a number they cannot see would be a way round that.
+    [Fact]
+    public async Task Choosing_roles_on_every_number_gives_none_on_a_number_whose_calls_the_chooser_cannot_see()
+    {
+        await using var app = await ReadyAsync(talkwatch);
+        var chooser = await RoleAsync(app, "Number chooser", Permission.ManageNumberPeople);
+        var viewer = await RoleAsync(app, "Number viewer", Permission.None);
+        var desk = await PersonAsync(app, "desk");
+        await AsSystemAsync(app, async (_, sp) =>
+        {
+            var users = sp.GetRequiredService<UserManager<AppUser>>();
+            var person = (await users.FindByIdAsync(desk.ToString()))!;
+            await users.RemoveFromRolesAsync(person, await users.GetRolesAsync(person));
+            return await users.AddToRoleAsync(person, "Number chooser");
+        });
+        using var browser = await SignedInAsync(app, "desk");
+        var token = WebUtility.HtmlDecode(Token().Match(await browser.GetStringAsync(new Uri("/numbers", UriKind.Relative), Ct)).Groups[1].Value);
+
+        using var form = new FormUrlEncodedContent([new("__RequestVerificationToken", token), new("Did", Main), new("PersonId", desk.ToString()), new("RoleId", viewer.ToString())]);
+        await browser.PostAsync(new Uri("/numbers/people", UriKind.Relative), form, Ct);
+
+        Assert.False(await AsSystemAsync(app, (db, _) => db.NumberRoles.AnyAsync(n => n.UserId == desk, Ct)));
+        Assert.Equal(0, Total(await browser.GetStringAsync(new Uri("/calls", UriKind.Relative), Ct)));
+    }
+
     [GeneratedRegex(@"<h2>([0-9,]+) calls?</h2>")]
     private static partial Regex CallsHeading();
 
