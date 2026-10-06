@@ -1,6 +1,6 @@
 # Behind a reverse proxy
 
-TalkWatch serves plain HTTP on port 8080 and leaves TLS to a reverse proxy in front of it. Four things matter whichever proxy you use.
+TalkWatch serves plain HTTP on port 8080 and leaves TLS to a reverse proxy in front of it. Five things matter whichever proxy you use.
 
 ## What the proxy has to get right
 
@@ -14,6 +14,8 @@ TalkWatch serves plain HTTP on port 8080 and leaves TLS to a reverse proxy in fr
 Trusting forwarded headers from anyone would let a visitor choose their own address, which is why it's a list, not a switch.
 
 **The public address.** Set `Site__PublicUrl` to the address people use, such as `https://talkwatch.example`. Alerts link back to it, and acknowledge and snooze links only appear when it's set.
+
+**Only the proxy reaches the plain HTTP.** `compose.yaml` publishes port 8080 on every address the host has, so a first run works from anywhere on the LAN. With the proxy on the same host, set `TALKWATCH_BIND=127.0.0.1` in `.env`, so nothing but the proxy can reach TalkWatch without TLS; with the proxy on another host, let only it through a firewall.
 
 **Alert links past any sign-in gate.** If the proxy puts a sign-in in front of every page (Authentik or Authelia forward auth, for instance), let `/a/` through without it. ntfy's **Acknowledge** button posts to `/a/…` from a phone that holds no session with your gate. Each link carries its own signed token for one alert, valid for seven days, and that token is the permission.
 

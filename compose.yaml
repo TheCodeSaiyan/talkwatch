@@ -48,8 +48,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # Every address the host has, for a first run on the LAN. With the reverse proxy on this same host, set
+    # TALKWATCH_BIND=127.0.0.1 so only the proxy reaches TalkWatch's plain HTTP.
     ports:
-      - "${TALKWATCH_PORT:-8080}:8080"
+      - "${TALKWATCH_BIND:-0.0.0.0}:${TALKWATCH_PORT:-8080}:8080"
     environment:
       ConnectionStrings__TalkWatch: Host=db;Database=talkwatch;Username=talkwatch
       Site__Name: ${SITE_NAME:-TalkWatch}
