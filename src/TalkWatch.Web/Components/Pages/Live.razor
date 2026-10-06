@@ -303,11 +303,11 @@
         scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UsePrincipal(_user);
         var db = scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>();
 
-        // A grant on a user covers that person and the handsets assigned to them. Grants are read through the access
-        // scope, so this is only ever this person's own.
+        // A grant on a user covers that person and the handsets assigned to them. Only this person's own: the access scope
+        // shows someone who manages people everyone's grants, which would show them everyone's handsets.
         if (!_admin)
         {
-            _allowedUsers = (await db.Grants.AsNoTracking().Where(g => g.Kind == LineKind.User).Select(g => g.Key).ToListAsync()).ToHashSet(StringComparer.Ordinal);
+            _allowedUsers = (await db.Grants.AsNoTracking().Where(g => g.UserId == db.ScopeUserId && g.Kind == LineKind.User).Select(g => g.Key).ToListAsync()).ToHashSet(StringComparer.Ordinal);
         }
 
         var now = Clock.GetUtcNow();

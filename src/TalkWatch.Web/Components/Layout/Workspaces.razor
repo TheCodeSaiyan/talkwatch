@@ -174,7 +174,7 @@
 
         if (!_admin)
         {
-            _allowedUsers = (await db.Grants.AsNoTracking().Where(g => g.Kind == LineKind.User).Select(g => g.Key).ToListAsync()).ToHashSet(StringComparer.Ordinal);
+            _allowedUsers = (await db.Grants.AsNoTracking().Where(g => g.UserId == db.ScopeUserId && g.Kind == LineKind.User).Select(g => g.Key).ToListAsync()).ToHashSet(StringComparer.Ordinal);
         }
 
         if (_canFlows)
