@@ -196,7 +196,10 @@ public sealed partial class ReportTests(TalkWatchApp talkwatch) : IClassFixture<
     public async Task A_report_compares_counts_only_its_hours_and_splits_by_number()
     {
         var console = new FixtureConsole(FixtureConsole.DefaultDirectory);
-        console.ShiftTimes(DateTimeOffset.UtcNow.AddDays(-2));
+        // Moved by whole weeks, so each call keeps the weekday and time of day it was made at. Moved by any other amount,
+        // every call's time of day moves with it, and at some hours of the day all of them fell outside office hours.
+        var newest = console.NewestCallTime!.Value;
+        console.ShiftTimes(newest.AddDays(7 * Math.Floor((DateTimeOffset.UtcNow.AddDays(-2) - newest).TotalDays / 7)));
         await using var app = talkwatch.Create(console);
         await app.Services.GetRequiredService<CallLogPoller>().RunOnceAsync(Ct);
         using var admin = TalkWatchApp.Browser(app);
