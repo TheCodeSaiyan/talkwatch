@@ -87,7 +87,7 @@ jobs:
           platforms: linux/amd64
           load: true
           tags: talkwatch:release
-          build-args: VERSION=${{ github.ref_name }}
+          build-args: TALKWATCH_VERSION=${{ github.ref_name }}
           cache-from: type=gha,scope=release
           cache-to: type=gha,mode=max,scope=release
 
@@ -102,7 +102,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          build-args: VERSION=${{ github.ref_name }}
+          build-args: TALKWATCH_VERSION=${{ github.ref_name }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=release

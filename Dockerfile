@@ -2,8 +2,10 @@
 # so an arm64 image does not need a whole build under emulation.
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0@sha256:e70cdb7f80b0348f5cb85f19a8f670fca061f033d57eed12fa003d58b0e06317 AS build
 ARG TARGETARCH
-# The release's tag, such as v0.5.0, for the version the app reports; a local build says it is one.
-ARG VERSION=v0.0.0-local
+# The release's tag, such as v0.5.0, for the version the app reports; a local build says it is one. Not called VERSION:
+# a build argument is in every RUN's environment, and MSBuild takes an environment variable named VERSION as the
+# project's version, which then failed every restore without a word.
+ARG TALKWATCH_VERSION=v0.0.0-local
 WORKDIR /src
 
 COPY global.json Directory.Build.props Directory.Packages.props .editorconfig ./
@@ -18,7 +20,7 @@ COPY src/ src/
 # Restore again now the source is here: .NET 10 decides whether to pull in the Blazor framework scripts from the
 # project's .razor files, which the restore above cannot see. Publishing with --no-restore shipped an image with no
 # _framework/blazor.web.js. The check below fails the build if that ever happens again.
-RUN dotnet publish src/TalkWatch.Web -c Release -a $TARGETARCH -o /app -p:Version=${VERSION#v} \
+RUN dotnet publish src/TalkWatch.Web -c Release -a $TARGETARCH -o /app -p:Version=${TALKWATCH_VERSION#v} \
     && test -f /app/wwwroot/_framework/blazor.web.js
 
 # Where copied recordings and voicemail live (Audio__Path). Made here because the runtime image has no shell, and
