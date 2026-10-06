@@ -402,6 +402,12 @@ public sealed partial class AlertDispatcher(
 
             if (secret is not null)
             {
+                // A channel saved before tokens needed https: its token is still not sent in clear.
+                if (request.RequestUri?.Scheme != Uri.UriSchemeHttps)
+                {
+                    throw new InvalidOperationException("An ntfy token is sent only over https: give the topic's https address.");
+                }
+
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", secret);
             }
         }
@@ -604,6 +610,12 @@ public sealed partial class AlertDispatcher(
 
                 if (secret is not null)
                 {
+                    // A channel saved before tokens needed https: its token is still not sent in clear.
+                    if (request.RequestUri?.Scheme != Uri.UriSchemeHttps)
+                    {
+                        throw new InvalidOperationException("An ntfy token is sent only over https: give the topic's https address.");
+                    }
+
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", secret);
                 }
 

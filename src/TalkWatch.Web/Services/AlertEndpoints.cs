@@ -77,6 +77,13 @@ public static partial class AlertEndpoints
                 return Refused(problem, form);
             }
 
+            // An ntfy token is sent as it is: over plain http, anyone on the way could read it.
+            if (form.Kind == ChannelKind.Ntfy && !string.IsNullOrEmpty(form.Secret)
+                && !(Uri.TryCreate(form.Target?.Trim(), UriKind.Absolute, out var topic) && topic.Scheme == Uri.UriSchemeHttps))
+            {
+                return Refused("An ntfy token is sent only over https: give the topic's https address.", form);
+            }
+
             if (!TryWindow(form.QuietDays, form.QuietStart, form.QuietEnd, out var quietDays, out var quietStart, out var quietEnd))
             {
                 return Refused("Quiet hours need a start and an end time, and they cannot be the same.", form);
@@ -203,7 +210,7 @@ public static partial class AlertEndpoints
             return FlowsBack($"{flow.Name} removed.");
         });
 
-        alerts.MapPost("/settings", async ([FromForm] SettingsForm form, TalkWatchDbContext db, CurrentSite site, ChannelSecrets secrets, Audit audit, TimeProvider clock, HttpContext http) =>
+        alerts.MapPost("/settings", async ([FromForm] SettingsForm form, TalkWatchDbContext db, CurrentSite site, ChannelSecrets secrets, AlertSettingsStore store, Audit audit, TimeProvider clock, HttpContext http) =>
         {
             if (!IsAdmin(http))
             {
@@ -248,6 +255,16 @@ public static partial class AlertEndpoints
             if (Text(form.TelegramBotToken) is { } token && !TelegramToken().IsMatch(token))
             {
                 return BackToSettings("The bot token from @BotFather is digits, a colon, then letters.");
+            }
+
+            // A mail password, saved here or in the settings, was given for the server it was given with: moving to another
+            // needs it typed again, or it would go wherever an admin pointed it.
+            var before = await store.SmtpAsync(http.RequestAborted);
+            var host = Text(form.SmtpHost) ?? store.SmtpFromSettings.Host;
+            if (!string.IsNullOrEmpty(before.Password) && !form.ClearSmtpPassword && string.IsNullOrEmpty(form.SmtpPassword)
+                && !string.Equals(before.Host, host, StringComparison.OrdinalIgnoreCase))
+            {
+                return BackToSettings("Changing the mail server needs its password again, so that a password never goes to a server it wasn't given for.");
             }
 
             var saved = await db.AlertSettings.SingleOrDefaultAsync();

@@ -46,6 +46,33 @@ public sealed partial class AlertTests
         Assert.Contains("Flow%20saved", plain.Headers.Location!.OriginalString, StringComparison.Ordinal);
     }
 
+    // The saved password, or the one in the settings, would otherwise go to whatever mail server an admin typed.
+    [Fact]
+    public async Task Changing_the_mail_server_needs_its_password_again()
+    {
+        await using var h = await StartAsync(LongAfterTheFixtures);
+        await SaveSettingsAsync(h, ("SmtpHost", "mail.example.test"), ("SmtpFrom", "talkwatch@example.test"), ("SmtpUsername", "talkwatch"), ("SmtpPassword", "the site's password"));
+
+        var moved = await SaveSettingsAsync(h, ("SmtpHost", "mail.elsewhere.test"), ("SmtpFrom", "talkwatch@example.test"), ("SmtpUsername", "talkwatch"));
+
+        Assert.Contains("password%20again", moved.Headers.Location!.OriginalString, StringComparison.Ordinal);
+        Assert.Equal("mail.example.test", await h.DbAsync(db => db.AlertSettings.Select(s => s.SmtpHost).SingleAsync(Ct)));
+    }
+
+    // A token sent to ntfy over plain http could be read on the way.
+    [Fact]
+    public async Task An_ntfy_token_goes_only_over_https()
+    {
+        await using var h = await StartAsync(LongAfterTheFixtures);
+
+        await PostAsync(h.Admin, "/admin/alerts", "/admin/alerts/channels",
+            ("Name", "Plain"), ("Kind", nameof(ChannelKind.Ntfy)), ("Target", "http://ntfy.example.test/alerts"), ("Secret", "tk_secret"), ("Owner", ""));
+        await PostAsync(h.Admin, "/admin/alerts", "/admin/alerts/channels",
+            ("Name", "Open"), ("Kind", nameof(ChannelKind.Ntfy)), ("Target", "http://ntfy.example.test/open"), ("Secret", ""), ("Owner", ""));
+
+        Assert.Equal(["Open"], await h.DbAsync(db => db.AlertChannels.Select(c => c.Name).ToListAsync(Ct)));
+    }
+
     [Fact]
     public async Task Only_an_admin_changes_the_mail_and_telegram_settings()
     {
