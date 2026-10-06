@@ -72,6 +72,13 @@ public sealed partial class TelemetryTests(TalkWatchApp talkwatch) : IClassFixtu
                 if (fakeChannels)
                 {
                     s.AddHttpClient(AlertDispatcher.HttpClientName).ConfigurePrimaryHttpMessageHandler(() => receiver);
+                    s.AddHttpClient(AlertDispatcher.PublicHttpClientName).ConfigurePrimaryHttpMessageHandler(() => receiver);
+                }
+                else
+                {
+                    // .NET's own handler, as in an install, but without the guard that keeps alerts off TalkWatch's own
+                    // machine: the server the test sends to is on the loopback.
+                    s.AddHttpClient(AlertDispatcher.HttpClientName).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler());
                 }
             });
         return new Harness(app, spans, metrics, receiver);

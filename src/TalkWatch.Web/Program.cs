@@ -121,12 +121,17 @@ builder.Services.AddSingleton<ChannelSecrets>();
 builder.Services.AddSingleton<AlertLinks>();
 builder.Services.AddSingleton<BrowserAlerts>();
 builder.Services.AddSingleton<WebPushSender>();
-builder.Services.AddHttpClient(WebPushSender.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(15)).RemoveAllLoggers();
+// Push services are on the internet, never on the LAN: a browser's endpoint is a URL anyone signed in can hand over.
+builder.Services.AddHttpClient(WebPushSender.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(15))
+    .ConfigurePrimaryHttpMessageHandler(() => OutboundGuard.Handler(privateAllowed: false)).RemoveAllLoggers();
 builder.Services.AddSingleton<AlertSettingsStore>();
 builder.Services.AddSingleton<MailSender>();
 builder.Services.AddSingleton<AlertService>();
 // No request logging: a Telegram bot token is part of the URL, and an ntfy topic name is often the only secret it has.
-builder.Services.AddHttpClient(AlertDispatcher.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(15)).RemoveAllLoggers();
+builder.Services.AddHttpClient(AlertDispatcher.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(15))
+    .ConfigurePrimaryHttpMessageHandler(() => OutboundGuard.Handler(privateAllowed: true)).RemoveAllLoggers();
+builder.Services.AddHttpClient(AlertDispatcher.PublicHttpClientName, c => c.Timeout = TimeSpan.FromSeconds(15))
+    .ConfigurePrimaryHttpMessageHandler(() => OutboundGuard.Handler(privateAllowed: false)).RemoveAllLoggers();
 builder.Services.AddSingleton<AlertDispatcher>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<AlertDispatcher>());
 builder.Services.AddSingleton<RetentionService>();
