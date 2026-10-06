@@ -42,6 +42,13 @@ documentation strictly, builds the image and checks the upgrade from the last
 release. It posts the result to GitHub as the commit's `local-ci` status, which
 the pull request shows.
 
+The tests run with the Docker socket, since Testcontainers starts PostgreSQL
+through it, and that gives the code under test the Docker host. So run
+`scripts/ci.sh` only on code you'd run yourself: your own branches, or a
+contributor's once you've read it. A contributor's pull request you haven't read
+belongs on GitHub's hosted runners (the CI workflow, run by hand), where it can
+reach nothing of yours.
+
 After a merge, `scripts/ci.sh --publish` on an up-to-date `main` does the same
 and pushes the image as `edge`, `live` and `demo` to the registry named by
 `REGISTRY_HOST` or `git config talkwatch.registry`. The maintainer's live and
