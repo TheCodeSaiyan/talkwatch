@@ -91,7 +91,7 @@ public static class AccountEndpoints
         {
             await signIn.SignOutAsync();
             return Results.Redirect("/signin");
-        }).RequireAuthorization();
+        }).RequireAuthorization().CheckFormToken();
     }
 
     /// <summary>The URL if it is a path on this site, else the calls page.</summary>

@@ -51,7 +51,7 @@ public static partial class ConsoleEndpoints
     public static void MapConsole(this IEndpointRouteBuilder app)
     {
         // A 404 stays a 404, rather than being re-run through the not-found page, whose antiforgery check turns it into a 400.
-        var console = app.MapGroup("/admin/console").RequireAuthorization(Permissions.AdminPolicy).WithMetadata(new SkipStatusCodePagesAttribute());
+        var console = app.MapGroup("/admin/console").RequireAuthorization(Permissions.AdminPolicy).WithMetadata(new SkipStatusCodePagesAttribute()).CheckFormToken();
 
         console.MapPost("/", async ([FromForm] ConsoleForm form, TalkWatchDbContext db, CurrentSite site, ChannelSecrets secrets, ConsoleConnection connection,
             IOptions<TalkOptions> options, Audit audit, TimeProvider clock, CancellationToken cancellationToken) =>

@@ -63,7 +63,7 @@ public static partial class AlertEndpoints
         // A 404 stays a 404, rather than being re-run through the not-found page, whose antiforgery check turns it into a 400.
         // Admins, and Managers for their own lines: the database filters show a Manager only their own channels,
         // flows and alerts, so a Manager's request for anyone else's finds nothing and answers 404.
-        var alerts = app.MapGroup("/admin/alerts").RequireAuthorization(Permissions.AlertsPolicy).WithMetadata(new SkipStatusCodePagesAttribute());
+        var alerts = app.MapGroup("/admin/alerts").RequireAuthorization(Permissions.AlertsPolicy).WithMetadata(new SkipStatusCodePagesAttribute()).CheckFormToken();
 
         alerts.MapPost("/channels", async ([FromForm] ChannelForm form, TalkWatchDbContext db, CurrentSite site, ChannelSecrets secrets, AlertSettingsStore settings, Audit audit, TimeProvider clock, HttpContext http, CancellationToken cancellationToken) =>
         {

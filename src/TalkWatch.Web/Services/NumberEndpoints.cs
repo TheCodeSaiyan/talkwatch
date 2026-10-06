@@ -88,7 +88,7 @@ public static class NumberPeople
 
     public static void MapNumbers(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/numbers").RequireAuthorization();
+        var group = app.MapGroup("/numbers").RequireAuthorization().CheckFormToken();
 
         group.MapPost("/people", async ([FromForm] SetForm form, HttpContext http, TalkWatchDbContext db, RoleManager<IdentityRole<Guid>> roles,
             UserManager<AppUser> users, CurrentSite site, Audit audit, TimeProvider clock) =>

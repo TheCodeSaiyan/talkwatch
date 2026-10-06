@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
@@ -59,6 +60,25 @@ public static class Protection
             };
         });
     }
+
+    /// <summary>
+    /// Refuses a form post without the page's antiforgery token, with 400. .NET checks the token itself only on an endpoint
+    /// that reads a form, so one that takes nothing but its address (lock, delete, sweep, sign out) was protected by the
+    /// SameSite=Strict cookie alone, which a site on a sibling subdomain gets past. JSON is left alone: no other site can
+    /// send it without the browser asking first.
+    /// </summary>
+    public static TBuilder CheckFormToken<TBuilder>(this TBuilder builder) where TBuilder : IEndpointConventionBuilder =>
+        builder.AddEndpointFilter(async (context, next) =>
+        {
+            var http = context.HttpContext;
+            if (HttpMethods.IsPost(http.Request.Method) && !(http.Request.ContentType?.StartsWith("application/json", StringComparison.OrdinalIgnoreCase) ?? false)
+                && !await http.RequestServices.GetRequiredService<IAntiforgery>().IsRequestValidAsync(http))
+            {
+                return Results.BadRequest();
+            }
+
+            return await next(context);
+        });
 
     /// <summary>Whether people reach TalkWatch over https, as Site__PublicUrl says.</summary>
     private static bool ServedOverHttps(IConfiguration configuration) =>

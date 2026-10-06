@@ -17,7 +17,7 @@ public static class BrowserAlertEndpoints
 
     public static void MapBrowserAlerts(this IEndpointRouteBuilder app)
     {
-        var account = app.MapGroup("/account").RequireAuthorization().WithMetadata(new SkipStatusCodePagesAttribute());
+        var account = app.MapGroup("/account").RequireAuthorization().WithMetadata(new SkipStatusCodePagesAttribute()).CheckFormToken();
 
         account.MapPost("/browser-alerts", async (TalkWatchDbContext db, CurrentSite site, Audit audit, TimeProvider clock, HttpContext http) =>
         {

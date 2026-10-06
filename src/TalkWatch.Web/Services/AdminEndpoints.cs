@@ -104,7 +104,7 @@ public static class AdminEndpoints
     {
         // A 404 from a form post stays a 404, rather than being re-run through the not-found page, whose antiforgery
         // check turns it into a 400.
-        var admin = app.MapGroup("/admin").RequireAuthorization(Policy).WithMetadata(new SkipStatusCodePagesAttribute());
+        var admin = app.MapGroup("/admin").RequireAuthorization(Policy).WithMetadata(new SkipStatusCodePagesAttribute()).CheckFormToken();
 
         admin.MapPost("/users", async ([FromForm] NewUserForm form, UserManager<AppUser> users, RoleManager<IdentityRole<Guid>> roles, CurrentSite site, Audit audit, HttpContext http) =>
         {

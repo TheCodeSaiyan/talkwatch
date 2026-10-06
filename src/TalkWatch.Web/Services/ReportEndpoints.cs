@@ -39,7 +39,7 @@ public static class ReportEndpoints
     {
         // A 404 stays a 404, rather than being re-run through the not-found page, whose antiforgery check turns it into a 400.
         // Site report managers, and anyone who may set up reports on a number: the query filters show them only their own.
-        var manage = app.MapGroup("/reports").RequireAuthorization(Permissions.ReportsPolicy).WithMetadata(new SkipStatusCodePagesAttribute());
+        var manage = app.MapGroup("/reports").RequireAuthorization(Permissions.ReportsPolicy).WithMetadata(new SkipStatusCodePagesAttribute()).CheckFormToken();
 
         manage.MapPost("/save", async ([FromForm] ReportForm form, TalkWatchDbContext db, CurrentSite site, ReportBuilder builder, Audit audit, TimeProvider clock, HttpContext http) =>
         {
