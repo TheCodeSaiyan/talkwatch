@@ -174,7 +174,22 @@ public sealed partial class AlertDispatcher(
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5), clock);
         do
         {
-            await RunOnceAsync(stoppingToken);
+            // A failure is logged and tried again next round: a background service that throws stops the whole app, and
+            // the database being out of reach for a minute did exactly that.
+            try
+            {
+                await RunOnceAsync(stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                throw;
+            }
+#pragma warning disable CA1031
+            catch (Exception e)
+#pragma warning restore CA1031
+            {
+                LogRoundFailed(logger, e);
+            }
         }
         while (await timer.WaitForNextTickAsync(stoppingToken));
     }
@@ -762,4 +777,7 @@ public sealed partial class AlertDispatcher(
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Gave up sending '{Title}' to {Channel} after the last retry.")]
     private static partial void LogGaveUp(ILogger logger, string channel, string title, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Moving flows on or sending alerts failed; trying again in five seconds.")]
+    private static partial void LogRoundFailed(ILogger logger, Exception exception);
 }
