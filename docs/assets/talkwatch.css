@@ -65,3 +65,9 @@
 .md-typeset .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.6fr); gap: 1rem; align-items: start; }
 .md-typeset .pair p { margin: 0; }
 @media (max-width: 760px) { .md-typeset .pair { grid-template-columns: minmax(0, 1fr); } }
+
+/* The guides' cards: two to a row, so each group of four sits square, and every picture cut to the same shape from
+   its top, where a page's heading is, so a full-page shot doesn't make its card twice the height of the rest. */
+.md-typeset .grid.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.md-typeset .grid.cards img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: top left; }
+@media (max-width: 760px) { .md-typeset .grid.cards { grid-template-columns: minmax(0, 1fr); } }

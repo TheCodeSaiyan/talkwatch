@@ -62,6 +62,8 @@ The step reaches people who may not see the line the call came in on, which noth
 
 ## Channels
 
+![Configure → Alert channels: each channel, its owner and quiet hours, and what was sent lately](images/alert-channels.png)
+
 - **ntfy** — a push to a topic URL, with an optional access token. The title names the caller; the body then gives their number and the line they rang, when and for how long, and the flow that sent it, each on its own line. It's plain text, because the ntfy phone app shows Markdown as typed. Notifications carry up to three buttons: **Acknowledge**, which posts straight from the phone; **Call back**, which opens the dialler on the caller's number; and **Open**, the alert's page, to snooze it or see more. Tapping the notification itself opens the call, for anyone who may see it.
 - **Email** — through the mail server set on the **Alert channels** page, or with `Smtp__` settings. **Send test email**, under the settings, checks them at once and shows what the server said. Leave the username empty for a server that takes mail without signing in. With a username set, a server that offers no sign-in fails the send and says so (*offers no sign-in on an unencrypted connection: turn STARTTLS on, or clear the username if it needs none*), rather than sending without the sign-in you asked for. Most servers offer sign-in only once the connection is encrypted, which is why STARTTLS is the usual fix.
 - **Telegram** — through a bot, to a chat, group or channel. The bot token and chat id can be on the channel, on the alerts page, or in `Telegram__` settings; the most specific wins.
@@ -103,6 +105,8 @@ A flow starts on one kind of alert, checks its conditions, then runs its steps t
 - **Branch** — on any condition: one path of steps if it holds, another if it doesn't. Branches go three deep at most.
 
 **Try it on the last 7 days**, in the editor, runs the flow against the past week's calls without sending anything: how many would have started it, and what its first step would have done. It looks only at calls you can see, and at the latest 500.
+
+![Try it on the last 7 days: who the flow would have told, and about which call](images/flow-try.png)
 
 ### Conditions
 
@@ -183,3 +187,15 @@ Anyone whose role lets them *set up their own alerts*, site-wide (a Manager's do
 ## Acknowledge and snooze
 
 Each alert carries a link to a page, valid for seven days, that acknowledges it or snoozes it for an hour or four. Acknowledging stops anything still waiting to be sent and the rest of the flow; snoozing holds the flow's next step off until the snooze ends. Every channel the alert reached then gets a quiet follow-up, **Acknowledged: …**, saying who acknowledged it and when, so whoever pressed the button sees it worked and everyone else knows it's in hand. On ntfy it comes at low priority, with no buttons. A follow-up due in a channel's quiet hours is dropped rather than held until morning, by when it would be stale. A link in a notification doesn't say whose phone it was on, so those read as acknowledged from a notification. Opening the page changes nothing, so a mail scanner that follows links can't acknowledge an alert by accident; ntfy's **Acknowledge** button posts directly. Links need `Site__PublicUrl`.
+
+## Guides
+
+Flows to copy, each starting from a problem:
+
+- [Getting back to every missed caller](guides/missed-callers.md)
+- [Voicemail that can't wait](guides/voicemail.md)
+- [Seeing a bad day coming](guides/busy-line.md)
+- [Calls when you're closed](guides/out-of-hours.md)
+- [Staff who answer on their mobiles](guides/mobiles.md)
+- [Knowing when the phones themselves go wrong](guides/phone-health.md)
+- [Using TalkWatch's data elsewhere](guides/integrations.md), for webhooks

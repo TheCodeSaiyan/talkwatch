@@ -84,6 +84,51 @@ public sealed partial class DashboardTests(TalkWatchApp talkwatch) : IClassFixtu
         Assert.Equal(expected.Quality.Worst.Count, Regex.Count(page, "data-poor-call=\""));
     }
 
+    // Each line says what kind it is in words, as the rest of TalkWatch does, never by the name it has in the code.
+    [Fact]
+    public async Task Each_line_says_what_kind_it_is_in_words()
+    {
+        await using var app = await ImportedAsync(talkwatch);
+        using var admin = TalkWatchApp.Browser(app);
+        await TalkWatchApp.SignInAsync(admin, TalkWatchApp.AdminUsername, TalkWatchApp.AdminPassword);
+
+        var page = await admin.GetStringAsync(new Uri($"/dashboard?{Period}", UriKind.Relative), Ct);
+
+        var kinds = LineKindCell().Matches(page).Select(m => (Kind: m.Groups[1].Value, Said: m.Groups[2].Value)).ToList();
+        Assert.Equal(Regex.Count(page, "data-line=\""), kinds.Count);
+        Assert.Contains(kinds, k => k.Kind == "Did");
+        Assert.Contains(kinds, k => k.Kind == "Attendant");
+        var words = new Dictionary<string, string>
+        {
+            ["Did"] = "Number", ["User"] = "Person", ["RingGroup"] = "Ring group", ["Attendant"] = "Switchboard", ["Queue"] = "Queue", ["Contact"] = "Outside number",
+        };
+        Assert.All(kinds, k => Assert.Equal(words[k.Kind], k.Said));
+    }
+
+    [GeneratedRegex("""data-line="([A-Za-z]+):[^"]*">\s*<td class="first">.*?</td>\s*<td class="muted">([^<]*)</td>""", RegexOptions.Singleline)]
+    private static partial Regex LineKindCell();
+
+    // Talk names a contact by its numeric id on some calls and by its uuid on others: the directory says which uuid is
+    // which id, and the contact is one line, not two of the same name.
+    [Fact]
+    public async Task A_contact_is_one_line_however_talk_names_it()
+    {
+        await using var app = await ImportedAsync(talkwatch);
+        using var admin = TalkWatchApp.Browser(app);
+        await TalkWatchApp.SignInAsync(admin, TalkWatchApp.AdminUsername, TalkWatchApp.AdminPassword);
+
+        var contacts = await AsSystemAsync(app, db => db.Lines.Where(l => l.Kind == LineKind.Contact).ToListAsync(Ct));
+        var byUuid = contacts.Where(l => !int.TryParse(l.Key, System.Globalization.CultureInfo.InvariantCulture, out _)).ToList();
+        Assert.NotEmpty(byUuid);
+        Assert.All(byUuid, l => Assert.Contains(contacts, id => id.Key == l.SameAs && id.Name == l.Name));
+        Assert.All(contacts.Except(byUuid), l => Assert.Null(l.SameAs));
+
+        var page = await admin.GetStringAsync(new Uri($"/dashboard?{Period}", UriKind.Relative), Ct);
+        var rows = Regex.Matches(page, "data-line=\"Contact:([^\"]+)\"").Select(m => WebUtility.HtmlDecode(m.Groups[1].Value)).ToList();
+        Assert.NotEmpty(rows);
+        Assert.DoesNotContain(rows, key => byUuid.Any(l => l.Key == key));
+    }
+
     [Fact]
     public async Task A_viewer_sees_figures_only_for_their_line()
     {

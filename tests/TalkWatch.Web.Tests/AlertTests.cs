@@ -360,6 +360,8 @@ public sealed partial class AlertTests(TalkWatchApp talkwatch) : IClassFixture<T
         Assert.Contains($"href=\"/admin/answering-lines?open={contact}#contact-{contact}\"", page, StringComparison.Ordinal);
         var settings = await h.Admin.GetStringAsync(new Uri($"/admin/answering-lines?open={contact}", UriKind.Relative), Ct);
         Assert.Contains($"id=\"contact-{contact}\" open", settings, StringComparison.Ordinal);
+        // The example phrases are one to a line, as the box asks for, not a character reference shown as typed.
+        Assert.Contains("placeholder=\"is not available\nleave a message after the tone\"", WebUtility.HtmlDecode(settings), StringComparison.Ordinal);
     }
 
     [Fact]

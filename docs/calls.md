@@ -52,3 +52,8 @@ If your role allows, you can give a caller to one person from the menu on the
 row, and the row then shows **Assigned to** them. A flow can do the same
 ([alerts](alerts.md)). **Got back to lately** underneath shows who was dealt
 with in the last week.
+
+## Guides
+
+- [Getting back to every missed caller](guides/missed-callers.md)
+- [Finding a call and what was said](guides/finding-a-call.md)

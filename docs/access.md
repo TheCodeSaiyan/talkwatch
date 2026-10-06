@@ -20,6 +20,8 @@ A role says what someone may do and see beyond the lines granted to them. Each h
 | Set up reports | reports and their schedules, and every copy |
 | Choose who holds which role on a number | under **Configure → Numbers** |
 
+![Configure → Roles: the permissions each role holds](images/roles.png)
+
 Three roles are built in:
 
 - **Admin** — every permission. It can't be changed, so there's always someone who can put things right, and the last Admin can't be demoted.
@@ -70,6 +72,8 @@ Whoever may mark missed callers done may also assign them, from the menu beside 
 
 ## A person's page
 
+![Configure → People: everyone, their role, their Talk user and their sign-in](images/people.png)
+
 Besides their role, lines and two-factor sign-in, a person's page under **Configure → People** holds:
 
 - **Email** — their account email, and where their reports go. Signing in through an identity provider sets it again at every sign-in, so a change made in the provider arrives next time they sign in, and one made here lasts until then.
@@ -107,3 +111,7 @@ A first sign-in makes a new account, named by the provider's username. It doesn'
 Every sign-in also keeps the person's email from the provider (`Oidc__EmailClaim`, `email` unless you say otherwise), so reports and email alerts can reach an account the provider made. And when nobody has linked the person to a Talk user yet, the Talk user with the same email is linked, so flows that tell *whoever it rang* reach them without anyone setting it by hand. A Talk user already linked to someone else is left alone, and so is an email the provider says it hasn't checked (`email_verified` false): some providers let people set their own, and it could be a colleague's. Link such a person by hand on their page.
 
 Behind a reverse proxy, `Proxy__TrustedNetworks` must include the proxy; see [Behind a reverse proxy](proxy.md).
+
+## Guides
+
+- [Giving someone their own number](guides/one-number.md)

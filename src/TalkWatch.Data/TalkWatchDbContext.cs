@@ -537,6 +537,7 @@ public sealed class TalkWatchDbContext(DbContextOptions<TalkWatchDbContext> opti
             e.Property(l => l.Key).HasMaxLength(64);
             e.Property(l => l.Name).HasMaxLength(200);
             e.Property(l => l.Ext).HasMaxLength(32);
+            e.Property(l => l.SameAs).HasMaxLength(64);
 
             // Names of lines are themselves information: admins see all, others only the lines they are granted or
             // a number they hold a role on covers.

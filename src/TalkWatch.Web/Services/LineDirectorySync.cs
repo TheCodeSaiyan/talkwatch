@@ -36,6 +36,9 @@ public sealed partial class LineDirectorySync(
             var db = scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>();
             var existing = await db.Lines.ToDictionaryAsync(l => (l.Kind, l.Key), cancellationToken);
             var seen = new HashSet<(LineKind, string)>();
+            // A contact is named by its numeric id on some calls and by its uuid on others: the uuid's line is the id's.
+            var contactIds = directory.Contacts.Where(c => c.Uuid is { Length: > 0 })
+                .ToDictionary(c => c.Uuid!, c => c.Id.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparer.Ordinal);
             foreach (var (kind, key, name, ext) in directory.Lines(numbers))
             {
                 if (!seen.Add((kind, key)))
@@ -43,19 +46,21 @@ public sealed partial class LineDirectorySync(
                     continue;
                 }
 
+                var sameAs = kind == LineKind.Contact ? contactIds.GetValueOrDefault(key) : null;
                 if (existing.TryGetValue((kind, key), out var line))
                 {
-                    if (line.Name != name || line.Ext != ext || !line.Present)
+                    if (line.Name != name || line.Ext != ext || !line.Present || line.SameAs != sameAs)
                     {
                         line.Name = name;
                         line.Ext = ext;
                         line.Present = true;
+                        line.SameAs = sameAs;
                         line.UpdatedAt = now;
                     }
                 }
                 else
                 {
-                    db.Lines.Add(new LineRecord { SiteId = site.Id, Kind = kind, Key = key, Name = name, Ext = ext, Present = true, UpdatedAt = now });
+                    db.Lines.Add(new LineRecord { SiteId = site.Id, Kind = kind, Key = key, Name = name, Ext = ext, Present = true, UpdatedAt = now, SameAs = sameAs });
                 }
             }
 

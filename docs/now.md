@@ -48,3 +48,8 @@ the light theme it's the same board on paper.
 The people and handsets come from Talk's live feed. If that's down, the
 heading says so and what went wrong, and calls carry on being copied from the
 call log each poll.
+
+## Guides
+
+- [Running the front desk from one screen](guides/front-desk.md)
+- [Knowing when the phones themselves go wrong](guides/phone-health.md)

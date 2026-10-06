@@ -123,23 +123,27 @@ public sealed record CallStatistics(
             .Select(g => new DayStatistics(g.Key, g.Count(), g.Count(c => c.Outcome == CallOutcome.Answered), g.Count(c => c.Outcome.IsMissed())))
             .ToList();
 
+        var lines = await db.Lines.AsNoTracking().Select(l => new { l.Kind, l.Key, l.Name, l.SameAs }).ToListAsync(cancellationToken);
+        var names = lines.ToDictionary(l => (l.Kind, l.Key), l => l.Name);
+        // A line that is another name for one of the same kind (a contact Talk names by uuid and by id) counts as that one.
+        var sameAs = lines.Where(l => l.SameAs is not null).ToDictionary(l => (l.Kind, l.Key), l => l.SameAs!);
         var perLine = await (
                 from l in db.CallLines
                 join c in db.Calls on l.CallId equals c.Id
                 where c.Time >= start && c.Time < end && InboundOutcomes.Contains(c.Outcome)
-                group c by new { l.Kind, l.Key, c.Outcome } into g
-                select new { g.Key.Kind, g.Key.Key, g.Key.Outcome, Count = g.Count() })
+                select new { l.Kind, l.Key, l.CallId, c.Outcome })
             .ToListAsync(cancellationToken);
-        var names = await db.Lines.AsNoTracking().ToDictionaryAsync(l => (l.Kind, l.Key), l => l.Name, cancellationToken);
         var byLine = perLine
+            .Select(r => (r.Kind, Key: sameAs.GetValueOrDefault((r.Kind, r.Key), r.Key), r.CallId, r.Outcome))
+            .Distinct()
             .GroupBy(r => (r.Kind, r.Key))
             .Select(g => new LineStatistics(
                 g.Key.Kind, g.Key.Key, names.GetValueOrDefault(g.Key, g.Key.Key),
-                g.Sum(r => r.Count),
-                g.Where(r => r.Outcome == CallOutcome.Answered).Sum(r => r.Count),
-                g.Where(r => r.Outcome.IsMissed()).Sum(r => r.Count),
-                g.Where(r => r.Outcome.IsVoicemail()).Sum(r => r.Count),
-                g.Where(r => r.Outcome == CallOutcome.HungUpAtSwitchboard).Sum(r => r.Count)))
+                g.Count(),
+                g.Count(r => r.Outcome == CallOutcome.Answered),
+                g.Count(r => r.Outcome.IsMissed()),
+                g.Count(r => r.Outcome.IsVoicemail()),
+                g.Count(r => r.Outcome == CallOutcome.HungUpAtSwitchboard)))
             .OrderByDescending(l => l.Inbound)
             .ThenBy(l => l.Name, StringComparer.Ordinal)
             .ToList();

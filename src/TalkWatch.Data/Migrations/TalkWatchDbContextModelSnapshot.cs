@@ -1280,6 +1280,10 @@ namespace TalkWatch.Data.Migrations
                     b.Property<bool>("Present")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("SameAs")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 

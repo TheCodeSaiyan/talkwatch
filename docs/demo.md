@@ -59,14 +59,31 @@ happen on your own phones:
 Each takes about a minute, and up to four play at once, since everyone trying
 the demo shares it. The bar folds down to a tab, and exists only in the demo.
 
+![Try a scenario, at the foot of every page in the demo](images/demo-bar.png)
+
+Each scenario goes with a guide, which says what to look for and what to set up
+on your own console:
+
+| Play | Then look at | Guide |
+|---|---|---|
+| **Missed**, **Missed call alert** | **Call-backs**, the pop-up, the *Missed calls* flow | [Getting back to every missed caller](guides/missed-callers.md) |
+| **Presses 1, then 2**, **Presses a wrong key** | **Operator** | [Running the front desk from one screen](guides/front-desk.md) |
+| **Voicemail** | **Now**, the *Voicemail that sounds urgent* flow | [Voicemail that can't wait](guides/voicemail.md) |
+| **Hangs up in the menu**, **Hang-up alert** | **Switchboards**, the *Hung up in the menu* flow | [Callers who give up at the switchboard](guides/switchboard.md) |
+| **Outside phone answers** | who answered on **Now**, the *Put through to a mobile* flow | [Staff who answer on their mobiles](guides/mobiles.md) |
+| **Do not disturb**, **On a call** | **People** on **Operator** and **Now** | [Running the front desk from one screen](guides/front-desk.md) |
+
 ## The guest account
 
 The sign-in page offers a shared **guest** account, with its password on the
-page and a **Sign in as guest** button. The guest is an admin, so every page
-and button is there to try. What would change the site for whoever comes next
-(people, roles, roles on numbers, group mappings, retention, the mail and
-Telegram settings) is refused when it's saved, with a message saying why,
-rather than hidden.
+page and a **Sign in as guest** button.
+
+The guest is an admin, so every page and button is there to try. What would
+change the site for whoever comes next (people, roles, roles on numbers, group
+mappings, retention, the mail and Telegram settings) is refused when it's
+saved, with a message saying why, rather than hidden.
+
+![Signing in to the demo as the guest](images/signin.png)
 
 ## What stays in the demo
 

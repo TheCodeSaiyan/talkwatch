@@ -237,6 +237,25 @@ public sealed partial class ReportTests(TalkWatchApp talkwatch) : IClassFixture<
     }
 
     // A new report can start from a ready-made one: its name, parts, schedule and options filled in, still to change.
+    // With nobody giving up in the period there is no wait to tell, so the report doesn't say they waited "–".
+    [Fact]
+    public async Task A_period_nobody_gave_up_in_says_nothing_of_how_long_they_waited()
+    {
+        await using var app = talkwatch.Create(new FixtureConsole(FixtureConsole.DefaultDirectory));
+        using var admin = TalkWatchApp.Browser(app);
+        await TalkWatchApp.SignInAsync(admin, TalkWatchApp.AdminUsername, TalkWatchApp.AdminPassword);
+        await PostAsync(admin, "/reports/new", "/reports/save",
+            ("Name", "Quiet"), ("Schedule", "Daily"), ("At", "07:00"), ("Enabled", "true"), ("Sections", "Figures"));
+        var report = await DbAsync(app, db => db.Reports.SingleAsync(Ct));
+
+        await PostAsync(admin, "/reports", $"/reports/{report.Id}/run");
+
+        var html = WebUtility.HtmlDecode(await DbAsync(app, db => db.ReportRuns.Select(r => r.Html).SingleAsync(Ct)));
+        Assert.Contains("data-report-figures", html, StringComparison.Ordinal);
+        Assert.Contains("scored calls had poor quality", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("gave up had waited", html, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task A_new_report_starts_from_a_ready_made_one_filled_in()
     {
