@@ -53,6 +53,7 @@ git archive --format=tar HEAD | docker run --rm -i \
     -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
     -e TALKWATCH_TEST_DATABASES=container-address \
     -e DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    -e CI=true \
     mcr.microsoft.com/dotnet/sdk:10.0 \
     sh -c 'mkdir /src && tar -x -C /src && cd /src \
         && dotnet build -c Release \

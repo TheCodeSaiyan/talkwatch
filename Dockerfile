@@ -6,20 +6,24 @@ ARG TARGETARCH
 # a build argument is in every RUN's environment, and MSBuild takes an environment variable named VERSION as the
 # project's version, which then failed every restore without a word.
 ARG TALKWATCH_VERSION=v0.0.0-local
+# Restores are held to the lock files (CI=true): a package that changed, or would resolve differently, fails the build.
+ENV CI=true
 WORKDIR /src
 
 COPY global.json Directory.Build.props Directory.Packages.props .editorconfig ./
-# Project files first, so the restore layer is reused until a dependency changes.
+# Project files first, so the restore layer is reused until a dependency changes. This first restore isn't held to
+# the lock files: .NET 10 adds a package for the Blazor scripts only once it sees the .razor files, which aren't here
+# yet. The restore that counts comes with the publish below.
 COPY src/TalkWatch.Core/TalkWatch.Core.csproj src/TalkWatch.Core/
 COPY src/TalkWatch.Data/TalkWatch.Data.csproj src/TalkWatch.Data/
 COPY src/TalkWatch.Replay/TalkWatch.Replay.csproj src/TalkWatch.Replay/
 COPY src/TalkWatch.Web/TalkWatch.Web.csproj src/TalkWatch.Web/
-RUN dotnet restore src/TalkWatch.Web -a $TARGETARCH
+RUN dotnet restore src/TalkWatch.Web -a $TARGETARCH -p:RestoreLockedMode=false
 
 COPY src/ src/
-# Restore again now the source is here: .NET 10 decides whether to pull in the Blazor framework scripts from the
-# project's .razor files, which the restore above cannot see. Publishing with --no-restore shipped an image with no
-# _framework/blazor.web.js. The check below fails the build if that ever happens again.
+# Restore again now the source is here, lock files and all, held to them: .NET 10 decides whether to pull in the Blazor
+# framework scripts from the project's .razor files, which the restore above cannot see. Publishing with --no-restore
+# shipped an image with no _framework/blazor.web.js. The check below fails the build if that ever happens again.
 RUN dotnet publish src/TalkWatch.Web -c Release -a $TARGETARCH -o /app -p:Version=${TALKWATCH_VERSION#v} \
     && test -f /app/wwwroot/_framework/blazor.web.js
 

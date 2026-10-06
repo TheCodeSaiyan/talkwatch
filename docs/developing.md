@@ -59,6 +59,10 @@ A release is a tag. Pushing `v1.2.3` runs `.github/workflows/release.yml` on
 GitHub Actions: the tests and fixture guard again, the upgrade from the last
 release, images for amd64 and arm64 on GHCR, this site, and a GitHub release.
 
+## Dependencies
+
+Each project's `packages.lock.json` records every package it uses, those pulled in by others too, with its version and content hash. CI and the image build restore with `CI=true`, which holds them to those files: a package that has changed, or would be resolved differently, fails the build rather than slipping in. Changing a version in `Directory.Packages.props` and restoring updates the lock files; commit them with the change, after a look at what else moved.
+
 ## The pictures in these pages
 
 The screenshots and animations here are taken of the demo, in Windows Sandbox
