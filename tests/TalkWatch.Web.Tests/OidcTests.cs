@@ -217,4 +217,26 @@ public sealed class OidcTests(TalkWatchApp talkwatch) : IClassFixture<TalkWatchA
 
         Assert.Equal("sam@example.test", (await AsSystemAsync(app, users => users.FindByNameAsync("sam")))!.Email);
     }
+
+    // Some providers let people set their own email, and say so: one the provider hasn't checked could be a colleague's,
+    // and would link the person to that colleague's Talk user, and the calls that ring it.
+    [Fact]
+    public async Task An_email_the_provider_has_not_checked_is_kept_but_links_no_talk_user()
+    {
+        using var provider = new FakeOidcProvider();
+        var console = new FixtureConsole(FixtureConsole.DefaultDirectory);
+        console.Overrides["/proxy/talk/api/users"] = """
+            [{"unique_id": "talk-sam", "id": 41, "full_name": "Sam Rivers", "ext": "0041", "email": "sam.rivers@example.test", "hide_from_user_list": false}]
+            """;
+        await using var app = talkwatch.Create(console, settings: Settings,
+            services: s => s.Configure<OpenIdConnectOptions>(OidcOptions.Scheme, o => o.BackchannelHttpHandler = provider));
+        await app.Services.GetRequiredService<LineDirectorySync>().RefreshAsync(Ct);
+
+        (provider.Email, provider.EmailVerified) = ("sam.rivers@example.test", false);
+        using var browser = Browser(app);
+        await SignInAsync(browser, provider, "subject-unverified", "mallory", "talkwatch-users");
+
+        var mallory = await AsSystemAsync(app, users => users.FindByNameAsync("mallory"));
+        Assert.Equal(("sam.rivers@example.test", false, (string?)null), (mallory!.Email, mallory.EmailConfirmed, mallory.TalkUserUuid));
+    }
 }

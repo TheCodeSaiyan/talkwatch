@@ -94,6 +94,7 @@ public static partial class Oidc
             o.ClaimActions.MapUniqueJsonKey(options.UsernameClaim, options.UsernameClaim);
             o.ClaimActions.MapJsonKey(options.GroupsClaim, options.GroupsClaim);
             o.ClaimActions.MapUniqueJsonKey(options.EmailClaim, options.EmailClaim);
+            o.ClaimActions.MapUniqueJsonKey(EmailVerifiedClaim, EmailVerifiedClaim);
             o.SaveTokens = false;
             o.SignInScheme = IdentityConstants.ExternalScheme;
             o.CallbackPath = "/signin-oidc";
@@ -146,6 +147,9 @@ public static partial class Oidc
     }
 
     private sealed record Outcome(AppUser? User, string? Refusal);
+
+    /// <summary>The standard claim saying whether the provider checked the email.</summary>
+    private const string EmailVerifiedClaim = "email_verified";
 
     /// <summary>
     /// Links the provider to the signed-in person's own account: how an account that signs in with a password comes to
@@ -204,19 +208,20 @@ public static partial class Oidc
     /// What the provider says of the person, kept on their account at every sign-in: their email, so reports and email
     /// alerts reach them and follow a change made in the provider. And, when nobody has linked them to a Talk user yet,
     /// the Talk user with that same email, so a flow's "whoever it rang" and "whoever is free" reach them too; a Talk user
-    /// already linked to someone else is left as it is.
+    /// already linked to someone else is left as it is. Only an email the provider hasn't said is unchecked links a Talk
+    /// user: some providers let people set their own, and one could be a colleague's.
     /// </summary>
-    private static async Task SyncProfileAsync(UserManager<AppUser> users, TalkWatchDbContext db, AppUser user, string? email, Core.Talk.LineDirectory directory)
+    private static async Task SyncProfileAsync(UserManager<AppUser> users, TalkWatchDbContext db, AppUser user, string? email, bool notChecked, Core.Talk.LineDirectory directory)
     {
         email = email?.Trim();
         var changed = false;
         if (!string.IsNullOrEmpty(email) && email.Contains('@', StringComparison.Ordinal) && !string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase))
         {
-            (user.Email, user.NormalizedEmail, user.EmailConfirmed) = (email, users.NormalizeEmail(email), true);
+            (user.Email, user.NormalizedEmail, user.EmailConfirmed) = (email, users.NormalizeEmail(email), !notChecked);
             changed = true;
         }
 
-        if (user.TalkUserUuid is null && !string.IsNullOrEmpty(email)
+        if (user.TalkUserUuid is null && !notChecked && !string.IsNullOrEmpty(email)
             && directory.Users.FirstOrDefault(u => !u.HideFromUserList && string.Equals(u.Email?.Trim(), email, StringComparison.OrdinalIgnoreCase)) is { } talk
             && !await db.Users.AnyAsync(u => u.TalkUserUuid == talk.Uuid))
         {
@@ -296,7 +301,9 @@ public static partial class Oidc
             await users.AddToRoleAsync(user, wanted);
         }
 
-        await SyncProfileAsync(users, db, user, info.Principal.FindFirstValue(options.EmailClaim), directory);
+        // A provider that says nothing either way is taken at its word, as before; only one that says unchecked is not.
+        var notChecked = string.Equals(info.Principal.FindFirstValue(EmailVerifiedClaim), "false", StringComparison.OrdinalIgnoreCase);
+        await SyncProfileAsync(users, db, user, info.Principal.FindFirstValue(options.EmailClaim), notChecked, directory);
         await SyncGrantsAsync(db, site, user, access.Lines, now);
         return new Outcome(user, null);
     }
