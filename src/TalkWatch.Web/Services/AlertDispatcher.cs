@@ -418,7 +418,7 @@ public sealed partial class AlertDispatcher(
         if (channel.Kind == ChannelKind.Ntfy)
         {
             request.Content = new StringContent(message, Encoding.UTF8, "text/plain");
-            request.Headers.Add("Title", title);
+            request.Headers.Add("Title", NtfyText.Header(title));
             request.Headers.Add("Tags", "bell");
             request.Headers.Add("Priority", urgent ? "high" : "default");
             if (site.Value.PublicUrl is { } url)
