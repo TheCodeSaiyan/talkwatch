@@ -27,8 +27,9 @@ public sealed class ConsoleFetcher : IDisposable
     }
 
     /// <summary>
-    /// A handler that trusts the console's certificate only if its SHA-256 matches <paramref name="pinnedSha256"/>.
-    /// Consoles ship a self-signed certificate, so pinning is the safe alternative to turning validation off.
+    /// A handler that trusts the console's certificate only if its SHA-256 matches <paramref name="pinnedSha256"/>, and no
+    /// other certificate then, even one a public authority vouches for. Consoles ship a self-signed certificate, so
+    /// pinning is the safe alternative to turning validation off.
     /// </summary>
     public static HttpMessageHandler CreateHandler(string? pinnedSha256)
     {
@@ -36,9 +37,8 @@ public sealed class ConsoleFetcher : IDisposable
         if (pinnedSha256 is not null)
         {
             var pin = pinnedSha256.Replace(":", "", StringComparison.Ordinal).ToUpperInvariant();
-            handler.SslOptions.RemoteCertificateValidationCallback = (_, certificate, _, errors) =>
-                errors == SslPolicyErrors.None
-                || (certificate is not null && Convert.ToHexString(SHA256.HashData(certificate.GetRawCertData())) == pin);
+            handler.SslOptions.RemoteCertificateValidationCallback = (_, certificate, _, _) =>
+                certificate is not null && Convert.ToHexString(SHA256.HashData(certificate.GetRawCertData())) == pin;
         }
 
         return handler;
