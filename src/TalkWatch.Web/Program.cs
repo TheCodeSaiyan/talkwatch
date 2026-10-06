@@ -7,6 +7,22 @@ using TalkWatch.Data;
 using TalkWatch.Web.Components;
 using TalkWatch.Web.Services;
 
+// 'healthz': asks the TalkWatch running in this container whether it is up, for a container healthcheck, since the
+// image has no shell or curl. Exits 0 when /healthz answers OK.
+if (args is ["healthz"])
+{
+    var port = (Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORTS") ?? "8080").Split([';', ','])[0];
+    using var probe = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+    try
+    {
+        return (await probe.GetAsync(new Uri($"http://127.0.0.1:{port}/healthz"))).IsSuccessStatusCode ? 0 : 1;
+    }
+    catch (Exception e) when (e is HttpRequestException or TaskCanceledException)
+    {
+        return 1;
+    }
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Docker secrets: a file named after a setting, with __ for each level, supplies that setting and overrides the

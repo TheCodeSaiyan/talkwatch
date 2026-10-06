@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+# The passwords compose.yaml reads, one file each
+/secrets/
+
 # User-specific files
 *.rsuser
 *.suo

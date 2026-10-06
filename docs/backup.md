@@ -32,10 +32,11 @@ Any tool that backs up PostgreSQL and a Docker volume will do (restic, Proxmox B
 1. Stop TalkWatch, so that nothing writes while the restore runs: `docker compose stop talkwatch`.
 2. Restore the database into an empty one:
    ```sh
-   docker compose exec -T db dropdb -U talkwatch --maintenance-db=postgres --if-exists talkwatch
-   docker compose exec -T db createdb -U talkwatch --maintenance-db=postgres talkwatch
+   docker compose exec -T db dropdb -U postgres --if-exists talkwatch
+   docker compose exec -T db createdb -U postgres -O talkwatch talkwatch
    docker compose exec -T db pg_restore -U talkwatch --no-owner -d talkwatch < talkwatch-2026-09-30.dump
    ```
+   On an install made before `compose.yaml` had a `postgres` superuser, use `-U talkwatch` in the first two lines instead.
 3. Restore the audio folder into the volume:
    ```sh
    docker run --rm -v talkwatch_audio:/data/audio -v "$PWD":/backup alpine \
