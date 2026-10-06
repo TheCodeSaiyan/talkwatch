@@ -17,6 +17,8 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddHealthChecks();
 builder.Services.AddCascadingAuthenticationState();
+// An open page checks its sign-in every minute, so locking or demoting someone reaches pages they already have open.
+builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider, CircuitRevalidation>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.Configure<TalkOptions>(builder.Configuration.GetSection(TalkOptions.Section));
