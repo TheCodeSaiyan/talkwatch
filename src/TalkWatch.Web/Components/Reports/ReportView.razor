@@ -100,7 +100,11 @@
             }
             <tr>
                 <td style="padding: 12px 28px 0; font-size: 13px; color: @Fg2; line-height: 1.5;">
-                    A caller who gave up had waited @Seconds(s.Speed.MedianGiveUp) at the median. @s.Quality.Poor of @s.Quality.Scored scored calls had poor quality.
+                    @if (s.Speed.MedianGiveUp is { } gaveUp)
+                    {
+                        <text>A caller who gave up had waited @Seconds(gaveUp) at the median. </text>
+                    }
+                    @s.Quality.Poor of @s.Quality.Scored scored calls had poor quality.
                     @if (s.MissedByWeekdayAndHour.SelectMany(r => r).Any(c => c.Missed > 0))
                     {
                         <br />
