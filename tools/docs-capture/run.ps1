@@ -6,7 +6,8 @@
 # Starts the demo from the image (scripts/ci.sh builds talkwatch:ci) with a throwaway database, stages Node and
 # Playwright for the Sandbox, which drives its own Edge headless, waits for it to finish, makes the GIFs here, and
 # removes the demo. Results land in the staging folder's out\: review them before copying into docs/images.
-# -Only call-detail takes that one picture again rather than the whole set.
+# -Only call-detail takes that one picture again rather than the whole set; -Only guides takes the guides' pictures
+# (the Analytics panels, the editors, the Configure pages, the scenario bar and the alert pop-up) in a few minutes.
 param([string] $Image = 'talkwatch:ci', [int] $Port = 8088, [string] $Only)
 $ErrorActionPreference = 'Stop'
 $tool = $PSScriptRoot

@@ -34,3 +34,7 @@ Send the token as `Authorization: Bearer tw_…`. The API doesn't accept the sig
 ```sh
 curl -H "Authorization: Bearer $TOKEN" "https://talkwatch.example/api/v1/calls?since=2026-09-01T00:00:00Z"
 ```
+
+## Guides
+
+- [Using TalkWatch's data elsewhere](guides/integrations.md), with webhook signature checks and a DuckDB query

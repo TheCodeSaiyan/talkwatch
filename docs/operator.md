@@ -42,3 +42,8 @@ calls took them.
 
 TalkWatch reads Talk and never controls it. Answering and transferring stay on
 the handset.
+
+## Guides
+
+- [Running the front desk from one screen](guides/front-desk.md)
+- [Callers who give up at the switchboard](guides/switchboard.md)

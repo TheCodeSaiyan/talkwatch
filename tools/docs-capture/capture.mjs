@@ -67,7 +67,7 @@ async function record(page, name, run, { keep } = {}) {
   });
   await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 95, everyNthFrame: 1 });
   const area = keep ? await page.evaluate(keep) : null;
-  await run((kind) => marks.push({ kind, t: Date.now() }));
+  await run((kind, t = Date.now()) => marks.push({ kind, t }));
   await cdp.send('Page.stopScreencast');
   fs.writeFileSync(path.join(dir, 'index.json'), JSON.stringify({ frames, marks, area }, null, 1));
   log('recorded', name, frames.length, 'frames', marks.length, 'marks');
@@ -147,6 +147,157 @@ async function lightAndPhone() {
   } catch (e) {
     log('FAILED light and phone', e.message);
   }
+}
+
+// One part of a page, cut to the section a heading starts: the guides show the panel they talk about, not the page.
+async function part(page, route, heading, name, { pad = 0 } = {}) {
+  try {
+    if (route) await page.goto(base + route);
+    await settle(page);
+    const h = page.locator('main h2, main h3').filter({ hasText: heading }).first();
+    const box = await h.evaluate((el, pad) => {
+      const s = el.closest('section, article, .panel, .card') ?? el.parentElement;
+      s.scrollIntoView({ block: 'start', behavior: 'instant' });
+      // Clear of the rail, which stays at the top of the window and would otherwise cover the heading.
+      scrollBy(0, -(document.querySelector('.rail, header')?.getBoundingClientRect().bottom ?? 0) - pad - 8);
+      const b = s.getBoundingClientRect();
+      return { x: Math.max(0, b.left - pad), y: Math.max(0, b.top - pad), width: Math.min(innerWidth, b.width + pad * 2), height: Math.min(innerHeight, b.height + pad * 2) };
+    }, pad);
+    await shot(page, name, { clip: box, settleMs: 600 });
+  } catch (e) {
+    log('FAILED', name, route, heading, e.message);
+  }
+}
+
+// The pictures the guides use: a panel each, the editors at work, and the pages under Configure.
+async function guideShots(page) {
+  for (const [heading, name] of [['How fast are calls answered?', 'analytics-answered'], ['When are calls missed?', 'analytics-missed'],
+    ['When do calls come in?', 'analytics-hours'], ['How many calls a day?', 'analytics-days'],
+    ['Which lines get them?', 'analytics-lines']]) await part(page, '/dashboard', heading, name, { pad: 8 });
+  // Over 90 days, so the worst-scored calls have something to list.
+  await part(page, '/dashboard?days=90', 'How good was the audio?', 'analytics-quality', { pad: 8 });
+
+  // The pages the guides send people to under Reports and Configure.
+  await visit(page, '/reports', 'reports');
+  const copy = await page.locator('a[href^="/reports/runs/"]').first().getAttribute('href').catch(() => null);
+  if (copy) await visit(page, copy, 'report', { full: true });
+  await visit(page, '/admin/alerts', 'alert-channels');
+  await visit(page, '/admin/users', 'people');
+  await visit(page, '/admin/roles', 'roles');
+
+  // A caller on the call-back list given to someone, so the row says who's to ring them.
+  try {
+    await page.goto(base + '/callbacks');
+    await settle(page);
+    const select = page.locator('main select').first();
+    const someone = await select.locator('option').evaluateAll((os) => os.map((o) => o.value).find((v) => v && !/nobody/i.test(v)));
+    await select.selectOption(someone);
+    await page.locator('main button').filter({ hasText: 'Assign' }).first().click();
+    await shot(page, 'callbacks-assign');
+  } catch (e) { log('FAILED callbacks-assign', e.message); }
+
+  // A flow tried against the last week before it's switched on.
+  try {
+    await page.goto(base + '/flows');
+    const missed = await page.locator('section[aria-label="Missed calls"] a[href^="/flows/"]').first().getAttribute('href');
+    await page.goto(base + missed);
+    await settle(page);
+    await page.locator('[data-try]').click();
+    await page.locator('[data-dry-run]').waitFor({ timeout: 20000 });
+    await page.locator('.plane-foot').evaluate((el) => el.scrollIntoView({ block: 'end', behavior: 'instant' }));
+    await shot(page, 'flow-try', { settleMs: 400 });
+  } catch (e) { log('FAILED flow-try', e.message); }
+
+  await visit(page, '/reports/new', 'report-new');
+  // Each outside number folds away; the first is opened, to show what's set on one.
+  for (const [route, name] of [['/admin/outside-voicemail', 'outside-voicemail'], ['/admin/outside-phones', 'outside-phones']]) {
+    try {
+      await page.goto(base + route);
+      await settle(page);
+      await page.locator('main details > summary').first().click();
+      await shot(page, name, { full: true, settleMs: 500 });
+    } catch (e) { log('FAILED', name, e.message); }
+  }
+  await part(page, '/account', 'Alerts in TalkWatch', 'account-alerts', { pad: 8 });
+  await part(page, '/account', 'API tokens', 'account-tokens', { pad: 8 });
+
+  // The demo's scenario bar, which every other picture hides.
+  try {
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark' });
+    const bare = await context.newPage();
+    await bare.goto(base + '/signin');
+    await bare.fill('input[name=Username]:not([type=hidden])', 'alex.morgan');
+    await bare.fill('input[name=Password]:not([type=hidden])', 'docs-capture-passphrase');
+    await Promise.all([bare.waitForURL((u) => !u.pathname.startsWith('/signin')), bare.click('form:not(:has(input[type=hidden][name=Username])) button[type=submit]')]);
+    await bare.goto(base + '/live');
+    await settle(bare);
+    const box = await bare.locator('[data-demobar]').boundingBox();
+    await shot(bare, 'demo-bar', { clip: { x: 0, y: Math.max(0, box.y - 16), width: 1440, height: 900 - Math.max(0, box.y - 16) } });
+    await context.close();
+  } catch (e) { log('FAILED demo-bar', e.message); }
+}
+
+// A missed call arriving as an alert: the pop-up TalkWatch shows on any open page, from the demo's own missed-call
+// scenario and the example flow that notifies the signed-in person.
+async function alertPopup() {
+  try {
+    const page = await signedIn();
+    await page.goto(base + '/live');
+    await settle(page);
+    await record(page, 'alert-popup', async (mark) => {
+      // A pop-up already showing, from one of the demo's own calls, would leave nothing to see arrive.
+      await page.locator('[data-popup]').waitFor({ state: 'detached', timeout: 60000 }).catch(() => {});
+      const asked = Date.now();
+      await scenario(page, 'Missed call alert');
+      await page.locator('[data-popup]').waitFor({ timeout: 150000 });
+      const at = Date.now();
+      // From a moment before it arrives, so the eye is on the page when it does.
+      mark('start', at - 1500);
+      await wait(3500);
+      mark('end');
+      log('pop-up after', at - asked);
+    }, { keep: () => ({ x: Math.max(0, innerWidth - 820), y: 0, width: Math.min(innerWidth, 820), height: Math.min(innerHeight, 520) }) });
+    await page.context().close();
+  } catch (e) {
+    log('FAILED alert-popup', e.message);
+  }
+}
+
+// The call log filtered by a click: each filter becomes a chip, and the address carries it.
+async function filterRide(page) {
+  try {
+    await page.goto(base + '/calls');
+    await settle(page);
+    await record(page, 'calls-filter', async (mark) => {
+      await wait(600);
+      mark('start');
+      await page.locator('main a, main button, main label').filter({ hasText: /^Missed$/ }).first().click();
+      await wait(1600);
+      await page.locator('main a, main button, main label').filter({ hasText: /^Last 7 days$/ }).first().click();
+      await wait(2200);
+      mark('end');
+    }, { keep: () => ({ x: 0, y: 0, width: innerWidth, height: Math.min(innerHeight, 620) }) });
+  } catch (e) {
+    log('FAILED calls-filter', e.message);
+  }
+}
+
+if (process.env.TW_ONLY === 'guides') {
+  try {
+    // The sign-in page as the demo shows it, with the guest's button.
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark' });
+    await visit(await context.newPage(), '/signin', 'signin');
+    await context.close();
+  } catch (e) { log('FAILED signin', e.message); }
+  try {
+    const page = await signedIn();
+    await guideShots(page);
+    await filterRide(page);
+  } catch (e) { log('FAILED', e.stack); }
+  await alertPopup();
+  await browser.close();
+  log('done');
+  process.exit(0);
 }
 
 // TW_ONLY names one shot to take again, so a picture that came out badly needn't mean the whole run again.
@@ -280,7 +431,10 @@ try {
     await wait(240000);
   }, { keep: () => { const b = document.querySelector('[data-board]').getBoundingClientRect(); return { x: 0, y: Math.max(0, b.top - 8), width: innerWidth, height: Math.min(innerHeight - Math.max(0, b.top - 8), 760) }; } });
 
+  await guideShots(page);
+  await filterRide(page);
   await operatorRide();
+  await alertPopup();
   await lightAndPhone();
 } catch (e) {
   log('FAILED', e.stack);

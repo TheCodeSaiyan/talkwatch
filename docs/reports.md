@@ -69,3 +69,8 @@ It's built for mail clients rather than browsers, because that's where most copi
 - sends to people and to their own email channels, not to channels someone else set up, since a channel's address isn't theirs to send to.
 
 The editor shows, beside each person, the numbers they hold a role on, so it's clear who a number's report is for. Each copy is still built with its reader's own access, so choosing a person doesn't show them more than they could see anyway.
+
+## Guides
+
+- [A report in the manager's inbox](guides/reports-for-managers.md)
+- [Calls when you're closed](guides/out-of-hours.md), for counting only opening hours

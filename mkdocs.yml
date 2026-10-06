@@ -50,6 +50,20 @@ nav:
       - Deploying on Railway: railway.md
       - Configuration: configuration.md
       - Upgrading: upgrading.md
+  - What it can help with:
+      - All the guides: guides/index.md
+      - Getting back to every missed caller: guides/missed-callers.md
+      - Running the front desk from one screen: guides/front-desk.md
+      - Voicemail that can't wait: guides/voicemail.md
+      - Finding a call and what was said: guides/finding-a-call.md
+      - Seeing a bad day coming: guides/busy-line.md
+      - Callers who give up at the switchboard: guides/switchboard.md
+      - A report in the manager's inbox: guides/reports-for-managers.md
+      - Calls when you're closed: guides/out-of-hours.md
+      - Staff who answer on their mobiles: guides/mobiles.md
+      - Giving someone their own number: guides/one-number.md
+      - Knowing when the phones themselves go wrong: guides/phone-health.md
+      - Using TalkWatch's data elsewhere: guides/integrations.md
   - A tour:
       - Finding your way round: using.md
       - Now: now.md

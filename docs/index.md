@@ -38,6 +38,12 @@ happened, and everything else here is built on that.
 - **One number at a time** — a switcher on the rail narrows every call page to one of your numbers, and **Ctrl+K** opens a palette that searches calls, numbers and people and jumps to any page. See [Finding your way round](using.md).
 - **Retention** presets, CSV and Parquet export, and a read-only API.
 
+Each of these is put to work in [What it can help with](guides/index.md):
+twelve guides that start from a problem and end with the flow, report or
+setting that deals with it, and a scenario to try in the demo.
+
+![A caller presses 1 and then 2 on Operator, and rides from the menu to each option](images/operator-ride.gif)
+
 ## What it doesn't do yet
 
 - **Ring groups** are read from the console's configuration, and that's where everything TalkWatch does with them comes from: Operator's teams, "whoever in the group is free" in a flow, and which calls a grant on a group covers (a number or extension that routes to it). What isn't done yet is telling from a call record alone that it rang a group, because every captured call has its group field empty, so there's nothing to test that against.
@@ -48,5 +54,6 @@ happened, and everything else here is built on that.
 ## Where to start
 
 - [Try the demo](demo.md): the same image replaying a real console's capture, no console needed.
+- [See what it can help with](guides/index.md): guides that start from a problem, such as missed callers nobody rings back or callers hanging up in the menu, with the flow or report to copy.
 - [Install it](install.md) against your own console.
 - [Take the tour](using.md) of what's on each page.
