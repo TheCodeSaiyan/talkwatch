@@ -24,6 +24,17 @@ public sealed class TalkClient(HttpClient http)
     /// <summary>The console ended the session some other way (a refused WebSocket upgrade): sign in again next time.</summary>
     public void SessionEnded() => IsSignedIn = false;
 
+    /// <summary>
+    /// The settings changed, perhaps to another console: forget the account and session, so a refusal from the new one is
+    /// never answered by signing in to it with the old one's password.
+    /// </summary>
+    public void Forget()
+    {
+        IsSignedIn = false;
+        _credentials = null;
+        _csrfToken = null;
+    }
+
     public async Task SignInAsync(string username, string password, CancellationToken cancellationToken)
     {
         _credentials = (username, password);

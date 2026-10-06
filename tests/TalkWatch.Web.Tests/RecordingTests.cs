@@ -11,7 +11,7 @@ using TalkWatch.Web.Services;
 
 namespace TalkWatch.Web.Tests;
 
-public sealed class RecordingTests(TalkWatchApp talkwatch) : IClassFixture<TalkWatchApp>
+public sealed partial class RecordingTests(TalkWatchApp talkwatch) : IClassFixture<TalkWatchApp>
 {
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 

@@ -40,7 +40,7 @@ public sealed partial class TalkSession(
     // rather than after a back-off the old settings earned.
     private void SettingsChanged()
     {
-        _client.Value.SessionEnded();
+        _client.Value.Forget();
         status.BackOffUntil = null;
     }
 

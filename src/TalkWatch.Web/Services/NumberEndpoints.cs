@@ -8,9 +8,9 @@ using TalkWatch.Data;
 namespace TalkWatch.Web.Services;
 
 /// <summary>
-/// Who holds which role on a number. Site admins who manage people may set any; anyone else needs a role allowing it,
-/// on that number or site-wide, and may give or take away only roles within what they hold there themselves, so nobody
-/// can raise anyone, themselves included, above their own reach.
+/// Who holds which role on a number. Admins may set any; anyone else needs to manage people, or a role allowing it, on
+/// that number or site-wide, and may give or take away only roles within what they hold there themselves, on a number
+/// whose calls they see themselves, so nobody can raise anyone, themselves included, above their own reach.
 /// </summary>
 public static class NumberPeople
 {
@@ -28,11 +28,11 @@ public static class NumberPeople
 
     /// <summary>
     /// What this person may give or take away on a number, as per-number permissions; <see cref="Permission.All"/> for
-    /// a site admin who manages people; null when they may not manage the number at all.
+    /// an admin; null when they may not manage the number at all.
     /// </summary>
     public static async Task<Permission?> AuthorityAsync(TalkWatchDbContext db, RoleManager<IdentityRole<Guid>> roles, ClaimsPrincipal user, string did)
     {
-        if (user.Can(Permission.ManagePeople))
+        if (user.IsInRole(Roles.Admin))
         {
             return Permission.All;
         }
@@ -42,27 +42,37 @@ public static class NumberPeople
             return null;
         }
 
+        var held = await db.NumberRoles.Where(n => n.UserId == me && n.Did == did).Select(n => (Guid?)n.RoleId).FirstOrDefaultAsync();
         var onNumber = Permission.None;
-        if (await db.NumberRoles.Where(n => n.UserId == me && n.Did == did).Select(n => (Guid?)n.RoleId).FirstOrDefaultAsync() is { } roleId
-            && await roles.FindByIdAsync(roleId.ToString()) is { } role)
+        if (held is { } roleId && await roles.FindByIdAsync(roleId.ToString()) is { } role)
         {
             onNumber = await RolePermissions.GetAsync(roles, role);
         }
 
+        // A role on a number shows its calls, so giving one on a number whose calls they cannot see would be a way to.
+        if (held is null && !user.Can(Permission.AllCalls))
+        {
+            return null;
+        }
+
         var reach = (Permissions.Of(user) | onNumber) & Permissions.PerNumber;
-        return (reach & Permission.ManageNumberPeople) == Permission.ManageNumberPeople ? reach : null;
+        return user.Can(Permission.ManagePeople) || (reach & Permission.ManageNumberPeople) == Permission.ManageNumberPeople ? reach : null;
     }
 
     /// <summary>Whether a role's per-number permissions are all within this authority.</summary>
     public static bool Within(Permission role, Permission authority) =>
         authority == Permission.All || (role & Permissions.PerNumber & ~authority) == Permission.None;
 
-    /// <summary>The numbers this person may manage: every number for a site admin, else those their roles allow.</summary>
+    /// <summary>
+    /// The numbers this person may manage: every number for an admin, or for someone who chooses roles site-wide and sees
+    /// every call; else, of the numbers they hold a role on, those their roles allow.
+    /// </summary>
     public static async Task<List<string>> ManagedAsync(TalkWatchDbContext db, CurrentSite site, ClaimsPrincipal user)
     {
         var numbers = await db.Lines.IgnoreQueryFilters().Where(l => l.SiteId == site.Id && l.Kind == LineKind.Did && l.Present)
             .OrderBy(l => l.Key).Select(l => l.Key).ToListAsync();
-        if (user.Can(Permission.ManagePeople) || user.Can(Permission.ManageNumberPeople))
+        var siteWide = user.Can(Permission.ManagePeople) || user.Can(Permission.ManageNumberPeople);
+        if (user.IsInRole(Roles.Admin) || (siteWide && user.Can(Permission.AllCalls)))
         {
             return numbers;
         }
@@ -72,13 +82,13 @@ public static class NumberPeople
             return [];
         }
 
-        var mine = await NumberAccess.NumbersWith(db, me, Permission.ManageNumberPeople).ToListAsync();
+        var mine = await (siteWide ? db.NumberRoles.Where(n => n.UserId == me).Select(n => n.Did) : NumberAccess.NumbersWith(db, me, Permission.ManageNumberPeople)).ToListAsync();
         return [.. numbers.Where(mine.Contains)];
     }
 
     public static void MapNumbers(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/numbers").RequireAuthorization();
+        var group = app.MapGroup("/numbers").RequireAuthorization().CheckFormToken();
 
         group.MapPost("/people", async ([FromForm] SetForm form, HttpContext http, TalkWatchDbContext db, RoleManager<IdentityRole<Guid>> roles,
             UserManager<AppUser> users, CurrentSite site, Audit audit, TimeProvider clock) =>

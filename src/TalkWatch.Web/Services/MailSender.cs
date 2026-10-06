@@ -57,17 +57,21 @@ public sealed class MailSender(AlertSettingsStore settings, IOptions<SiteOptions
         // Revocation is not checked, as the mail client before this never did: a container often cannot reach the lists.
         using var client = new SmtpClient { Timeout = (int)Timeout.TotalMilliseconds, LocalDomain = GreetingName(options), CheckCertificateRevocation = false };
         var security = options.Port == 465 ? SecureSocketOptions.SslOnConnect : options.StartTls ? SecureSocketOptions.StartTls : SecureSocketOptions.None;
+
+        // The password would cross the network as it is, readable by anyone on the way, whatever the server would accept.
+        if (!string.IsNullOrEmpty(options.Username) && security == SecureSocketOptions.None)
+        {
+            throw new SmtpException($"TalkWatch signs in to the mail server {options.Host} only over an encrypted connection: turn STARTTLS on, use port 465, or clear the username if it needs none.");
+        }
+
         try
         {
             await client.ConnectAsync(options.Host, options.Port, security, cancellationToken);
             if (!string.IsNullOrEmpty(options.Username))
             {
-                // Most servers offer sign-in only once the connection is encrypted.
                 if (!client.Capabilities.HasFlag(SmtpCapabilities.Authentication))
                 {
-                    throw new SmtpException(security == SecureSocketOptions.None
-                        ? $"The mail server {options.Host} offers no sign-in on an unencrypted connection: turn STARTTLS on, or clear the username if it needs none."
-                        : $"The mail server {options.Host} offers no sign-in: clear the username if it needs none.");
+                    throw new SmtpException($"The mail server {options.Host} offers no sign-in: clear the username if it needs none.");
                 }
 
                 await client.AuthenticateAsync(options.Username, options.Password ?? "", cancellationToken);

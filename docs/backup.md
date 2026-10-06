@@ -1,11 +1,14 @@
 # Backing up and restoring TalkWatch
 
-TalkWatch keeps two things, and a backup needs both:
+TalkWatch keeps three things, and a backup needs all of them:
 
-1. **The PostgreSQL database**: calls, lines, people, grants, alerts, settings, and the keys that encrypt channel secrets and sign alert links. Without those keys, saved secrets and outstanding links stop working, so back up the database rather than recreating it.
+1. **The PostgreSQL database**: calls, lines, people, grants, alerts, settings, and the keys that encrypt saved credentials and sign alert links and sign-ins. Without those keys, saved secrets and outstanding links stop working, so back up the database rather than recreating it.
 2. **The audio folder** (`Audio__Path`, `/data/audio` in the image): the copied recordings and voicemail. The database indexes each file with its SHA-256.
+3. **The key those keys are encrypted with.** It's never in the database, so a copy of the database alone, a stray dump say, reads none of the saved passwords and tokens. Given as the `DataProtection__Key` secret, it's yours to keep with your other secrets. Otherwise TalkWatch made it on first start, in `.keys/data-protection.key` in the audio folder, and the audio backup below carries it. Lose it and the saved passwords on the Console and alert pages have to be typed again, and everyone signs in again; nothing else is lost.
 
 Nothing else is needed. Settings given as environment variables or secret files belong to your deployment, not to TalkWatch's backup.
+
+Keeping the database backup and the key apart is what keeps the credentials safe in a backup: anyone with both can read them, so store them in different places, or give the key as a secret and keep it with your other secrets.
 
 ## Taking a backup
 
@@ -29,10 +32,11 @@ Any tool that backs up PostgreSQL and a Docker volume will do (restic, Proxmox B
 1. Stop TalkWatch, so that nothing writes while the restore runs: `docker compose stop talkwatch`.
 2. Restore the database into an empty one:
    ```sh
-   docker compose exec -T db dropdb -U talkwatch --maintenance-db=postgres --if-exists talkwatch
-   docker compose exec -T db createdb -U talkwatch --maintenance-db=postgres talkwatch
+   docker compose exec -T db dropdb -U postgres --if-exists talkwatch
+   docker compose exec -T db createdb -U postgres -O talkwatch talkwatch
    docker compose exec -T db pg_restore -U talkwatch --no-owner -d talkwatch < talkwatch-2026-09-30.dump
    ```
+   On an install made before `compose.yaml` had a `postgres` superuser, use `-U talkwatch` in the first two lines instead.
 3. Restore the audio folder into the volume:
    ```sh
    docker run --rm -v talkwatch_audio:/data/audio -v "$PWD":/backup alpine \

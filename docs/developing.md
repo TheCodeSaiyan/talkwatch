@@ -42,6 +42,13 @@ documentation strictly, builds the image and checks the upgrade from the last
 release. It posts the result to GitHub as the commit's `local-ci` status, which
 the pull request shows.
 
+The tests run with the Docker socket, since Testcontainers starts PostgreSQL
+through it, and that gives the code under test the Docker host. So run
+`scripts/ci.sh` only on code you'd run yourself: your own branches, or a
+contributor's once you've read it. A contributor's pull request you haven't read
+belongs on GitHub's hosted runners (the CI workflow, run by hand), where it can
+reach nothing of yours.
+
 After a merge, `scripts/ci.sh --publish` on an up-to-date `main` does the same
 and pushes the image as `edge`, `live` and `demo` to the registry named by
 `REGISTRY_HOST` or `git config talkwatch.registry`. The maintainer's live and
@@ -51,6 +58,10 @@ behind on a tag it already thinks is current.
 A release is a tag. Pushing `v1.2.3` runs `.github/workflows/release.yml` on
 GitHub Actions: the tests and fixture guard again, the upgrade from the last
 release, images for amd64 and arm64 on GHCR, this site, and a GitHub release.
+
+## Dependencies
+
+Each project's `packages.lock.json` records every package it uses, those pulled in by others too, with its version and content hash. CI and the image build restore with `CI=true`, which holds them to those files: a package that has changed, or would be resolved differently, fails the build rather than slipping in. Changing a version in `Directory.Packages.props` and restoring updates the lock files; commit them with the change, after a look at what else moved.
 
 ## The pictures in these pages
 

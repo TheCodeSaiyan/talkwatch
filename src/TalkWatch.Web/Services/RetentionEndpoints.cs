@@ -20,7 +20,7 @@ public static class RetentionEndpoints
     public static void MapRetention(this IEndpointRouteBuilder app)
     {
         // A 404 stays a 404, rather than being re-run through the not-found page, whose antiforgery check turns it into a 400.
-        var retention = app.MapGroup("/admin/retention").RequireAuthorization(Permissions.Policy(Permission.ManageRetention)).WithMetadata(new SkipStatusCodePagesAttribute());
+        var retention = app.MapGroup("/admin/retention").RequireAuthorization(Permissions.Policy(Permission.ManageRetention)).WithMetadata(new SkipStatusCodePagesAttribute()).CheckFormToken();
 
         retention.MapPost("/", async ([FromForm] PolicyForm form, TalkWatchDbContext db, CurrentSite site, Audit audit, TimeProvider clock) =>
         {

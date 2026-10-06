@@ -7,6 +7,22 @@ using TalkWatch.Data;
 using TalkWatch.Web.Components;
 using TalkWatch.Web.Services;
 
+// 'healthz': asks the TalkWatch running in this container whether it is up, for a container healthcheck, since the
+// image has no shell or curl. Exits 0 when /healthz answers OK.
+if (args is ["healthz"])
+{
+    var port = (Environment.GetEnvironmentVariable("ASPNETCORE_HTTP_PORTS") ?? "8080").Split([';', ','])[0];
+    using var probe = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
+    try
+    {
+        return (await probe.GetAsync(new Uri($"http://127.0.0.1:{port}/healthz"))).IsSuccessStatusCode ? 0 : 1;
+    }
+    catch (Exception e) when (e is HttpRequestException or TaskCanceledException)
+    {
+        return 1;
+    }
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Docker secrets: a file named after a setting, with __ for each level, supplies that setting and overrides the
@@ -17,6 +33,8 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddHealthChecks();
 builder.Services.AddCascadingAuthenticationState();
+// An open page checks its sign-in every minute, so locking or demoting someone reaches pages they already have open.
+builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider, CircuitRevalidation>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.Configure<TalkOptions>(builder.Configuration.GetSection(TalkOptions.Section));
@@ -37,9 +55,7 @@ builder.Services.AddScoped<AccessScopeHolder>();
 builder.Services.AddScoped<IAccessScopeSource>(sp => sp.GetRequiredService<AccessScopeHolder>());
 builder.Services.AddDbContext<TalkWatchDbContext>(o => o.UseNpgsql(connectionString));
 
-builder.Services.AddDataProtection()
-    .SetApplicationName("TalkWatch")
-    .PersistKeysToDbContext<TalkWatchDbContext>();
+builder.AddKeyRing();
 
 builder.Services.AddIdentity<AppUser, IdentityRole<Guid>>(o =>
     {
@@ -56,7 +72,9 @@ builder.Services.AddIdentity<AppUser, IdentityRole<Guid>>(o =>
     .AddEntityFrameworkStores<TalkWatchDbContext>()
     // Password resets by an admin need a token provider; without one, setting a password failed with a server error.
     .AddDefaultTokenProviders()
-    .AddClaimsPrincipalFactory<SiteClaimsFactory>();
+    .AddClaimsPrincipalFactory<SiteClaimsFactory>()
+    // Two-factor keys and recovery codes are credentials too: kept encrypted, as everything else is.
+    .AddUserStore<ProtectedTokenUserStore>();
 builder.Services.ConfigureApplicationCookie(o =>
 {
     o.LoginPath = "/signin";
@@ -121,12 +139,17 @@ builder.Services.AddSingleton<ChannelSecrets>();
 builder.Services.AddSingleton<AlertLinks>();
 builder.Services.AddSingleton<BrowserAlerts>();
 builder.Services.AddSingleton<WebPushSender>();
-builder.Services.AddHttpClient(WebPushSender.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(15)).RemoveAllLoggers();
+// Push services are on the internet, never on the LAN: a browser's endpoint is a URL anyone signed in can hand over.
+builder.Services.AddHttpClient(WebPushSender.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(15))
+    .ConfigurePrimaryHttpMessageHandler(() => OutboundGuard.Handler(privateAllowed: false)).RemoveAllLoggers();
 builder.Services.AddSingleton<AlertSettingsStore>();
 builder.Services.AddSingleton<MailSender>();
 builder.Services.AddSingleton<AlertService>();
 // No request logging: a Telegram bot token is part of the URL, and an ntfy topic name is often the only secret it has.
-builder.Services.AddHttpClient(AlertDispatcher.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(15)).RemoveAllLoggers();
+builder.Services.AddHttpClient(AlertDispatcher.HttpClientName, c => c.Timeout = TimeSpan.FromSeconds(15))
+    .ConfigurePrimaryHttpMessageHandler(() => OutboundGuard.Handler(privateAllowed: true)).RemoveAllLoggers();
+builder.Services.AddHttpClient(AlertDispatcher.PublicHttpClientName, c => c.Timeout = TimeSpan.FromSeconds(15))
+    .ConfigurePrimaryHttpMessageHandler(() => OutboundGuard.Handler(privateAllowed: false)).RemoveAllLoggers();
 builder.Services.AddSingleton<AlertDispatcher>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<AlertDispatcher>());
 builder.Services.AddSingleton<RetentionService>();
@@ -157,6 +180,7 @@ if (args.Contains("check-audio"))
 await DatabaseStartup.CheckAudioAsync(app.Services, checksums: false, CancellationToken.None);
 
 app.UseProtection();
+app.UsePageMessages();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -178,6 +202,7 @@ app.MapHealthChecks("/healthz");
 app.MapStaticAssets();
 app.MapAccount();
 app.MapOidc();
+app.MapOidcLink();
 app.MapAudio();
 app.MapAdmin();
 app.MapAlertAdmin();

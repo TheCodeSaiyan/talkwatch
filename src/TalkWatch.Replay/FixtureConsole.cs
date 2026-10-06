@@ -88,6 +88,9 @@ public sealed class FixtureConsole : HttpMessageHandler
         }
     }
 
+    /// <summary>When the newest call happened, as captured or as last shifted; null with no calls.</summary>
+    public DateTimeOffset? NewestCallTime => _calls.Count == 0 ? null : _calls.Max(c => c.GetProperty("time").GetDateTimeOffset());
+
     /// <summary>
     /// Moves every call, and each of its events, by the same amount so that the newest happened at
     /// <paramref name="newestAt"/>: a demo then has calls from today rather than from when the capture was taken.

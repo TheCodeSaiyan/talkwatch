@@ -53,6 +53,7 @@ git archive --format=tar HEAD | docker run --rm -i \
     -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
     -e TALKWATCH_TEST_DATABASES=container-address \
     -e DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    -e CI=true \
     mcr.microsoft.com/dotnet/sdk:10.0 \
     sh -c 'mkdir /src && tar -x -C /src && cd /src \
         && dotnet build -c Release \
@@ -90,15 +91,17 @@ if $publish; then
     [ -n "$registry" ] || fail "--publish needs a registry: set REGISTRY_HOST, or git config talkwatch.registry <host>"
     target="$registry/talkwatch/talkwatch:edge"
     docker tag "$image" "$target"
-    docker push -q "$target" || fail "Push of $short to $registry failed"
+    docker push -q "$target" || fail "Push of $short as edge failed"
     # The same image under a tag for each stack that runs it. Both stacks ran edge from one Docker host: whichever pulled
     # it first left the other comparing the registry with a tag already up to date, so that one never redeployed. Each
     # on its own tag sees its own change.
     for stack in live demo; do
         docker tag "$image" "$registry/talkwatch/talkwatch:$stack"
-        docker push -q "$registry/talkwatch/talkwatch:$stack" || fail "Push of $short as $stack to $registry failed"
+        docker push -q "$registry/talkwatch/talkwatch:$stack" || fail "Push of $short as $stack failed"
     done
-    status success "Tested, built and pushed to $target, live and demo"
+    # The status is public, on the repository's commits: it says what was pushed, never where, since the registry is
+    # kept out of the repository. The line below is local, and says both.
+    status success "Tested, built and pushed as edge, live and demo"
     echo "local-ci: pushed $short as $target, live and demo"
 else
     status success "Tested and built on local Docker"

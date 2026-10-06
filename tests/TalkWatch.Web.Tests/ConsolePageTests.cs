@@ -221,6 +221,44 @@ public sealed partial class ConsolePageTests(TalkWatchApp talkwatch) : IClassFix
         Assert.True(await AsSystemAsync(app, db => db.Calls.AnyAsync(Ct)));
     }
 
+    // The console's password goes only over TLS, to a console its certificate vouches for.
+    [Fact]
+    public async Task The_console_is_reached_over_https_only()
+    {
+        var (app, admin) = await StartAsync();
+        await using var _ = app;
+        using var __ = admin;
+
+        var refused = await PostAsync(admin, "/admin/console", ("ConsoleUrl", "http://192.168.1.1"), ("Password", "a password from the page"));
+
+        Assert.Contains("https://", refused, StringComparison.Ordinal);
+        Assert.False(await AsSystemAsync(app, db => db.ConsoleSettings.AnyAsync(Ct)));
+    }
+
+    // Otherwise the saved password, or the one in the settings, would go to whatever address an admin typed: a way to read
+    // a password that is never shown.
+    [Fact]
+    public async Task Changing_the_consoles_address_needs_its_password_again()
+    {
+        var (app, admin) = await StartAsync(new Dictionary<string, string> { ["Talk:ConsoleUrl"] = "https://192.168.1.1" });
+        await using var _ = app;
+        using var __ = admin;
+
+        var moved = await PostAsync(admin, "/admin/console", ("ConsoleUrl", "https://elsewhere.example.test"));
+        var cleared = await PostAsync(admin, "/admin/console", ("ConsoleUrl", "https://elsewhere.example.test"), ("ClearPassword", "true"));
+        var target = await app.Services.GetRequiredService<ConsoleConnection>().GetAsync(Ct);
+
+        Assert.Contains("password again", moved, StringComparison.Ordinal);
+        Assert.Contains("password again", cleared, StringComparison.Ordinal);
+        Assert.Equal(new Uri("https://192.168.1.1"), target.Url);
+
+        var withPassword = await PostAsync(admin, "/admin/console", ("ConsoleUrl", "https://elsewhere.example.test"), ("Password", "the new console's password"));
+        var after = await app.Services.GetRequiredService<ConsoleConnection>().GetAsync(Ct);
+
+        Assert.Contains("Saved.", withPassword, StringComparison.Ordinal);
+        Assert.Equal((new Uri("https://elsewhere.example.test"), "the new console's password"), (after.Url, after.Password));
+    }
+
     // Test connection signs in afresh with what is saved and reads the console's versions: the whole way there at once.
     [Fact]
     public async Task Test_connection_signs_in_with_what_is_saved_and_says_what_the_console_runs()

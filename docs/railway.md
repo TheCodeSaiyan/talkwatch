@@ -62,6 +62,17 @@ and its addresses aren't published, so `Proxy__TrustedNetworks` stays unset
 - sign-in through an identity provider is refused, because the redirect back
   comes to `http://`. Use passwords and two-factor sign-in.
 
+The template sets `Site__PublicUrl` to the service's `https://` domain all
+the same. TalkWatch then marks its sign-in cookie for https only and tells
+browsers to keep to https, since it can't tell from the proxy that people come
+over https. Keep it set: without it, the sign-in cookie could go over plain
+`http://` to that domain, where anyone on the way could take it.
+
+The template also generates `DataProtection__Key`, the key TalkWatch's saved
+passwords and tokens are encrypted with, so it's kept with Railway's variables
+rather than on the volume. Keep it: changing or losing it means typing those
+passwords again, and everyone signs in again.
+
 ## Upgrades
 
 The TalkWatch service follows `latest`, as `compose.yaml` does. Turn on
@@ -69,7 +80,7 @@ automatic updates in the service's **Settings**, under **Source**, with a
 maintenance window out of the site's working hours: Railway then redeploys
 when a release moves `latest`. A pre-release never moves `latest`. To take only
 fixes, change the image to the minor version, such as
-`ghcr.io/thecodesaiyan/talkwatch:0.2`; see [Upgrading](upgrading.md).
+`ghcr.io/thecodesaiyan/talkwatch:1.2` for the 1.2 releases; see [Upgrading](upgrading.md).
 
 A redeploy has a short gap, under two minutes, because a service with a volume
 can't run two deployments at once. The console keeps its log, so TalkWatch

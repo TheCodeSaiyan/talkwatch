@@ -50,7 +50,7 @@ public static class CallBackEndpoints
     public static void MapCallBacks(this IEndpointRouteBuilder app)
     {
         // A 404 stays a 404, rather than being re-run through the not-found page, whose antiforgery check turns it into a 400.
-        var group = app.MapGroup("/callbacks").RequireAuthorization().WithMetadata(new SkipStatusCodePagesAttribute());
+        var group = app.MapGroup("/callbacks").RequireAuthorization().WithMetadata(new SkipStatusCodePagesAttribute()).CheckFormToken();
 
         group.MapPost("/done", async ([FromForm] DoneForm form, TalkWatchDbContext db, AlertService alerts, Audit audit, TimeProvider clock, HttpContext http, CancellationToken cancellationToken) =>
         {

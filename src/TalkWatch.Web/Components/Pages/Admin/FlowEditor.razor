@@ -19,6 +19,7 @@
 @inject AlertService Alerting
 @inject Microsoft.Extensions.Options.IOptions<SiteOptions> SiteSettings
 @inject NavigationManager Navigation
+@inject Microsoft.AspNetCore.DataProtection.IDataProtectionProvider Protection
 @inject LineDirectorySync Directory
 
 <PageTitle>@(Id is null ? "New flow" : "Edit flow") · TalkWatch</PageTitle>
@@ -298,7 +299,7 @@ else if (_loaded)
                 return;
             }
 
-            Navigation.NavigateTo($"/flows?msg={Uri.EscapeDataString("Flow saved.")}", forceLoad: true);
+            Navigation.NavigateTo(PageMessages.WithMessage(Protection, "/flows", "Flow saved."), forceLoad: true);
         }
         finally
         {

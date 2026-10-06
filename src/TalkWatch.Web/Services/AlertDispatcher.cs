@@ -36,6 +36,9 @@ public sealed partial class AlertDispatcher(
 {
     public const string HttpClientName = "alerts";
 
+    /// <summary>For a channel someone owns who doesn't manage every alert: public addresses only (<see cref="OutboundGuard"/>).</summary>
+    public const string PublicHttpClientName = "alerts-public";
+
     private const int MaxChatText = 3500, MaxEmailText = 20000;
 
     /// <summary>A voicemail as an email carries it.</summary>
@@ -73,6 +76,29 @@ public sealed partial class AlertDispatcher(
 
     // The largest voicemail an email takes as an attachment; a longer one is a link instead.
     private const long MaxAttachment = 10 * 1024 * 1024;
+
+    /// <summary>
+    /// Whether a channel may reach the LAN's private addresses: a site channel, or one owned by someone who manages every
+    /// alert, may, as a self-hosted ntfy or Home Assistant needs. Anyone else's reaches public addresses only, so a
+    /// Manager's channel is no way into the network TalkWatch sits on.
+    /// </summary>
+    private async Task<bool> MayReachTheLanAsync(AlertChannel channel, CancellationToken cancellationToken)
+    {
+        if (channel.OwnerUserId is not { } owner)
+        {
+            return true;
+        }
+
+        using var scope = scopes.CreateScope();
+        scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UseSystemScope();
+        var db = scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>();
+        var permissions = RolePermissions.Of(await (
+            from ur in db.UserRoles
+            join rc in db.RoleClaims on ur.RoleId equals rc.RoleId
+            where ur.UserId == owner
+            select new System.Security.Claims.Claim(rc.ClaimType!, rc.ClaimValue!)).ToListAsync(cancellationToken));
+        return permissions.HasFlag(Permission.ManageAlerts);
+    }
 
     /// <summary>
     /// The summary, what was said and the voicemail, as the channel's owner may read and hear them: through their own
@@ -386,13 +412,13 @@ public sealed partial class AlertDispatcher(
                 return;
         }
 
-        var client = http.CreateClient(HttpClientName);
+        var client = http.CreateClient(await MayReachTheLanAsync(channel, cancellationToken) ? HttpClientName : PublicHttpClientName);
         using var request = new HttpRequestMessage(HttpMethod.Post, channel.Target);
         request.Options.Set(Telemetry.NotTraced, true);
         if (channel.Kind == ChannelKind.Ntfy)
         {
             request.Content = new StringContent(message, Encoding.UTF8, "text/plain");
-            request.Headers.Add("Title", title);
+            request.Headers.Add("Title", NtfyText.Header(title));
             request.Headers.Add("Tags", "bell");
             request.Headers.Add("Priority", urgent ? "high" : "default");
             if (site.Value.PublicUrl is { } url)
@@ -402,6 +428,12 @@ public sealed partial class AlertDispatcher(
 
             if (secret is not null)
             {
+                // A channel saved before tokens needed https: its token is still not sent in clear.
+                if (request.RequestUri?.Scheme != Uri.UriSchemeHttps)
+                {
+                    throw new InvalidOperationException("An ntfy token is sent only over https: give the topic's https address.");
+                }
+
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", secret);
             }
         }
@@ -550,7 +582,7 @@ public sealed partial class AlertDispatcher(
             return;
         }
 
-        var client = http.CreateClient(HttpClientName);
+        var client = http.CreateClient(await MayReachTheLanAsync(channel, cancellationToken) ? HttpClientName : PublicHttpClientName);
         using var request = new HttpRequestMessage(HttpMethod.Post, channel.Target);
         request.Options.Set(Telemetry.NotTraced, true);
 
@@ -604,6 +636,12 @@ public sealed partial class AlertDispatcher(
 
                 if (secret is not null)
                 {
+                    // A channel saved before tokens needed https: its token is still not sent in clear.
+                    if (request.RequestUri?.Scheme != Uri.UriSchemeHttps)
+                    {
+                        throw new InvalidOperationException("An ntfy token is sent only over https: give the topic's https address.");
+                    }
+
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", secret);
                 }
 

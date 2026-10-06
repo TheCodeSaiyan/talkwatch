@@ -349,9 +349,10 @@ public sealed class TalkWatchDbContext(DbContextOptions<TalkWatchDbContext> opti
             e.HasIndex(r => new { r.ReportId, r.CreatedAt });
             e.Property(r => r.ReportName).HasMaxLength(100);
             e.HasOne<Report>().WithMany().HasForeignKey(r => r.ReportId).OnDelete(DeleteBehavior.Cascade);
-            // And the copies of the reports they set up on their own numbers.
-            e.HasQueryFilter(r => r.SiteId == ScopeSiteId && (ScopeManageReports || (r.AudienceUserId != null && r.AudienceUserId == ScopeUserId)
-                || Set<Report>().Any(rep => rep.Id == r.ReportId)));
+            // A copy is built for one person's access, or the whole site's: anyone else reads it only if they see every call,
+            // and manage reports or the ones on their own numbers. Setting reports up is not a way to see more calls.
+            e.HasQueryFilter(r => r.SiteId == ScopeSiteId && ((r.AudienceUserId != null && r.AudienceUserId == ScopeUserId)
+                || (ScopeAllCalls && (ScopeManageReports || Set<Report>().Any(rep => rep.Id == r.ReportId)))));
         });
 
         // Emailing a copy: seen with the copy, so by the person it was for and by those who manage reports.

@@ -62,7 +62,8 @@ public sealed class AudioCheck(TalkWatchDbContext db, AudioStore store, TimeProv
         var orphans = Directory.Exists(store.Root)
             ? Directory.EnumerateFiles(store.Root, "*", SearchOption.AllDirectories)
                 .Select(f => Path.GetRelativePath(store.Root, f).Replace('\\', '/'))
-                .Where(f => !f.StartsWith(".incoming/", StringComparison.Ordinal) && !known.Contains(f))
+                // .keys holds the key the credentials are encrypted with, when TalkWatch made it (KeyEncryptionKey).
+                .Where(f => !f.StartsWith(".incoming/", StringComparison.Ordinal) && !f.StartsWith(".keys/", StringComparison.Ordinal) && !known.Contains(f))
                 .Order(StringComparer.Ordinal)
                 .ToList()
             : [];

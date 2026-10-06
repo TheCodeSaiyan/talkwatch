@@ -19,15 +19,15 @@
   "host_device_name": "Emerson22",
   "host_device_model": "UDMPRO",
   "host_device_serial": "248be4d2a835",
-  "anonymous_controller_id": "f5d45baf-a6ee-4d60-82bf-2ceff26a4b5e",
-  "owner_sso_id": "498f450d-f4f0-4105-b7a7-d67dbb63d1ce",
+  "anonymous_controller_id": "cda5f7b3-9bd9-6f35-a2cc-30227120aaa8",
+  "owner_sso_id": "670478ec-c5b8-21ba-30ee-a50f54a1f1b2",
   "uid_adopted": true,
   "uid": {
     "keep_users": true,
     "env": {
       "name": "Casey57",
-      "api": "https://tatux.ui.com/gw",
-      "admin_portal": "https://tatux.ui.com/cloud",
+      "api": "https://example.ui.com/gw",
+      "admin_portal": "https://example.ui.com/cloud",
       "login_portal": ""
     }
   },

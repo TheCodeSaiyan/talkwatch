@@ -6,5 +6,13 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <IsPackable>false</IsPackable>
+    <!-- Every package, those pulled in by others too, at the version and content hash recorded in each project's
+         packages.lock.json. CI and the image build (CI=true) refuse a restore that would change one; a developer's
+         restore updates the file, to be read and committed with the change that caused it. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
+    <!-- The platforms the image is built for, so the lock files hold their packages too: the image's restore names one,
+         for every project it builds. -->
+    <RuntimeIdentifiers>linux-x64;linux-arm64</RuntimeIdentifiers>
   </PropertyGroup>
 </Project>

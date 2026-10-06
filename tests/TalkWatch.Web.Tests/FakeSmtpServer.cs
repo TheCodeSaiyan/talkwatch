@@ -5,8 +5,8 @@ using System.Text;
 namespace TalkWatch.Web.Tests;
 
 /// <summary>
-/// Just enough SMTP to receive a message from SmtpClient on the loopback: no TLS, no authentication. Keeps each
-/// message's envelope recipients and raw data.
+/// Just enough SMTP to receive a message from SmtpClient on the loopback: no TLS, and sign-in only when asked to offer
+/// it, unencrypted as some servers do. Keeps each message's envelope recipients and raw data, and each sign-in tried.
 /// </summary>
 public sealed class FakeSmtpServer : IAsyncDisposable
 {
@@ -16,8 +16,11 @@ public sealed class FakeSmtpServer : IAsyncDisposable
     private readonly CancellationTokenSource _stop = new();
     private readonly Task _loop;
 
-    public FakeSmtpServer()
+    private readonly bool _offersSignIn;
+
+    public FakeSmtpServer(bool offersSignIn = false)
     {
+        _offersSignIn = offersSignIn;
         _listener.Start();
         _loop = Task.Run(AcceptAsync);
     }
@@ -28,6 +31,9 @@ public sealed class FakeSmtpServer : IAsyncDisposable
 
     /// <summary>Each EHLO or HELO line it was greeted with.</summary>
     public List<string> Greetings { get; } = [];
+
+    /// <summary>Each AUTH line a client sent, password and all.</summary>
+    public List<string> SignIns { get; } = [];
 
     private async Task AcceptAsync()
     {
@@ -63,7 +69,11 @@ public sealed class FakeSmtpServer : IAsyncDisposable
             {
                 case "EHLO" or "HELO":
                     Greetings.Add(line);
-                    await writer.WriteLineAsync("250 fake");
+                    await writer.WriteLineAsync(_offersSignIn ? "250-fake\r\n250 AUTH PLAIN" : "250 fake");
+                    break;
+                case "AUTH":
+                    SignIns.Add(line);
+                    await writer.WriteLineAsync("235 signed in");
                     break;
                 case "RCPT":
                     to.Add(line[(line.IndexOf(':', StringComparison.Ordinal) + 1)..].Trim().Trim('<', '>'));

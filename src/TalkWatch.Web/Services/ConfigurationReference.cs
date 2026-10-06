@@ -15,7 +15,7 @@ public static partial class ConfigurationReference
     /// <summary>Every options class, in the order the reference lists them.</summary>
     public static readonly Type[] Sections =
     [
-        typeof(TalkOptions), typeof(SiteOptions), typeof(BootstrapOptions), typeof(DatabaseOptions), typeof(AudioOptions),
+        typeof(TalkOptions), typeof(SiteOptions), typeof(BootstrapOptions), typeof(DatabaseOptions), typeof(AudioOptions), typeof(KeyRingOptions),
         typeof(ProxyOptions), typeof(SignInLimitOptions), typeof(SmtpOptions), typeof(TelegramOptions), typeof(OidcOptions), typeof(DemoOptions),
     ];
 
@@ -81,7 +81,7 @@ public static partial class ConfigurationReference
             var defaults = Activator.CreateInstance(options);
             foreach (var setting in Settings(options))
             {
-                var secret = SecretNames.Any(s => setting.Name.Contains(s, StringComparison.Ordinal)) ? " **Secret:** give it as a file." : "";
+                var secret = SecretNames.Any(s => setting.Name.Contains(s, StringComparison.Ordinal)) || setting.Name == "Key" ? " **Secret:** give it as a file." : "";
                 md.Append(CultureInfo.InvariantCulture,
                     $"| `{SectionOf(options)}__{setting.Name}` | {Default(setting.GetValue(defaults))} | {Describe(docs, setting)}{secret} |\n");
             }

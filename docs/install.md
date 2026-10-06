@@ -25,18 +25,27 @@ The fingerprint changes if the console's certificate is regenerated, and TalkWat
 
 ## 3. Start it
 
+Passwords go in files, one each in `secrets/` beside `compose.yaml`, never in `.env` or the environment, where anyone who can list processes or inspect a container reads them. Git ignores the folder.
+
 ```sh
+mkdir -p secrets
+# The database's: PostgreSQL's own superuser, and the role TalkWatch signs in as. No line ending in any of these:
+# it would be part of the password.
+openssl rand -base64 32 | tr -d '\r\n/+=' > secrets/db_admin_password
+openssl rand -base64 32 | tr -d '\r\n/+=' > secrets/db_password
+# The console account's password, or an empty file to give it on the Console page instead.
+printf '%s' 'the console password' > secrets/talk_password
+# The first admin's, at least 12 characters, read on the first start only.
+printf '%s' 'a long first password' > secrets/admin_password
+chmod 600 secrets/*
+
 cp .env.example .env    # then fill it in
 docker compose up -d
 ```
 
-`.env` holds passwords, so git ignores it. At a minimum, set:
+In `.env`, set `TALK_CONSOLE_URL`, `TALK_USERNAME` and `TALK_CERTIFICATE_SHA256`, `BOOTSTRAP_ADMIN_USERNAME`, and `SITE_PUBLIC_URL` once a reverse proxy is in front. The console's address, account and fingerprint can instead be given after the first start, on **Configure → Console**, which wins over these. Every setting is in [Configuration](configuration.md); any of them can be a file in `/run/secrets` named after it, such as `Talk__Password`, which wins over the environment.
 
-- `DB_PASSWORD` — any long random value; it never leaves the two containers.
-- `TALK_CONSOLE_URL`, `TALK_USERNAME`, `TALK_PASSWORD` and `TALK_CERTIFICATE_SHA256`.
-- `BOOTSTRAP_ADMIN_USERNAME` and `BOOTSTRAP_ADMIN_PASSWORD` (at least 12 characters) — the first admin account, made on the first start only. Remove the password afterwards.
-
-The console's address, account and fingerprint can instead be given after the first start, on **Configure → Console**, which wins over these. Every setting is in [Configuration](configuration.md). In production, give the passwords as files rather than environment variables: a file in `/run/secrets` named after the setting, such as `Talk__Password`, overrides the environment, and Docker secrets land there by default.
+On the first start, PostgreSQL makes a `talkwatch` role that owns TalkWatch's database and nothing else, so a fault in TalkWatch can't reach the rest of the server. TalkWatch makes a key for the credentials it saves, in `.keys` on the audio volume; to keep it with your other secrets instead, add `DataProtection__Key` as a secret before the first start (see [Backing up](backup.md)). The TalkWatch container runs with a read-only file system and no Linux capabilities, and reports its health to Docker.
 
 ## 4. The first start
 

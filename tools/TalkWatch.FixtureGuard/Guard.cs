@@ -43,6 +43,11 @@ public static partial class Guard
     // Short runs are left alone: extensions and ring-group numbers are internal, not personal.
     // Only a neighbouring digit ends a match, not a letter: a number glued to text, such as the %2B-encoded
     // plus in a query string, must still be found. A long digit run inside an identifier is the price.
+    // A MAC written out, or bare in a field named for one. A manufacturer's names a real device; a pseudonymised one is
+    // locally administered (its first byte has the 02 bit set), which no manufacturer assigns.
+    [GeneratedRegex(@"\b(?:[0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}\b|(?<=""[A-Za-z_]*mac[A-Za-z_]*""\s*:\s*"")[0-9A-Fa-f]{12}(?="")", RegexOptions.IgnoreCase)]
+    private static partial Regex MacAddress();
+
     [GeneratedRegex(@"(?<![\d+])\+?\(?\d(?:[ \-.()]{0,2}\d){8,14}(?!\d)")]
     private static partial Regex PhoneLike();
 
@@ -96,6 +101,14 @@ public static partial class Guard
         foreach (var line in lines)
         {
             lineNumber++;
+            foreach (Match mac in MacAddress().Matches(line))
+            {
+                if ((Convert.ToByte(mac.Value[..2], 16) & 0x02) == 0)
+                {
+                    yield return new Finding(path, lineNumber, mac.Value, "a manufacturer's MAC address; pseudonymise it to a locally administered one (02:...)");
+                }
+            }
+
             foreach (var (index, value) in FindPhoneLike(line))
             {
                 if (!ReservedNumbers.IsReserved(value) && !allowed.Contains(value) && !IsJsonTimestamp(line, index, value)

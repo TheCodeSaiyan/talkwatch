@@ -84,7 +84,9 @@ public static class ApiEndpoints
     public static void AddApi(this WebApplicationBuilder builder)
     {
         builder.Services.AddAuthentication().AddScheme<AuthenticationSchemeOptions, ApiTokenHandler>(ApiTokens.Scheme, null);
-        builder.Services.AddAuthorizationBuilder().AddPolicy(ApiTokens.Policy, p => p.AddAuthenticationSchemes(ApiTokens.Scheme).RequireAuthenticatedUser());
+        // Making tokens is a permission: taken from a role, its members' tokens stop working, not just new ones being made.
+        builder.Services.AddAuthorizationBuilder().AddPolicy(ApiTokens.Policy, p => p.AddAuthenticationSchemes(ApiTokens.Scheme).RequireAuthenticatedUser()
+            .RequireAssertion(c => c.User.Can(Permission.ApiTokens)));
     }
 
     public static void MapApi(this IEndpointRouteBuilder app)
@@ -97,7 +99,8 @@ public static class ApiEndpoints
             var end = (until ?? clock.GetUtcNow()).ToUniversalTime();
             var start = (since ?? end.AddDays(-7)).ToUniversalTime();
             var size = Math.Clamp(pageSize ?? 100, 1, MaxPageSize);
-            var number = Math.Max(page ?? 0, 0);
+            // Past the end is an empty page; a page number too big to multiply by the size would be a server error instead.
+            var number = Math.Clamp(page ?? 0, 0, (int.MaxValue / MaxPageSize) - 1);
             var query = db.Calls.AsNoTracking().Where(c => c.Time >= start && c.Time < end);
             var total = await query.CountAsync();
             var calls = await query.OrderByDescending(c => c.Time).Skip(number * size).Take(size).Include(c => c.Lines).ToListAsync();

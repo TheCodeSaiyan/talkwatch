@@ -333,7 +333,8 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        Page = Math.Max(0, Page);
+        // Past the end is an empty page; one too big to multiply by the page size would be a server error instead.
+        Page = Math.Clamp(Page, 0, (int.MaxValue / PageSize) - 1);
         var calls = Db.Calls.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(Q))
         {

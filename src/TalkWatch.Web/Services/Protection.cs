@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -36,6 +38,15 @@ public static class Protection
             trusted.ForEach(o.KnownIPNetworks.Add);
         });
 
+        // Reached over https, as the public address says: the sign-in cookies are sent over https alone, whatever scheme
+        // TalkWatch sees behind its proxy. Without this, a proxy whose forwarded headers aren't trusted, such as Railway's,
+        // left the sign-in cookie free to go over plain http, where anyone on the way could take it. (Not the antiforgery
+        // cookie: it refuses to be made at all on a request that looks like http, which would break every form there.)
+        if (ServedOverHttps(builder.Configuration))
+        {
+            builder.Services.PostConfigureAll<CookieAuthenticationOptions>(o => o.Cookie.SecurePolicy = CookieSecurePolicy.Always);
+        }
+
         var perMinute = (builder.Configuration.GetSection(SignInLimitOptions.Section).Get<SignInLimitOptions>() ?? new()).AttemptsPerMinute;
         builder.Services.AddRateLimiter(o =>
         {
@@ -50,9 +61,33 @@ public static class Protection
         });
     }
 
+    /// <summary>
+    /// Refuses a form post without the page's antiforgery token, with 400. .NET checks the token itself only on an endpoint
+    /// that reads a form, so one that takes nothing but its address (lock, delete, sweep, sign out) was protected by the
+    /// SameSite=Strict cookie alone, which a site on a sibling subdomain gets past. JSON is left alone: no other site can
+    /// send it without the browser asking first.
+    /// </summary>
+    public static TBuilder CheckFormToken<TBuilder>(this TBuilder builder) where TBuilder : IEndpointConventionBuilder =>
+        builder.AddEndpointFilter(async (context, next) =>
+        {
+            var http = context.HttpContext;
+            if (HttpMethods.IsPost(http.Request.Method) && !(http.Request.ContentType?.StartsWith("application/json", StringComparison.OrdinalIgnoreCase) ?? false)
+                && !await http.RequestServices.GetRequiredService<IAntiforgery>().IsRequestValidAsync(http))
+            {
+                return Results.BadRequest();
+            }
+
+            return await next(context);
+        });
+
+    /// <summary>Whether people reach TalkWatch over https, as Site__PublicUrl says.</summary>
+    private static bool ServedOverHttps(IConfiguration configuration) =>
+        configuration.GetSection(SiteOptions.Section).Get<SiteOptions>()?.PublicUrl?.Scheme == Uri.UriSchemeHttps;
+
     /// <summary>First in the pipeline: every response, errors and static files included, carries the headers.</summary>
     public static void UseProtection(this WebApplication app)
     {
+        var https = ServedOverHttps(app.Configuration);
         app.UseForwardedHeaders();
         app.Use(async (context, next) =>
         {
@@ -75,6 +110,12 @@ public static class Protection
                 // Alert links carry their token in the path; no page here should hand its address to another site.
                 headers["Referrer-Policy"] = "no-referrer";
                 headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()";
+                // A browser that has been here over https comes back over https, before any cookie can go in the clear.
+                // Sent on every response, as the proxy in front may not say the request was https.
+                if (https)
+                {
+                    headers.StrictTransportSecurity = "max-age=31536000";
+                }
                 return Task.CompletedTask;
             });
             await next();

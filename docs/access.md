@@ -14,7 +14,7 @@ A role says what someone may do and see beyond the lines granted to them. Each h
 | Make API tokens | for scripts and other tools |
 | Mark missed callers done | on the call-back list, and assign them to someone |
 | Set up their own alerts | channels and flows for their own lines |
-| Manage every alert | and the mail and Telegram settings |
+| Manage every alert | every channel and flow; the mail and Telegram settings stay with admins |
 | Manage people | people, roles, grants and group mappings |
 | Manage retention | how long calls and audio are kept |
 | Set up reports | reports and their schedules, and every copy |
@@ -25,6 +25,10 @@ Three roles are built in:
 - **Admin** — every permission. It can't be changed, so there's always someone who can put things right, and the last Admin can't be demoted.
 - **Manager** — starts as it always was: its lines, export, API tokens, call-backs, and alerts for its own lines.
 - **Viewer** — starts as it always was: its lines, export, API tokens and call-backs.
+
+Someone who manages people without being an Admin hands out no more than they hold. They can't make anyone an Admin, tick a permission on a role that their own role lacks, grant a line they can't see themselves (or its recordings, voicemail or transcripts, if they can't hear or read them), or change the account of someone whose role, lines or numbers reach further than theirs: an Admin's password, say. Without that, managing people would be a way to become an Admin.
+
+Someone who manages every alert, without reading every transcript, can't build a flow that sends what was said, or tests for it; without hearing every voicemail, they can't build one that sends the voicemail. A channel that belongs to nobody is sent what the whole site holds, so managing alerts would otherwise be a way round both.
 
 Manager and Viewer can be changed, and admins can add roles of their own: a *Supervisor* who sees every call and hears every recording but reads no transcripts and changes nothing, say. A role someone holds can't be removed until they have another. A change holds from the next page someone opens: permissions are read from their roles on every request rather than kept from when they signed in, so nobody has to sign out and back in, and nobody is signed out for it.
 
@@ -52,7 +56,7 @@ A role on a number shows that number's calls: those that came in on it, and thos
 
 On a number, a role only does what's about that number's calls: hearing recordings and voicemail, reading transcripts, exporting, marking and assigning call-backs, setting up their own alerts and flows, setting up reports for it, and choosing who holds which role on it. Anything else the role holds, such as managing people or retention, is ignored there, so a role on a number can never reach the rest of the site. Site-wide permissions stay site-wide.
 
-Someone may give roles on a number if they manage people, or if a role of theirs, on that number or site-wide, lets them choose who holds roles. Without managing people, they can only give or take away roles that are within what they hold there themselves, so nobody can raise anyone, themselves included, above their own reach.
+Someone may give roles on a number if they manage people, or if a role of theirs, on that number or site-wide, lets them choose who holds roles. They can only give or take away roles that are within what they hold there themselves, and only on a number whose calls they see themselves, by seeing every call or holding a role on it, so nobody can raise anyone, themselves included, above their own reach. Only an Admin gives any role on any number.
 
 Roles on numbers are read on every page, as grants are, so taking one away holds from the next page. They start empty: an upgrade changes nobody's access.
 
@@ -98,8 +102,8 @@ Groups decide who gets in, with what role and which lines, at every sign-in:
 
 Lines from groups follow the groups: joining a group in the provider grants its lines at the next sign-in, and leaving it takes them away, so access is managed in one place. They're shown on the person's page as *from group …* and can't be changed there. Lines given by hand on a person's page are kept apart and never touched by a sign-in. A change to the mappings reaches each member at their next sign-in.
 
-A first sign-in links to an existing account with the same username, or makes a new one. After that, the provider's own identifier for the person finds the account, so renaming them in the provider doesn't lose it. The provider's checks stand in for TalkWatch's two-factor code.
+A first sign-in makes a new account, named by the provider's username. It doesn't take over an existing account of the same name that signs in with a password, since some providers let people choose their own username, and someone calling themselves *admin* there would otherwise be the admin here, password and two-factor code skipped. To sign in through the provider to an account like that, sign in with its password and press **Link** under **Account**. After that, the provider's own identifier for the person finds the account, so renaming them in the provider doesn't lose it. The provider's checks stand in for TalkWatch's two-factor code.
 
-Every sign-in also keeps the person's email from the provider (`Oidc__EmailClaim`, `email` unless you say otherwise), so reports and email alerts can reach an account the provider made. And when nobody has linked the person to a Talk user yet, the Talk user with the same email is linked, so flows that tell *whoever it rang* reach them without anyone setting it by hand. A Talk user already linked to someone else is left alone.
+Every sign-in also keeps the person's email from the provider (`Oidc__EmailClaim`, `email` unless you say otherwise), so reports and email alerts can reach an account the provider made. And when nobody has linked the person to a Talk user yet, the Talk user with the same email is linked, so flows that tell *whoever it rang* reach them without anyone setting it by hand. A Talk user already linked to someone else is left alone, and so is an email the provider says it hasn't checked (`email_verified` false): some providers let people set their own, and it could be a colleague's. Link such a person by hand on their page.
 
 Behind a reverse proxy, `Proxy__TrustedNetworks` must include the proxy; see [Behind a reverse proxy](proxy.md).

@@ -135,6 +135,7 @@ public sealed partial class AlertTests(TalkWatchApp talkwatch) : IClassFixture<T
             s.AddSingleton(sp => ActivatorUtilities.CreateInstance<AlertDispatcher>(sp, (TimeProvider)clock));
             s.AddSingleton(sp => ActivatorUtilities.CreateInstance<ConsoleHealthMonitor>(sp, (TimeProvider)clock));
             s.AddHttpClient(AlertDispatcher.HttpClientName).ConfigurePrimaryHttpMessageHandler(() => receiver);
+            s.AddHttpClient(AlertDispatcher.PublicHttpClientName).ConfigurePrimaryHttpMessageHandler(() => receiver);
             s.AddHttpClient(WebPushSender.HttpClientName).ConfigurePrimaryHttpMessageHandler(() => receiver);
             s.Configure<SiteOptions>(o => o.PublicUrl = new Uri("https://talkwatch.test"));
             more?.Invoke(s);

@@ -104,13 +104,18 @@ public static class AdminEndpoints
     {
         // A 404 from a form post stays a 404, rather than being re-run through the not-found page, whose antiforgery
         // check turns it into a 400.
-        var admin = app.MapGroup("/admin").RequireAuthorization(Policy).WithMetadata(new SkipStatusCodePagesAttribute());
+        var admin = app.MapGroup("/admin").RequireAuthorization(Policy).WithMetadata(new SkipStatusCodePagesAttribute()).CheckFormToken();
 
-        admin.MapPost("/users", async ([FromForm] NewUserForm form, UserManager<AppUser> users, RoleManager<IdentityRole<Guid>> roles, CurrentSite site, Audit audit) =>
+        admin.MapPost("/users", async ([FromForm] NewUserForm form, UserManager<AppUser> users, RoleManager<IdentityRole<Guid>> roles, CurrentSite site, Audit audit, HttpContext http) =>
         {
             if (string.IsNullOrWhiteSpace(form.Username) || string.IsNullOrEmpty(form.Role) || !await roles.RoleExistsAsync(form.Role) || string.IsNullOrEmpty(form.Password))
             {
                 return Back("/admin/users", "Give a username, a role and a first password.");
+            }
+
+            if (await (await PeopleReach.ForAsync(http)).RoleAsync(form.Role) is { } beyond)
+            {
+                return Back("/admin/users", beyond);
             }
 
             var user = new AppUser { Id = Guid.NewGuid(), UserName = form.Username.Trim(), SiteId = site.Id };
@@ -144,7 +149,7 @@ public static class AdminEndpoints
             return Back("/admin/roles", $"{name} added, with no permissions yet: tick what it allows.");
         });
 
-        admin.MapPost("/roles/{id:guid}/permissions", async (Guid id, [FromForm] RolePermissionsForm? form, RoleManager<IdentityRole<Guid>> roles, UserManager<AppUser> users, Audit audit) =>
+        admin.MapPost("/roles/{id:guid}/permissions", async (Guid id, [FromForm] RolePermissionsForm? form, RoleManager<IdentityRole<Guid>> roles, UserManager<AppUser> users, Audit audit, HttpContext http) =>
         {
             if (await roles.FindByIdAsync(id.ToString()) is not { } role)
             {
@@ -159,6 +164,12 @@ public static class AdminEndpoints
             // Nothing ticked posts no field at all, and binds as no form.
             var permissions = (form?.Permissions ?? []).Aggregate(Permission.None, (all, name) =>
                 Enum.TryParse<Permission>(name, out var p) && Permissions.Each.Contains(p) ? all | p : all);
+            // Neither what the role holds now nor what it is to hold may go beyond what the person changing it holds.
+            if ((await PeopleReach.ForAsync(http)).Give(permissions | await RolePermissions.GetAsync(roles, role)) is { } beyond)
+            {
+                return Back("/admin/roles", beyond);
+            }
+
             await RolePermissions.ChangeAsync(roles, role, permissions);
             await audit.WriteAsync("role.permissions", "role", role.Id, $"{role.Name}: {permissions}");
             return Back("/admin/roles", $"{role.Name} saved. Its members have it within a minute.");
@@ -187,7 +198,7 @@ public static class AdminEndpoints
         });
 
         // Group mappings: what identity-provider groups give at sign-in. They take effect at each member's next sign-in.
-        admin.MapPost("/groups", async ([FromForm] GroupMappingForm form, TalkWatchDbContext db, RoleManager<IdentityRole<Guid>> roles, CurrentSite site, Audit audit) =>
+        admin.MapPost("/groups", async ([FromForm] GroupMappingForm form, TalkWatchDbContext db, RoleManager<IdentityRole<Guid>> roles, CurrentSite site, Audit audit, HttpContext http) =>
         {
             var group = form.Group?.Trim();
             if (string.IsNullOrEmpty(group) || group.Length > 200)
@@ -205,6 +216,11 @@ public static class AdminEndpoints
                 return Back("/admin/groups", problem);
             }
 
+            if (await (await PeopleReach.ForAsync(http)).RoleAsync(Blank(form.Role)) is { } beyond)
+            {
+                return Back("/admin/groups", beyond);
+            }
+
             var mapping = new GroupMapping { Id = Guid.NewGuid(), SiteId = site.Id, Group = group, Role = Blank(form.Role), Order = form.Order };
             db.GroupMappings.Add(mapping);
             await db.SaveChangesAsync();
@@ -212,7 +228,7 @@ public static class AdminEndpoints
             return Back("/admin/groups", $"{group} mapped. Add the lines it grants, if any; members get it at their next sign-in.");
         });
 
-        admin.MapPost("/groups/{id:guid}", async (Guid id, [FromForm] GroupMappingForm form, TalkWatchDbContext db, RoleManager<IdentityRole<Guid>> roles, Audit audit) =>
+        admin.MapPost("/groups/{id:guid}", async (Guid id, [FromForm] GroupMappingForm form, TalkWatchDbContext db, RoleManager<IdentityRole<Guid>> roles, Audit audit, HttpContext http) =>
         {
             if (await db.GroupMappings.SingleOrDefaultAsync(m => m.Id == id) is not { } mapping)
             {
@@ -224,17 +240,28 @@ public static class AdminEndpoints
                 return Back("/admin/groups", problem);
             }
 
+            var reach = await PeopleReach.ForAsync(http);
+            if ((await reach.RoleAsync(mapping.Role) ?? await reach.RoleAsync(Blank(form.Role))) is { } beyond)
+            {
+                return Back("/admin/groups", beyond);
+            }
+
             (mapping.Role, mapping.Order) = (Blank(form.Role), form.Order);
             await db.SaveChangesAsync();
             await audit.WriteAsync("group.change", "group_mapping", mapping.Id, $"{mapping.Group} → {mapping.Role ?? "lines only"}, order {mapping.Order}");
             return Back("/admin/groups", $"{mapping.Group} saved.");
         });
 
-        admin.MapPost("/groups/{id:guid}/delete", async (Guid id, TalkWatchDbContext db, Audit audit) =>
+        admin.MapPost("/groups/{id:guid}/delete", async (Guid id, TalkWatchDbContext db, Audit audit, HttpContext http) =>
         {
             if (await db.GroupMappings.SingleOrDefaultAsync(m => m.Id == id) is not { } mapping)
             {
                 return Results.NotFound();
+            }
+
+            if (await (await PeopleReach.ForAsync(http)).RoleAsync(mapping.Role) is { } beyond)
+            {
+                return Back("/admin/groups", beyond);
             }
 
             db.GroupMappings.Remove(mapping);
@@ -243,7 +270,7 @@ public static class AdminEndpoints
             return Back("/admin/groups", $"{mapping.Group} unmapped. Its members lose what it gave at their next sign-in.");
         });
 
-        admin.MapPost("/groups/{id:guid}/lines", async (Guid id, [FromForm] NewGrantForm form, TalkWatchDbContext db, Audit audit) =>
+        admin.MapPost("/groups/{id:guid}/lines", async (Guid id, [FromForm] NewGrantForm form, TalkWatchDbContext db, Audit audit, HttpContext http) =>
         {
             if (await db.GroupMappings.Include(m => m.Lines).SingleOrDefaultAsync(m => m.Id == id) is not { } mapping)
             {
@@ -261,6 +288,12 @@ public static class AdminEndpoints
                 return Back("/admin/groups", $"{mapping.Group} grants that line already.");
             }
 
+            var reach = await PeopleReach.ForAsync(http);
+            if ((await reach.RoleAsync(mapping.Role) ?? reach.Line(kind, parts[1], form.AllowRecordings, form.AllowVoicemail, form.AllowTranscripts)) is { } beyond)
+            {
+                return Back("/admin/groups", beyond);
+            }
+
             var line = new GroupMappingLine
             {
                 Id = Guid.NewGuid(), MappingId = mapping.Id, Kind = kind, Key = parts[1],
@@ -272,12 +305,17 @@ public static class AdminEndpoints
             return Back("/admin/groups", $"{mapping.Group} now grants that line.");
         });
 
-        admin.MapPost("/groups/{id:guid}/lines/{lineId:guid}/delete", async (Guid id, Guid lineId, TalkWatchDbContext db, Audit audit) =>
+        admin.MapPost("/groups/{id:guid}/lines/{lineId:guid}/delete", async (Guid id, Guid lineId, TalkWatchDbContext db, Audit audit, HttpContext http) =>
         {
             if (await db.GroupMappings.Include(m => m.Lines).SingleOrDefaultAsync(m => m.Id == id) is not { } mapping
                 || mapping.Lines.FirstOrDefault(l => l.Id == lineId) is not { } line)
             {
                 return Results.NotFound();
+            }
+
+            if (await (await PeopleReach.ForAsync(http)).RoleAsync(mapping.Role) is { } beyond)
+            {
+                return Back("/admin/groups", beyond);
             }
 
             mapping.Lines.Remove(line);
@@ -292,6 +330,12 @@ public static class AdminEndpoints
             if (user is null)
             {
                 return Results.NotFound();
+            }
+
+            var reach = await PeopleReach.ForAsync(http);
+            if ((await reach.AccountAsync(user) ?? await reach.RoleAsync(form.Role)) is { } beyond)
+            {
+                return Back($"/admin/users/{id}", beyond);
             }
 
             if (string.IsNullOrEmpty(form.Role) || !await roles.RoleExistsAsync(form.Role))
@@ -311,12 +355,17 @@ public static class AdminEndpoints
             return Back($"/admin/users/{id}", $"Role set to {form.Role}.");
         });
 
-        admin.MapPost("/users/{id:guid}/talk-user", async (Guid id, [FromForm] TalkUserForm form, UserManager<AppUser> users, CurrentSite site, TalkWatchDbContext db, Audit audit) =>
+        admin.MapPost("/users/{id:guid}/talk-user", async (Guid id, [FromForm] TalkUserForm form, UserManager<AppUser> users, CurrentSite site, TalkWatchDbContext db, Audit audit, HttpContext http) =>
         {
             var user = await FindAsync(users, site, id);
             if (user is null)
             {
                 return Results.NotFound();
+            }
+
+            if (await (await PeopleReach.ForAsync(http)).AccountAsync(user) is { } beyond)
+            {
+                return Back($"/admin/users/{id}", beyond);
             }
 
             var talkUser = string.IsNullOrWhiteSpace(form.TalkUser) ? null : form.TalkUser.Trim();
@@ -345,6 +394,11 @@ public static class AdminEndpoints
             if (user is null)
             {
                 return Results.NotFound();
+            }
+
+            if (await (await PeopleReach.ForAsync(http)).AccountAsync(user) is { } beyond)
+            {
+                return Back($"/admin/users/{id}", beyond);
             }
 
             var known = directory.Current.Contacts.Select(c => c.Uuid).OfType<string>().ToHashSet(StringComparer.Ordinal);
@@ -381,12 +435,17 @@ public static class AdminEndpoints
 
         // Where reports and email alerts for them go. Someone who signs in with single sign-on has it from the provider at
         // each sign-in, so a change here lasts until then; the page says so.
-        admin.MapPost("/users/{id:guid}/email", async (Guid id, [FromForm] EmailForm form, UserManager<AppUser> users, CurrentSite site, Audit audit) =>
+        admin.MapPost("/users/{id:guid}/email", async (Guid id, [FromForm] EmailForm form, UserManager<AppUser> users, CurrentSite site, Audit audit, HttpContext http) =>
         {
             var user = await FindAsync(users, site, id);
             if (user is null)
             {
                 return Results.NotFound();
+            }
+
+            if (await (await PeopleReach.ForAsync(http)).AccountAsync(user) is { } beyond)
+            {
+                return Back($"/admin/users/{id}", beyond);
             }
 
             var email = string.IsNullOrWhiteSpace(form.Email) ? null : form.Email.Trim();
@@ -402,12 +461,17 @@ public static class AdminEndpoints
         });
 
         // Where their reports go instead of their email; empty to send them to their email again.
-        admin.MapPost("/users/{id:guid}/report-email", async (Guid id, [FromForm] ReportEmailForm form, UserManager<AppUser> users, CurrentSite site, Audit audit) =>
+        admin.MapPost("/users/{id:guid}/report-email", async (Guid id, [FromForm] ReportEmailForm form, UserManager<AppUser> users, CurrentSite site, Audit audit, HttpContext http) =>
         {
             var user = await FindAsync(users, site, id);
             if (user is null)
             {
                 return Results.NotFound();
+            }
+
+            if (await (await PeopleReach.ForAsync(http)).AccountAsync(user) is { } beyond)
+            {
+                return Back($"/admin/users/{id}", beyond);
             }
 
             var address = string.IsNullOrWhiteSpace(form.ReportEmail) ? null : form.ReportEmail.Trim();
@@ -424,12 +488,17 @@ public static class AdminEndpoints
                 : $"Reports go to {address}.");
         });
 
-        admin.MapPost("/users/{id:guid}/password", async (Guid id, [FromForm] PasswordForm form, UserManager<AppUser> users, CurrentSite site, Audit audit) =>
+        admin.MapPost("/users/{id:guid}/password", async (Guid id, [FromForm] PasswordForm form, UserManager<AppUser> users, CurrentSite site, Audit audit, HttpContext http) =>
         {
             var user = await FindAsync(users, site, id);
             if (user is null)
             {
                 return Results.NotFound();
+            }
+
+            if (await (await PeopleReach.ForAsync(http)).AccountAsync(user) is { } beyond)
+            {
+                return Back($"/admin/users/{id}", beyond);
             }
 
             var token = await users.GeneratePasswordResetTokenAsync(user);
@@ -453,6 +522,11 @@ public static class AdminEndpoints
                 return Results.NotFound();
             }
 
+            if (await (await PeopleReach.ForAsync(http)).AccountAsync(user) is { } beyond)
+            {
+                return Back($"/admin/users/{id}", beyond);
+            }
+
             if (await RefuseAsync(users, site, user, http) is { } refusal)
             {
                 return Back($"/admin/users/{id}", refusal);
@@ -465,12 +539,17 @@ public static class AdminEndpoints
             return Back($"/admin/users/{id}", "Locked. They are signed out and cannot sign in.");
         });
 
-        admin.MapPost("/users/{id:guid}/unlock", async (Guid id, UserManager<AppUser> users, CurrentSite site, Audit audit) =>
+        admin.MapPost("/users/{id:guid}/unlock", async (Guid id, UserManager<AppUser> users, CurrentSite site, Audit audit, HttpContext http) =>
         {
             var user = await FindAsync(users, site, id);
             if (user is null)
             {
                 return Results.NotFound();
+            }
+
+            if (await (await PeopleReach.ForAsync(http)).AccountAsync(user) is { } beyond)
+            {
+                return Back($"/admin/users/{id}", beyond);
             }
 
             await users.SetLockoutEndDateAsync(user, null);
@@ -479,12 +558,17 @@ public static class AdminEndpoints
             return Back($"/admin/users/{id}", "Unlocked.");
         });
 
-        admin.MapPost("/users/{id:guid}/two-factor/reset", async (Guid id, UserManager<AppUser> users, CurrentSite site, Audit audit) =>
+        admin.MapPost("/users/{id:guid}/two-factor/reset", async (Guid id, UserManager<AppUser> users, CurrentSite site, Audit audit, HttpContext http) =>
         {
             var user = await FindAsync(users, site, id);
             if (user is null)
             {
                 return Results.NotFound();
+            }
+
+            if (await (await PeopleReach.ForAsync(http)).AccountAsync(user) is { } beyond)
+            {
+                return Back($"/admin/users/{id}", beyond);
             }
 
             // For a lost phone: they sign in with their password alone, and can turn it on again from their account.
@@ -495,8 +579,13 @@ public static class AdminEndpoints
             return Back($"/admin/users/{id}", "Two-factor sign-in turned off. They can turn it on again from their account page.");
         });
 
-        admin.MapPost("/users/{id:guid}/tokens/{tokenId:guid}/revoke", async (Guid id, Guid tokenId, TalkWatchDbContext db, Audit audit) =>
+        admin.MapPost("/users/{id:guid}/tokens/{tokenId:guid}/revoke", async (Guid id, Guid tokenId, TalkWatchDbContext db, Audit audit, UserManager<AppUser> users, CurrentSite site, HttpContext http) =>
         {
+            if (await BeyondAsync(users, site, id, http) is { } beyond)
+            {
+                return beyond;
+            }
+
             var token = await db.ApiTokens.SingleOrDefaultAsync(t => t.Id == tokenId && t.UserId == id);
             if (token is null)
             {
@@ -517,11 +606,22 @@ public static class AdminEndpoints
                 return Results.NotFound();
             }
 
+            var reach = await PeopleReach.ForAsync(http);
+            if (await reach.AccountAsync(user) is { } beyond)
+            {
+                return Back($"/admin/users/{id}", beyond);
+            }
+
             // Lines are offered as "Kind:Key" from the directory; a key may itself contain ':' (E.164 does not, uuids do not).
             var parts = (form.Line ?? "").Split(':', 2);
             if (parts.Length != 2 || !Enum.TryParse<LineKind>(parts[0], out var kind) || string.IsNullOrWhiteSpace(parts[1]))
             {
                 return Back($"/admin/users/{id}", "Choose a line.");
+            }
+
+            if (reach.Line(kind, parts[1], form.AllowRecordings, form.AllowVoicemail, form.AllowTranscripts) is { } unseen)
+            {
+                return Back($"/admin/users/{id}", unseen);
             }
 
             if (await db.Grants.AnyAsync(g => g.UserId == id && g.Kind == kind && g.Key == parts[1] && !g.ByGroups))
@@ -542,13 +642,23 @@ public static class AdminEndpoints
             return Back($"/admin/users/{id}", "Line granted.");
         });
 
-        admin.MapPost("/users/{id:guid}/grants/{grantId:guid}", async (Guid id, Guid grantId, [FromForm] GrantFlagsForm form, TalkWatchDbContext db, Audit audit) =>
+        admin.MapPost("/users/{id:guid}/grants/{grantId:guid}", async (Guid id, Guid grantId, [FromForm] GrantFlagsForm form, TalkWatchDbContext db, Audit audit, UserManager<AppUser> users, CurrentSite site, HttpContext http) =>
         {
+            if (await BeyondAsync(users, site, id, http) is { } beyond)
+            {
+                return beyond;
+            }
+
             // Grants by groups follow the groups, at sign-in; only those given by hand are changed here.
             var grant = await db.Grants.SingleOrDefaultAsync(g => g.Id == grantId && g.UserId == id && !g.ByGroups);
             if (grant is null)
             {
                 return Results.NotFound();
+            }
+
+            if ((await PeopleReach.ForAsync(http)).Line(grant.Kind, grant.Key, form.AllowRecordings, form.AllowVoicemail, form.AllowTranscripts) is { } unseen)
+            {
+                return Back($"/admin/users/{id}", unseen);
             }
 
             grant.AllowRecordings = form.AllowRecordings;
@@ -559,8 +669,13 @@ public static class AdminEndpoints
             return Back($"/admin/users/{id}", "Access updated.");
         });
 
-        admin.MapPost("/users/{id:guid}/grants/{grantId:guid}/delete", async (Guid id, Guid grantId, TalkWatchDbContext db, Audit audit) =>
+        admin.MapPost("/users/{id:guid}/grants/{grantId:guid}/delete", async (Guid id, Guid grantId, TalkWatchDbContext db, Audit audit, UserManager<AppUser> users, CurrentSite site, HttpContext http) =>
         {
+            if (await BeyondAsync(users, site, id, http) is { } beyond)
+            {
+                return beyond;
+            }
+
             // Grants by groups follow the groups, at sign-in; only those given by hand are changed here.
             var grant = await db.Grants.SingleOrDefaultAsync(g => g.Id == grantId && g.UserId == id && !g.ByGroups);
             if (grant is null)
@@ -587,6 +702,12 @@ public static class AdminEndpoints
     // Accounts belong to a site; an admin manages only their own site's.
     private static async Task<AppUser?> FindAsync(UserManager<AppUser> users, CurrentSite site, Guid id) =>
         await users.Users.SingleOrDefaultAsync(u => u.Id == id && u.SiteId == site.Id);
+
+    /// <summary>Not found, or sent back with why, when this account is not the signed-in person's to change; null when it is.</summary>
+    private static async Task<IResult?> BeyondAsync(UserManager<AppUser> users, CurrentSite site, Guid id, HttpContext http) =>
+        await FindAsync(users, site, id) is not { } user ? Results.NotFound()
+        : await (await PeopleReach.ForAsync(http)).AccountAsync(user) is { } beyond ? Back($"/admin/users/{id}", beyond)
+        : null;
 
     private static async Task<bool> IsAdminAsync(UserManager<AppUser> users, AppUser user) => await users.IsInRoleAsync(user, Roles.Admin);
 

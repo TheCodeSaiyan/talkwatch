@@ -22,6 +22,9 @@ public sealed class FakeOidcProvider : HttpMessageHandler
     /// <summary>The email the provider gives for whoever signs in next; none when null.</summary>
     public string? Email { get; set; }
 
+    /// <summary>Whether the provider says it checked that email: true, false, or not said when null.</summary>
+    public bool? EmailVerified { get; set; }
+
     private readonly RsaSecurityKey _key = new(RSA.Create(2048)) { KeyId = "fake-key" };
     private readonly Dictionary<string, (string Nonce, string Subject, string Username, string[] Groups)> _codes = new(StringComparer.Ordinal);
 
@@ -74,7 +77,7 @@ public sealed class FakeOidcProvider : HttpMessageHandler
                 return Json(new { access_token = "fake-access-token", token_type = "Bearer", expires_in = 300, id_token = idToken });
 
             case "/userinfo":
-                return Json(new { sub = _lastSubject.Subject, preferred_username = _lastSubject.Username, groups = _lastSubject.Groups, email = Email });
+                return Json(new { sub = _lastSubject.Subject, preferred_username = _lastSubject.Username, groups = _lastSubject.Groups, email = Email, email_verified = EmailVerified });
 
             default:
                 return new HttpResponseMessage(HttpStatusCode.NotFound);

@@ -63,7 +63,7 @@ public static partial class AlertEndpoints
         // A 404 stays a 404, rather than being re-run through the not-found page, whose antiforgery check turns it into a 400.
         // Admins, and Managers for their own lines: the database filters show a Manager only their own channels,
         // flows and alerts, so a Manager's request for anyone else's finds nothing and answers 404.
-        var alerts = app.MapGroup("/admin/alerts").RequireAuthorization(Permissions.AlertsPolicy).WithMetadata(new SkipStatusCodePagesAttribute());
+        var alerts = app.MapGroup("/admin/alerts").RequireAuthorization(Permissions.AlertsPolicy).WithMetadata(new SkipStatusCodePagesAttribute()).CheckFormToken();
 
         alerts.MapPost("/channels", async ([FromForm] ChannelForm form, TalkWatchDbContext db, CurrentSite site, ChannelSecrets secrets, AlertSettingsStore settings, Audit audit, TimeProvider clock, HttpContext http, CancellationToken cancellationToken) =>
         {
@@ -75,6 +75,13 @@ public static partial class AlertEndpoints
             if (TargetProblem(form, await settings.TelegramAsync(cancellationToken)) is { } problem)
             {
                 return Refused(problem, form);
+            }
+
+            // An ntfy token is sent as it is: over plain http, anyone on the way could read it.
+            if (form.Kind == ChannelKind.Ntfy && !string.IsNullOrEmpty(form.Secret)
+                && !(Uri.TryCreate(form.Target?.Trim(), UriKind.Absolute, out var topic) && topic.Scheme == Uri.UriSchemeHttps))
+            {
+                return Refused("An ntfy token is sent only over https: give the topic's https address.", form);
             }
 
             if (!TryWindow(form.QuietDays, form.QuietStart, form.QuietEnd, out var quietDays, out var quietStart, out var quietEnd))
@@ -203,11 +210,18 @@ public static partial class AlertEndpoints
             return FlowsBack($"{flow.Name} removed.");
         });
 
-        alerts.MapPost("/settings", async ([FromForm] SettingsForm form, TalkWatchDbContext db, CurrentSite site, ChannelSecrets secrets, Audit audit, TimeProvider clock, HttpContext http) =>
+        alerts.MapPost("/settings", async ([FromForm] SettingsForm form, TalkWatchDbContext db, CurrentSite site, ChannelSecrets secrets, AlertSettingsStore store, Audit audit, TimeProvider clock, HttpContext http) =>
         {
             if (!IsAdmin(http))
             {
                 return Results.NotFound();
+            }
+
+            // The mail server carries every report and alert, and the settings hold the site's mail password and bot
+            // token: like the console's, they are for admins, whatever else a role may manage.
+            if (!http.User.IsInRole(Roles.Admin))
+            {
+                return BackToSettings("Only an admin can change the mail and Telegram settings.");
             }
 
             static string? Text(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
@@ -241,6 +255,16 @@ public static partial class AlertEndpoints
             if (Text(form.TelegramBotToken) is { } token && !TelegramToken().IsMatch(token))
             {
                 return BackToSettings("The bot token from @BotFather is digits, a colon, then letters.");
+            }
+
+            // A mail password, saved here or in the settings, was given for the server it was given with: moving to another
+            // needs it typed again, or it would go wherever an admin pointed it.
+            var before = await store.SmtpAsync(http.RequestAborted);
+            var host = Text(form.SmtpHost) ?? store.SmtpFromSettings.Host;
+            if (!string.IsNullOrEmpty(before.Password) && !form.ClearSmtpPassword && string.IsNullOrEmpty(form.SmtpPassword)
+                && !string.Equals(before.Host, host, StringComparison.OrdinalIgnoreCase))
+            {
+                return BackToSettings("Changing the mail server needs its password again, so that a password never goes to a server it wasn't given for.");
             }
 
             var saved = await db.AlertSettings.SingleOrDefaultAsync();

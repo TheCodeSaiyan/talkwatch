@@ -2,7 +2,8 @@ site_name: TalkWatch
 site_description: A self-hosted dashboard and alert router for UniFi Talk
 repo_url: https://github.com/TheCodeSaiyan/talkwatch
 edit_uri: edit/main/docs/
-copyright: MIT licence. Not affiliated with Ubiquiti.
+# The release workflow puts the version in front, so the published site says which release it describes.
+copyright: !ENV [TALKWATCH_DOCS_FOOTER, "MIT licence. Not affiliated with Ubiquiti."]
 
 theme:
   name: material

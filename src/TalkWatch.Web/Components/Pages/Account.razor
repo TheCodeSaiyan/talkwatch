@@ -9,6 +9,7 @@
 @inject TalkWatchDbContext Db
 @inject TimeProvider Clock
 @inject Microsoft.Extensions.Options.IOptions<DemoOptions> DemoSettings
+@inject Microsoft.Extensions.Options.IOptions<OidcOptions> Oidc
 
 <PageTitle>Your account · TalkWatch</PageTitle>
 
@@ -99,6 +100,40 @@
             </div>
         </section>
 
+        @if (Oidc.Value.Enabled && _user is not null)
+        {
+            <section class="plane" aria-label="Signing in with @Oidc.Value.DisplayName">
+                <div class="plane-head"><h2>Signing in with @Oidc.Value.DisplayName</h2><div class="end">@if (_linked)
+                    {
+                        <span class="tag ok">Linked</span>
+                    }
+                    else
+                    {
+                        <span class="tag">Not linked</span>
+                    }</div></div>
+                <div class="plane-body stack" style="gap: 12px">
+                    @if (OidcOutcome is { Length: > 0 } outcome)
+                    {
+                        <p class="notice @(outcome == "linked" ? "" : "problem")" role="status" data-oidc-outcome="@outcome">@(outcome switch
+                        {
+                            "linked" => $"Linked: you can sign in with {Oidc.Value.DisplayName} as well as your password.",
+                            "taken" => $"That {Oidc.Value.DisplayName} account already signs in to another TalkWatch account.",
+                            _ => $"Linking {Oidc.Value.DisplayName} did not work. Try again.",
+                        })</p>
+                    }
+                    @if (_linked)
+                    {
+                        <p class="hint" style="margin: 0" data-oidc="linked">You can sign in with @Oidc.Value.DisplayName as well as your password.</p>
+                    }
+                    else
+                    {
+                        <p class="hint" style="margin: 0" data-oidc="not-linked">Link it once, here, and you can sign in with @Oidc.Value.DisplayName from then on. It has to be done from here, signed in, so that nobody else's @Oidc.Value.DisplayName account can claim yours.</p>
+                        <form method="post" action="/account/link/oidc" data-enhance="false"><AntiforgeryToken /><button type="submit" class="btn sm primary">Link @Oidc.Value.DisplayName</button></form>
+                    }
+                </div>
+            </section>
+        }
+
         <section class="plane" aria-label="Alerts in TalkWatch">
             <div class="plane-head"><h2>Alerts in TalkWatch</h2><div class="end">@if (_browserAlerts)
                 {
@@ -181,6 +216,9 @@
 
 @code {
     private bool _browserAlerts;
+    private bool _linked;
+
+    [SupplyParameterFromQuery(Name = "oidc")] private string? OidcOutcome { get; set; }
 
     private static string Initials(string? name) =>
         string.Concat((name ?? "?").Split(['.', ' ', '-', '_'], StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpperInvariant(p[0])));
@@ -250,6 +288,7 @@
     {
         _user = await Users.GetUserAsync(HttpContext.User);
         _browserAlerts = _user is not null && await Db.AlertChannels.AnyAsync(c => c.Kind == ChannelKind.Browser && c.OwnerUserId == _user.Id);
+        _linked = _user is not null && (await Users.GetLoginsAsync(_user)).Any(l => l.LoginProvider == OidcOptions.Scheme);
         await LoadAsync();
     }
 

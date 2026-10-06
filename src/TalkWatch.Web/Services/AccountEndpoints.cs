@@ -8,6 +8,9 @@ namespace TalkWatch.Web.Services;
 
 public static class AccountEndpoints
 {
+    // A password hash nobody can match, made once, for checking a name with no account against.
+    private static string? _unreachable;
+
     public sealed record SignInForm(string? Username, string? Password, string? ReturnUrl);
 
     public sealed record NumberForm(string? Did, string? ReturnUrl);
@@ -23,11 +26,20 @@ public static class AccountEndpoints
     {
         // Form posts, protected by the antiforgery token the sign-in page renders. A failed attempt counts towards
         // lockout, and the page says only that sign-in failed, never which half was wrong.
-        app.MapPost("/account/signin", async ([FromForm] SignInForm form, SignInManager<AppUser> signIn) =>
+        app.MapPost("/account/signin", async ([FromForm] SignInForm form, SignInManager<AppUser> signIn, IPasswordHasher<AppUser> hasher) =>
         {
             var returnUrl = IsLocal(form.ReturnUrl) ? form.ReturnUrl! : Home;
             if (string.IsNullOrEmpty(form.Username) || string.IsNullOrEmpty(form.Password))
             {
+                return Results.Redirect($"/signin?failed=true&returnUrl={Uri.EscapeDataString(returnUrl)}");
+            }
+
+            // Checking a password is slow on purpose. A name with no account is checked against one all the same, so how
+            // long the answer takes says nothing about which names have an account.
+            if (await signIn.UserManager.FindByNameAsync(form.Username) is null)
+            {
+                _unreachable ??= hasher.HashPassword(new AppUser(), Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)));
+                hasher.VerifyHashedPassword(new AppUser(), _unreachable, form.Password);
                 return Results.Redirect($"/signin?failed=true&returnUrl={Uri.EscapeDataString(returnUrl)}");
             }
 
@@ -91,7 +103,7 @@ public static class AccountEndpoints
         {
             await signIn.SignOutAsync();
             return Results.Redirect("/signin");
-        }).RequireAuthorization();
+        }).RequireAuthorization().CheckFormToken();
     }
 
     /// <summary>The URL if it is a path on this site, else the calls page.</summary>

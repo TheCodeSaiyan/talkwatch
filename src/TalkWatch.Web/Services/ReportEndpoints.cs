@@ -39,7 +39,7 @@ public static class ReportEndpoints
     {
         // A 404 stays a 404, rather than being re-run through the not-found page, whose antiforgery check turns it into a 400.
         // Site report managers, and anyone who may set up reports on a number: the query filters show them only their own.
-        var manage = app.MapGroup("/reports").RequireAuthorization(Permissions.ReportsPolicy).WithMetadata(new SkipStatusCodePagesAttribute());
+        var manage = app.MapGroup("/reports").RequireAuthorization(Permissions.ReportsPolicy).WithMetadata(new SkipStatusCodePagesAttribute()).CheckFormToken();
 
         manage.MapPost("/save", async ([FromForm] ReportForm form, TalkWatchDbContext db, CurrentSite site, ReportBuilder builder, Audit audit, TimeProvider clock, HttpContext http) =>
         {
@@ -125,6 +125,12 @@ public static class ReportEndpoints
             {
                 return Back(back, "Choose your own email channels.");
             }
+            // A channel that belongs to nobody is sent the copy built for the whole site.
+            if (!http.User.Can(Permission.AllCalls) && channels.Count > 0 && await db.AlertChannels.AnyAsync(c => channels.Contains(c.Id) && c.OwnerUserId == null))
+            {
+                return Back(back, "A channel that belongs to nobody is sent the whole site's calls, so only someone who sees every call can choose it.");
+            }
+
             if (await db.Users.CountAsync(u => users.Contains(u.Id) && u.SiteId == site.Id) != users.Count
                 || await db.AlertChannels.CountAsync(c => channels.Contains(c.Id) && c.Kind == ChannelKind.Email) != channels.Count)
             {
@@ -165,14 +171,15 @@ public static class ReportEndpoints
             return Back("/reports", $"{report.Name} saved.{(report.NextRunAt is { } next ? $" It next runs {TimeZoneInfo.ConvertTime(next, builder.Zone):ddd d MMM HH:mm}." : "")}");
         });
 
-        manage.MapPost("/{id:guid}/run", async (Guid id, TalkWatchDbContext db, ReportBuilder builder, ReportMailer mailer, Audit audit, TimeProvider clock, CancellationToken cancellationToken) =>
+        manage.MapPost("/{id:guid}/run", async (Guid id, TalkWatchDbContext db, ReportBuilder builder, ReportMailer mailer, Audit audit, TimeProvider clock, HttpContext http, CancellationToken cancellationToken) =>
         {
             if (!await db.Reports.AnyAsync(r => r.Id == id, cancellationToken))
             {
                 return Results.NotFound();
             }
 
-            var runs = await builder.RunAsync(id, clock.GetUtcNow(), cancellationToken);
+            Guid? me = Guid.TryParse(http.User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier), out var parsedMe) ? parsedMe : null;
+            var runs = await builder.RunAsync(id, clock.GetUtcNow(), cancellationToken, me);
             await mailer.SendDueAsync(cancellationToken);
             await audit.WriteAsync("report.run", "report", id, $"{runs.Count} copies");
             return Back("/reports", $"Report run: {runs.Count} {(runs.Count == 1 ? "copy" : "copies")}.");
@@ -191,7 +198,7 @@ public static class ReportEndpoints
             return Back("/reports", $"{report.Name} removed, with its copies.");
         });
 
-        // A copy's call list: its own filter lets in the person it was built for, or someone who manages reports.
+        // A copy's call list: its own filter lets in the person it was built for, or someone who manages reports and sees every call.
         app.MapGet("/reports/runs/{id:guid}/calls.csv", async (Guid id, TalkWatchDbContext db, Audit audit, HttpContext http) =>
         {
             if (await db.ReportRuns.AsNoTracking().SingleOrDefaultAsync(r => r.Id == id) is not { Csv: { } csv } run)

@@ -87,7 +87,7 @@
       "employee_number": "",
       "create_time": 1693768635,
       "extras": {
-        "previous_uid_sso_id": "e27c731a-50d4-4092-9d8a-0d23d073fdc5",
+        "previous_uid_sso_id": "7a5db04c-b085-1548-0ca0-7a33226c653c",
         "uid_avatar": "https://example.invalid/redacted/3"
       },
       "onboard_time": 1646827200,
@@ -98,12 +98,12 @@
       "only_ui_account": false,
       "only_local_account": false,
       "sso_account": "person3@example.invalid",
-      "sso_uuid": "498f450d-f4f0-4105-b7a7-d67dbb63d1ce",
+      "sso_uuid": "670478ec-c5b8-21ba-30ee-a50f54a1f1b2",
       "sso_username": "Riley4",
       "sso_picture": "https://example.invalid/redacted/4",
       "from_org": false,
       "org_role": "",
-      "uid_sso_id": "e27c731a-50d4-4092-9d8a-0d23d073fdc5",
+      "uid_sso_id": "7a5db04c-b085-1548-0ca0-7a33226c653c",
       "uid_sso_account": "person4@example.invalid",
       "uid_account_status": "ACTIVE",
       "org_user_id": "",
@@ -647,7 +647,7 @@
       "accept_queue_calls": null,
       "devices": [
         {
-          "mac": "6022320c0574",
+          "mac": "02bc04103b6f",
           "ip": "10.50.50.19",
           "model": "UVP-TOUCH-MAX",
           "sshd_port": 32768,
@@ -714,7 +714,7 @@
     "user_avatar": "https://example.invalid/redacted/5",
     "device": "Lorem ipsum do",
     "device_model": "UVP-TOUCH-MAX",
-    "mac": "6022320c0574",
+    "mac": "02bc04103b6f",
     "smart_attendant": {
       "id": "swb_15",
       "internal_id": 15,

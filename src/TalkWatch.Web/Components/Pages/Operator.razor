@@ -240,8 +240,8 @@
         var db = scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>();
         if (!_admin)
         {
-            _allowedUsers = (await db.Grants.AsNoTracking().Where(g => g.Kind == LineKind.User).Select(g => g.Key).ToListAsync()).ToHashSet(StringComparer.Ordinal);
-            _allowedContacts = (await db.Grants.AsNoTracking().Where(g => g.Kind == LineKind.Contact).Select(g => g.Key).ToListAsync()).ToHashSet(StringComparer.Ordinal);
+            _allowedUsers = (await db.Grants.AsNoTracking().Where(g => g.UserId == db.ScopeUserId && g.Kind == LineKind.User).Select(g => g.Key).ToListAsync()).ToHashSet(StringComparer.Ordinal);
+            _allowedContacts = (await db.Grants.AsNoTracking().Where(g => g.UserId == db.ScopeUserId && g.Kind == LineKind.Contact).Select(g => g.Key).ToListAsync()).ToHashSet(StringComparer.Ordinal);
         }
 
         var now = Clock.GetUtcNow();

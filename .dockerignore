@@ -8,3 +8,11 @@ tests/
 !tests/fixtures/talk-5.3.2/
 !tests/fixtures/talk-5.3.2-voicemail/
 tools/
+# Never sent to the builder: raw console captures and HAR files hold real calls and sessions, and .env holds secrets.
+*.twcap
+*.har
+.env
+.env.*
+TestResults/
+site/
+**/appsettings.*.local.json

@@ -120,8 +120,28 @@ public sealed partial class ReportEmailTests(TalkWatchApp talkwatch) : IClassFix
 
         var delivery = await DbAsync(app, db => db.ReportDeliveries.SingleAsync(Ct));
         Assert.Equal((DeliveryState.Pending, 1), (delivery.State, delivery.Attempts));
-        Assert.Contains("offers no sign-in on an unencrypted connection: turn STARTTLS on", delivery.LastError, StringComparison.Ordinal);
+        Assert.Contains("only over an encrypted connection: turn STARTTLS on", delivery.LastError, StringComparison.Ordinal);
         Assert.Empty(smtp.Messages);
+    }
+
+    // A server that offers sign-in without TLS would be sent the password in clear: TalkWatch doesn't send it.
+    [Fact]
+    public async Task The_mail_servers_password_is_never_sent_unencrypted_even_to_a_server_that_asks_for_it()
+    {
+        await using var smtp = new FakeSmtpServer(offersSignIn: true);
+        var (app, admin, _, _, channel) = await StartAsync(smtp, username: "talkwatch@example.test");
+        await using var __ = app;
+        using var ___ = admin;
+        await PostAsync(admin, "/reports/new", "/reports/save", Report(("Channels", channel.ToString())));
+        var report = await DbAsync(app, db => db.Reports.Select(r => r.Id).SingleAsync(Ct));
+
+        await PostAsync(admin, "/reports", $"/reports/{report}/run");
+        await app.Services.GetRequiredService<ReportMailer>().SendDueAsync(Ct);
+
+        var delivery = await DbAsync(app, db => db.ReportDeliveries.SingleAsync(Ct));
+        Assert.Empty(smtp.SignIns);
+        Assert.Empty(smtp.Messages);
+        Assert.Contains("only over an encrypted connection: turn STARTTLS on", delivery.LastError, StringComparison.Ordinal);
     }
 
     // A person's page shows where their reports go and how they sign in, and the address can be put right there.

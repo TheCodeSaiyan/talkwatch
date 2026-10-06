@@ -11,6 +11,26 @@ Each release is published as `ghcr.io/thecodesaiyan/talkwatch` for amd64 and arm
 
 TalkWatch migrates its database when it starts, then checks that every copied recording and voicemail is where the database says. Take a [backup](backup.md) first: it's the only way back if an upgrade goes wrong.
 
+## Moving to the compose file that keeps passwords in files
+
+`compose.yaml` used to take its passwords from `.env`, where anyone who can list processes or inspect a container reads them. It now reads each from a file in `secrets/`. An install made with the old one keeps working on its old file; to move to the new one:
+
+1. Put each password from `.env` in its own file, with no line ending, then take the password lines out of `.env`:
+   ```sh
+   mkdir -p secrets
+   printf '%s' 'your DB_PASSWORD' > secrets/db_password
+   printf '%s' 'your TALK_PASSWORD' > secrets/talk_password      # or an empty file, if it's set on the Console page
+   printf '%s' 'any value' > secrets/admin_password              # read only while there are no users
+   printf '%s' 'any value' > secrets/db_admin_password           # used only when a database volume is first made
+   chmod 600 secrets/*
+   ```
+2. Take the new `compose.yaml`, and the `db-init` folder beside it, from the release.
+3. `docker compose up -d`.
+
+Your database keeps the role it was made with, which PostgreSQL made its superuser and won't demote. A new install's TalkWatch signs in as a role that owns its own database and nothing else. To move to that too, [back up](backup.md), remove the database volume (`docker compose down`, then `docker volume rm talkwatch_db`), start the database alone so it's made afresh (`docker compose up -d db`), and restore into it as the restore steps say.
+
+The TalkWatch container now runs with a read-only file system and no Linux capabilities, and Docker checks its health.
+
 ## How upgrades are tested
 
 Before an image is published, the build runs the previous published image against a clean database, then starts the new one on the same database: it has to migrate it and come up healthy with nothing logged as an error. Started from an image eleven migrations old, that check applied all eleven cleanly. Migrations that rewrite data, such as working out the outcome of calls stored before outcomes existed, have tests of their own.

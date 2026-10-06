@@ -359,4 +359,34 @@ public class PseudonymiserTests
         Assert.Contains("wan_ip", pseudonymiser.FieldNames);
         Assert.DoesNotContain(pseudonymiser.FieldNames, f => f.Contains("Jane", StringComparison.Ordinal));
     }
+
+    // Talk writes some MACs bare, twelve hex digits, and names the owner's Ubiquiti account and its cloud address; all
+    // identify real hardware or a real person.
+    [Fact]
+    public void Bare_macs_the_owners_account_and_the_consoles_cloud_address_are_replaced()
+    {
+        const string info = """
+            {
+              "devices": [{ "mac": "602232AABBCC" }, { "mac": "602232aabbcd" }],
+              "events": [{ "from_mac": "602232AABBCC" }],
+              "owner_sso_id": "11111111-2222-4333-8444-555555555555",
+              "anonymous_controller_id": "66666666-7777-4888-9999-aaaaaaaaaaaa",
+              "uid": { "env": { "api": "https://acme.ui.com/gw", "admin_portal": "https://acme.ui.com/cloud" } }
+            }
+            """;
+
+        var output = new Pseudonymiser(Key).Json(info);
+        var json = JsonNode.Parse(output)!;
+        var mac = (string)json["devices"]![0]!["mac"]!;
+
+        Assert.DoesNotContain("602232", output, StringComparison.OrdinalIgnoreCase);
+        Assert.Matches("^02[0-9A-F]{10}$", mac);
+        Assert.Matches("^02[0-9a-f]{10}$", (string)json["devices"]![1]!["mac"]!);
+        Assert.Equal(mac, (string)json["events"]![0]!["from_mac"]!);
+        Assert.DoesNotContain("11111111", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("66666666", output, StringComparison.Ordinal);
+        Assert.True(Guid.TryParse((string)json["owner_sso_id"]!, out _));
+        Assert.DoesNotContain("acme", output, StringComparison.Ordinal);
+        Assert.Equal("https://example.ui.com/gw", (string)json["uid"]!["env"]!["api"]!);
+    }
 }

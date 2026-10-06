@@ -104,18 +104,60 @@ public sealed class OidcTests(TalkWatchApp talkwatch) : IClassFixture<TalkWatchA
         Assert.Null(await AsSystemAsync(app, users => users.FindByNameAsync("stranger")));
     }
 
+    // Some providers let people choose their username: one who calls themselves "admin" there is not the admin here.
     [Fact]
-    public async Task An_existing_account_of_the_same_name_is_linked_and_keeps_its_grants()
+    public async Task An_account_of_the_same_name_with_a_password_is_not_taken_over()
+    {
+        using var provider = new FakeOidcProvider();
+        await using var app = Create(provider);
+        using var browser = Browser(app);
+
+        var landed = await SignInAsync(browser, provider, "subject-4", TalkWatchApp.AdminUsername, "talkwatch-users");
+        var calls = await browser.GetAsync(new Uri("/calls", UriKind.Relative), Ct);
+
+        Assert.Equal("/signin?oidc=link-first", landed);
+        Assert.NotEqual(HttpStatusCode.OK, calls.StatusCode);
+        Assert.Null(await AsSystemAsync(app, users => users.FindByLoginAsync(OidcOptions.Scheme, "subject-4")));
+        Assert.True(await AsSystemAsync(app, async users => await users.IsInRoleAsync((await users.FindByNameAsync(TalkWatchApp.AdminUsername))!, Roles.Admin)));
+    }
+
+    [Fact]
+    public async Task Someone_signed_in_with_their_password_links_the_provider_from_their_account_and_keeps_it()
     {
         using var provider = new FakeOidcProvider();
         await using var app = Create(provider);
         var existing = await AsSystemAsync(app, async users => (await users.FindByNameAsync(TalkWatchApp.AdminUsername))!.Id);
         using var browser = Browser(app);
+        await TalkWatchApp.SignInAsync(browser, TalkWatchApp.AdminUsername, TalkWatchApp.AdminPassword);
 
-        await SignInAsync(browser, provider, "subject-4", TalkWatchApp.AdminUsername, "THS Admins");
+        // Started by a form post with the page's antiforgery token, then the provider's round trip.
+        var account = await browser.GetStringAsync(new Uri("/account", UriKind.Relative), Ct);
+        var token = System.Text.RegularExpressions.Regex.Match(account, @"action=""/account/link/oidc""[^>]*><input[^>]*name=""__RequestVerificationToken""[^>]*value=""([^""]+)""").Groups[1].Value;
+        using var form = new FormUrlEncodedContent([new("__RequestVerificationToken", WebUtility.HtmlDecode(token))]);
+        var challenge = await browser.PostAsync(new Uri("/account/link/oidc", UriKind.Relative), form, Ct);
+        var callback = await browser.GetAsync(provider.Authorise(challenge.Headers.Location!, "subject-5", "someone-else-there", "THS Admins"), Ct);
+        var done = await browser.GetAsync(callback.Headers.Location!, Ct);
 
-        var linked = await AsSystemAsync(app, async users => (await users.FindByLoginAsync(OidcOptions.Scheme, "subject-4"))?.Id);
-        Assert.Equal(existing, linked);
+        Assert.Equal("/account?oidc=linked", done.Headers.Location!.OriginalString);
+        Assert.Equal(existing, await AsSystemAsync(app, async users => (await users.FindByLoginAsync(OidcOptions.Scheme, "subject-5"))?.Id));
+
+        // From then on the provider signs them in to that account, whatever it calls them.
+        using var later = Browser(app);
+        Assert.Equal("/dashboard", await SignInAsync(later, provider, "subject-5", "someone-else-there", "THS Admins"));
+    }
+
+    [Fact]
+    public async Task Linking_without_the_pages_antiforgery_token_is_refused()
+    {
+        using var provider = new FakeOidcProvider();
+        await using var app = Create(provider);
+        using var browser = Browser(app);
+        await TalkWatchApp.SignInAsync(browser, TalkWatchApp.AdminUsername, TalkWatchApp.AdminPassword);
+
+        using var form = new FormUrlEncodedContent([]);
+        var forged = await browser.PostAsync(new Uri("/account/link/oidc", UriKind.Relative), form, Ct);
+
+        Assert.Equal(HttpStatusCode.BadRequest, forged.StatusCode);
     }
 
     [Fact]
@@ -174,5 +216,27 @@ public sealed class OidcTests(TalkWatchApp talkwatch) : IClassFixture<TalkWatchA
         }
 
         Assert.Equal("sam@example.test", (await AsSystemAsync(app, users => users.FindByNameAsync("sam")))!.Email);
+    }
+
+    // Some providers let people set their own email, and say so: one the provider hasn't checked could be a colleague's,
+    // and would link the person to that colleague's Talk user, and the calls that ring it.
+    [Fact]
+    public async Task An_email_the_provider_has_not_checked_is_kept_but_links_no_talk_user()
+    {
+        using var provider = new FakeOidcProvider();
+        var console = new FixtureConsole(FixtureConsole.DefaultDirectory);
+        console.Overrides["/proxy/talk/api/users"] = """
+            [{"unique_id": "talk-sam", "id": 41, "full_name": "Sam Rivers", "ext": "0041", "email": "sam.rivers@example.test", "hide_from_user_list": false}]
+            """;
+        await using var app = talkwatch.Create(console, settings: Settings,
+            services: s => s.Configure<OpenIdConnectOptions>(OidcOptions.Scheme, o => o.BackchannelHttpHandler = provider));
+        await app.Services.GetRequiredService<LineDirectorySync>().RefreshAsync(Ct);
+
+        (provider.Email, provider.EmailVerified) = ("sam.rivers@example.test", false);
+        using var browser = Browser(app);
+        await SignInAsync(browser, provider, "subject-unverified", "mallory", "talkwatch-users");
+
+        var mallory = await AsSystemAsync(app, users => users.FindByNameAsync("mallory"));
+        Assert.Equal(("sam.rivers@example.test", false, (string?)null), (mallory!.Email, mallory.EmailConfirmed, mallory.TalkUserUuid));
     }
 }

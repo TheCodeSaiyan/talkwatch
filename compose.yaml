@@ -1,20 +1,41 @@
-# TalkWatch with its own PostgreSQL. Copy .env.example to .env, fill it in, then: docker compose up -d
+# TalkWatch with its own PostgreSQL. Make the secret files in ./secrets and copy .env.example to .env, as the install
+# guide says, then: docker compose up -d
 #
 # The web port is published on the host for a first run on the LAN. Put a reverse proxy with TLS in front before
 # anyone reaches it from outside; TalkWatch itself serves plain HTTP on 8080.
 
 name: talkwatch
 
+# Passwords are files, never environment variables, which anyone who can list processes or inspect the container
+# reads. Each lands in /run/secrets inside the container that needs it, named after the setting it supplies.
+secrets:
+  db_admin_password:
+    file: ./secrets/db_admin_password
+  db_password:
+    file: ./secrets/db_password
+  talk_password:
+    file: ./secrets/talk_password
+  admin_password:
+    file: ./secrets/admin_password
+
 services:
   db:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: talkwatch
-      POSTGRES_USER: talkwatch
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      # PostgreSQL's own superuser, for the server's upkeep. TalkWatch signs in as a role of its own that owns its
+      # database and nothing else, made on the first start by db-init.
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
+    secrets:
+      - db_admin_password
+      - source: db_password
+        target: Database__Password
     volumes:
       - db:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d:ro
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U talkwatch -d talkwatch"]
       interval: 5s
@@ -27,22 +48,45 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # Every address the host has, for a first run on the LAN. With the reverse proxy on this same host, set
+    # TALKWATCH_BIND=127.0.0.1 so only the proxy reaches TalkWatch's plain HTTP.
     ports:
-      - "${TALKWATCH_PORT:-8080}:8080"
+      - "${TALKWATCH_BIND:-0.0.0.0}:${TALKWATCH_PORT:-8080}:8080"
     environment:
-      ConnectionStrings__TalkWatch: Host=db;Database=talkwatch;Username=talkwatch;Password=${DB_PASSWORD}
+      ConnectionStrings__TalkWatch: Host=db;Database=talkwatch;Username=talkwatch
       Site__Name: ${SITE_NAME:-TalkWatch}
       Site__Region: ${SITE_REGION:-GB}
+      Site__PublicUrl: ${SITE_PUBLIC_URL:-}
       Talk__ConsoleUrl: ${TALK_CONSOLE_URL:-}
       Talk__Username: ${TALK_USERNAME:-}
-      Talk__Password: ${TALK_PASSWORD:-}
       Talk__CertificateSha256: ${TALK_CERTIFICATE_SHA256:-}
       Talk__PollSeconds: ${TALK_POLL_SECONDS:-60}
       Bootstrap__AdminUsername: ${BOOTSTRAP_ADMIN_USERNAME:-}
-      Bootstrap__AdminPassword: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+    secrets:
+      - source: db_password
+        target: Database__Password
+      - source: talk_password
+        target: Talk__Password
+      - source: admin_password
+        target: Bootstrap__AdminPassword
     volumes:
-      # Copied recordings and voicemail. Back this up together with the database: each file is indexed there.
+      # Copied recordings and voicemail, and the key TalkWatch encrypts saved credentials with. Back this up together
+      # with the database: each file is indexed there.
       - audio:/data/audio
+    # Nothing in the image is ever written: audio goes to its volume, and the tunnel helpers' working files to /tmp.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "dotnet", "TalkWatch.Web.dll", "healthz"]
+      interval: 30s
+      timeout: 10s
+      start_period: 2m
+      retries: 3
 
 volumes:
   db:
