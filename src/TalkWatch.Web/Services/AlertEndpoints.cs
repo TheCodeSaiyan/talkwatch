@@ -210,6 +210,13 @@ public static partial class AlertEndpoints
                 return Results.NotFound();
             }
 
+            // The mail server carries every report and alert, and the settings hold the site's mail password and bot
+            // token: like the console's, they are for admins, whatever else a role may manage.
+            if (!http.User.IsInRole(Roles.Admin))
+            {
+                return BackToSettings("Only an admin can change the mail and Telegram settings.");
+            }
+
             static string? Text(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
             int? port = null;

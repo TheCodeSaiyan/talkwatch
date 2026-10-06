@@ -50,6 +50,25 @@ public sealed class AlertFlowStore(TalkWatchDbContext db, CurrentSite site, Audi
             return (null, "Testing what a voicemail says is for admins.");
         }
 
+        // A channel that belongs to nobody is sent what the whole site holds, so managing every alert is not enough to
+        // send it what was said or the voicemail: the person saving the flow must be allowed them everywhere too.
+        // A Manager's own channels are sent only what the Manager may have, so this is for those who manage every alert.
+        if (admin)
+        {
+            var includes = Flows.AllNotify(flow.Steps).Aggregate(NotifyIncludes.None, (all, n) => all | n.Include);
+            var reads = user.Can(Permission.AllTranscripts);
+            if (!reads && ((includes & (NotifyIncludes.Summary | NotifyIncludes.Transcript)) != NotifyIncludes.None
+                || Flows.AllConditions(flow).Any(c => c is TranscriptWordsCondition)))
+            {
+                return (null, "Sending or testing what was said is for those who may read every transcript.");
+            }
+
+            if (!user.Can(Permission.AllAudio) && includes.HasFlag(NotifyIncludes.Voicemail))
+            {
+                return (null, "Sending the voicemail is for those who may hear every voicemail.");
+            }
+        }
+
         if (!admin && Flows.IsSiteAlert(flow.Trigger))
         {
             return (null, "Alerts about the whole site, such as TalkWatch itself or the Talk account, are for admins.");

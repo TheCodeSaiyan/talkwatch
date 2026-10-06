@@ -81,7 +81,7 @@ public enum Permission
     /// <summary>Set up alert channels and flows of one's own, for one's own lines.</summary>
     OwnAlerts = 1 << 7,
 
-    /// <summary>Every alert channel and flow, the mail and Telegram settings, and the alert about TalkWatch itself.</summary>
+    /// <summary>Every alert channel and flow, and the alert about TalkWatch itself. The mail and Telegram settings are for admins.</summary>
     ManageAlerts = 1 << 8,
 
     /// <summary>People, their roles and grants, roles themselves, and group mappings.</summary>
@@ -151,7 +151,7 @@ public static class Permissions
         Permission.ApiTokens => "Make API tokens",
         Permission.MarkCallBacks => "Mark missed callers done",
         Permission.OwnAlerts => "Set up their own alerts, for their own lines",
-        Permission.ManageAlerts => "Manage every alert, and the alert settings",
+        Permission.ManageAlerts => "Manage every alert",
         Permission.ManagePeople => "Manage people, roles, grants and group mappings",
         Permission.ManageRetention => "Manage retention",
         Permission.ManageReports => "Set up reports, and read every copy",
