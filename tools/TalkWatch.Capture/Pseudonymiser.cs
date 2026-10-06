@@ -77,6 +77,22 @@ public sealed partial class Pseudonymiser(byte[] key)
     [GeneratedRegex(@"\b(?:[0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}\b")]
     private static partial Regex Mac();
 
+    // Talk writes some MACs bare, as twelve hex digits, in fields named for them; the pattern above needs separators.
+    [GeneratedRegex(@"mac", RegexOptions.IgnoreCase)]
+    private static partial Regex MacField();
+
+    [GeneratedRegex(@"^[0-9A-Fa-f]{12}$")]
+    private static partial Regex BareMac();
+
+    // The owner's Ubiquiti account and the console's id at Ubiquiti: UUIDs, kept as such, but each names the owner.
+    [GeneratedRegex(@"(^|_)sso_(id|uuid)$|^anonymous_controller_id$", RegexOptions.IgnoreCase)]
+    private static partial Regex OwnerIdField();
+
+    // A console's own cloud address, such as https://acme.ui.com/gw, carries the name its owner gave it; Ubiquiti's
+    // shared hosts (api, sso, fw-update and the like) name nobody, and stay.
+    [GeneratedRegex(@"(?<=://)(?!(?:api|sso|account|accounts|fw-update|fw-download|static|config|unifi|community|help|store|www)\.)[A-Za-z0-9-]+(?=\.ui\.com\b)")]
+    private static partial Regex OwnersUiHost();
+
     [GeneratedRegex(@"\b(?:\d{1,3}\.){3}\d{1,3}\b")]
     private static partial Regex IPv4();
 
@@ -245,6 +261,16 @@ public sealed partial class Pseudonymiser(byte[] key)
             return text;
         }
 
+        if (MacField().IsMatch(property) && BareMac().IsMatch(text))
+        {
+            return BareFakeMac(text);
+        }
+
+        if (OwnerIdField().IsMatch(property) && Guid.TryParse(text, out _))
+        {
+            return new Guid(HMACSHA256.HashData(key, Encoding.UTF8.GetBytes("owner:" + text.ToUpperInvariant()))[..16]).ToString();
+        }
+
         if (TitleField().IsMatch(property))
         {
             return Consistent(_titles, text, n => $"Title {n}");
@@ -347,6 +373,7 @@ public sealed partial class Pseudonymiser(byte[] key)
 
         text = Email().Replace(text, m => Consistent(_emails, m.Value, n => $"person{n}@example.invalid"));
         text = Mac().Replace(text, m => Consistent(_macs, m.Value, _ => FakeMac(m.Value)));
+        text = OwnersUiHost().Replace(text, "example");
         text = IPv6().Replace(text, m => IsPublicIPv6(m.Value) ? Consistent(_ipv6, m.Value, n => $"2001:db8::{n:x}") : m.Value);
         return IPv4().Replace(text, m => IsPublic(m.Value) ? Consistent(_ips, m.Value, n => $"203.0.113.{n % 254 + 1}") : m.Value);
     }
@@ -367,6 +394,24 @@ public sealed partial class Pseudonymiser(byte[] key)
         // 02 marks a locally administered address, which no manufacturer assigns.
         return string.Join(separator, new[] { (byte)0x02 }.Concat(hash.Take(5)).Select(b => b.ToString("x2", CultureInfo.InvariantCulture)));
     }
+
+    // Twelve hex digits with no separators: a run of seven or more digits would read to the guard as a phone number, so
+    // the fake is drawn again until it has none. The same device gets the same fake, written in the same case.
+    private string BareFakeMac(string real)
+    {
+        for (var salt = 0; ; salt++)
+        {
+            var hash = HMACSHA256.HashData(key, Encoding.UTF8.GetBytes($"mac:{salt}:{real.ToUpperInvariant()}"));
+            var fake = string.Concat(new[] { (byte)0x02 }.Concat(hash.Take(5)).Select(b => b.ToString("x2", CultureInfo.InvariantCulture)));
+            if (!LongDigitRun().IsMatch(fake))
+            {
+                return real.Any(char.IsAsciiLetterLower) ? fake : fake.ToUpperInvariant();
+            }
+        }
+    }
+
+    [GeneratedRegex(@"\d{7}")]
+    private static partial Regex LongDigitRun();
 
     private static string Consistent(Dictionary<string, string> map, string real, Func<int, string> make)
     {

@@ -27,6 +27,18 @@ public sealed class GuardTests : IDisposable
 
     private static IEnumerable<Finding> ScanLine(string line) => Guard.ScanText("f.json", [line], new HashSet<string>());
 
+    // A manufacturer's MAC names a real device; a pseudonymised one is locally administered (02:...), which none assigns.
+    [Theory]
+    [InlineData(@"""mac"": ""602232AABBCC""")]
+    [InlineData(@"""from_mac"": ""60:22:32:aa:bb:cc""")]
+    public void A_manufacturers_mac_in_a_fixture_is_reported(string line) =>
+        Assert.Contains(ScanLine(line), f => f.Reason.Contains("MAC", StringComparison.Ordinal));
+
+    [Theory]
+    [InlineData(@"""mac"": ""02C6FDBC85D6""")]
+    [InlineData(@"""mac"": ""02:c6:fd:bc:85:d6""")]
+    public void A_locally_administered_mac_passes(string line) => Assert.Empty(ScanLine(line));
+
     [Fact]
     public void A_real_number_in_a_fixture_is_reported_with_its_line()
     {
