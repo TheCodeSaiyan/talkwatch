@@ -12,7 +12,7 @@ The console TalkWatch reads from, and the way to it. Each of these but PollSecon
 
 | Setting | Default | Description |
 |---|---|---|
-| `Talk__ConsoleUrl` | none | The console's LAN address, such as https://10.0.0.1. Polling is off while this is unset. |
+| `Talk__ConsoleUrl` | none | The console's LAN address, such as https://10.0.0.1. Polling is off while this is unset. It must be https: the console's password goes only over TLS. Changing it on the Console page needs the password typed again, so a saved password never goes to an address it wasn't given for. |
 | `Talk__Route` | `Direct` | How TalkWatch reaches the console: Direct, on the same network; WireGuard, through the site gateway's own WireGuard VPN server; or Tailscale, through a tailnet with a subnet router on the site's network. ConsoleUrl stays the console's LAN address whichever it is. |
 | `Talk__WireGuardConfig` | none | For WireGuard: the client's .conf as the gateway's VPN server gives it out, whole. Its endpoint can be the site's dynamic DNS name, which TalkWatch looks up again every few minutes. **Secret:** give it as a file. |
 | `Talk__TailscaleAuthKey` | none | For Tailscale: an auth key, or an OAuth client secret with the auth_keys scope, which does not expire. TalkWatch joins as an ephemeral node each time it starts. **Secret:** give it as a file. |

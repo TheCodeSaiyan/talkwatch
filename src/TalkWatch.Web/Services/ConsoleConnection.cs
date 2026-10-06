@@ -100,6 +100,11 @@ public sealed class ConsoleConnection(IServiceScopeFactory scopes, ChannelSecret
             FromPage = saved is not null,
         };
 
+        if (target.Url is { } address && address.Scheme != Uri.UriSchemeHttps)
+        {
+            return target with { Problem = $"The console's address {address} isn't https: TalkWatch sends the console's password only over TLS." };
+        }
+
         switch (route)
         {
             case ConsoleRoute.WireGuard:

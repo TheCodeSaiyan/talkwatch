@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using TalkWatch.Core.Talk;
 using TalkWatch.Data;
 
@@ -53,12 +54,24 @@ public static partial class ConsoleEndpoints
         var console = app.MapGroup("/admin/console").RequireAuthorization(Permissions.AdminPolicy).WithMetadata(new SkipStatusCodePagesAttribute());
 
         console.MapPost("/", async ([FromForm] ConsoleForm form, TalkWatchDbContext db, CurrentSite site, ChannelSecrets secrets, ConsoleConnection connection,
-            Audit audit, TimeProvider clock, CancellationToken cancellationToken) =>
+            IOptions<TalkOptions> options, Audit audit, TimeProvider clock, CancellationToken cancellationToken) =>
         {
+            // https only: the console's password goes over TLS, to a console its certificate vouches for.
+            Uri? newUrl = null;
             if (Text(form.ConsoleUrl) is { } url
-                && (!Uri.TryCreate(url, UriKind.Absolute, out var parsed) || (parsed.Scheme != Uri.UriSchemeHttps && parsed.Scheme != Uri.UriSchemeHttp) || parsed.AbsolutePath != "/"))
+                && (!Uri.TryCreate(url, UriKind.Absolute, out newUrl) || newUrl.Scheme != Uri.UriSchemeHttps || newUrl.AbsolutePath != "/"))
             {
-                return Back("The console's address is just its scheme and host, such as https://192.168.1.1.");
+                return Back("The console's address is just https:// and its host, such as https://192.168.1.1.");
+            }
+
+            // A password saved here, or in the settings, was given for the console it was given with. Moving to another
+            // address needs it typed again, or it would go wherever an admin pointed it: a way to read a password never shown.
+            var before = (await connection.GetAsync(cancellationToken)).Url;
+            var after = newUrl ?? options.Value.ConsoleUrl;
+            if (before is not null && after is not null && Uri.Compare(before, after, UriComponents.SchemeAndServer, UriFormat.Unescaped, StringComparison.OrdinalIgnoreCase) != 0
+                && string.IsNullOrEmpty(form.Password))
+            {
+                return Back("Changing the console's address needs its password again, so that a password never goes to an address it wasn't given for.");
             }
 
             if (Text(form.CertificateSha256) is { } pin && !Fingerprint().IsMatch(pin))
