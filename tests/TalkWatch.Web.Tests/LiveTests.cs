@@ -155,6 +155,24 @@ public sealed class LiveTests(TalkWatchApp talkwatch) : IClassFixture<TalkWatchA
         Assert.Equal(["ONGOING_EVENTS_UPDATE", "USERS_ON_ACTIVE_CALLS"], events);
     }
 
+    // The console is trusted, but a message without end would fill memory before anything read it: the socket gives up.
+    [Fact]
+    public async Task A_live_message_bigger_than_any_the_console_sends_ends_the_connection()
+    {
+        await using var console = await FakeLiveConsole.StartAsync([new string('x', (4 * 1024 * 1024) + 1)]);
+        using var handler = ConsoleHttp.CreateHandler(null);
+        using var http = new HttpClient(handler, disposeHandler: false) { BaseAddress = console.Address };
+        using var invoker = new HttpMessageInvoker(handler, disposeHandler: false);
+        await new TalkClient(http).SignInAsync("talkwatch", "pw", Ct);
+
+        await Assert.ThrowsAsync<TalkApiException>(async () =>
+        {
+            await foreach (var _ in TalkLive.ReadAsync(console.Address, invoker, Ct))
+            {
+            }
+        });
+    }
+
     private static int Count(string html, string marker) =>
         (html.Length - html.Replace(marker, "", StringComparison.Ordinal).Length) / marker.Length;
 

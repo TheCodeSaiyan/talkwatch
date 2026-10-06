@@ -141,6 +141,12 @@ public sealed record LiveMessage(string Event, JsonElement Data)
 /// </summary>
 public static class TalkLive
 {
+    /// <summary>
+    /// The most one message may hold. The console's are a few kilobytes; a message without end would otherwise fill
+    /// memory before anything read it.
+    /// </summary>
+    public const int MaxMessageBytes = 4 * 1024 * 1024;
+
     public static async IAsyncEnumerable<LiveMessage> ReadAsync(Uri console, HttpMessageInvoker invoker, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var uri = new UriBuilder(console) { Scheme = console.Scheme == Uri.UriSchemeHttps ? "wss" : "ws", Path = "/proxy/talk/" }.Uri;
@@ -156,6 +162,11 @@ public static class TalkLive
             if (result.MessageType == WebSocketMessageType.Close)
             {
                 yield break;
+            }
+
+            if (message.Length + result.Count > MaxMessageBytes)
+            {
+                throw new TalkApiException($"A live message from the console ran past {MaxMessageBytes / (1024 * 1024)} MB; reconnecting.");
             }
 
             message.Write(buffer, 0, result.Count);
