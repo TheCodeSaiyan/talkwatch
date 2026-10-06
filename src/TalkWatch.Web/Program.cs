@@ -180,6 +180,7 @@ if (args.Contains("check-audio"))
 await DatabaseStartup.CheckAudioAsync(app.Services, checksums: false, CancellationToken.None);
 
 app.UseProtection();
+app.UsePageMessages();
 
 if (!app.Environment.IsDevelopment())
 {
