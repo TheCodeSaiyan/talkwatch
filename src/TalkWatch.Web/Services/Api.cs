@@ -99,7 +99,8 @@ public static class ApiEndpoints
             var end = (until ?? clock.GetUtcNow()).ToUniversalTime();
             var start = (since ?? end.AddDays(-7)).ToUniversalTime();
             var size = Math.Clamp(pageSize ?? 100, 1, MaxPageSize);
-            var number = Math.Max(page ?? 0, 0);
+            // Past the end is an empty page; a page number too big to multiply by the size would be a server error instead.
+            var number = Math.Clamp(page ?? 0, 0, (int.MaxValue / MaxPageSize) - 1);
             var query = db.Calls.AsNoTracking().Where(c => c.Time >= start && c.Time < end);
             var total = await query.CountAsync();
             var calls = await query.OrderByDescending(c => c.Time).Skip(number * size).Take(size).Include(c => c.Lines).ToListAsync();
