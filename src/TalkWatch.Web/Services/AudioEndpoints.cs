@@ -39,7 +39,11 @@ public static class AudioEndpoints
             }
 
             http.Response.Headers.CacheControl = "private, no-store";
-            return Results.File(store.OpenRead(audio.RelativePath!), audio.ContentType ?? "audio/mpeg", enableRangeProcessing: true);
+            // The type is the console's word, kept from the copy. Anything but audio is served as a plain download, never
+            // as a page, which would be a page on TalkWatch's own address.
+            var type = audio.ContentType ?? "audio/mpeg";
+            return Results.File(store.OpenRead(audio.RelativePath!),
+                type.StartsWith("audio/", StringComparison.OrdinalIgnoreCase) ? type : "application/octet-stream", enableRangeProcessing: true);
         }).RequireAuthorization();
     }
 }
