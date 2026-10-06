@@ -2,7 +2,7 @@
   "event": "DEVICES_UPDATED",
   "data": [
     {
-      "mac": "6022320c0574",
+      "mac": "02bc04103b6f",
       "ip": "10.50.50.19",
       "model": "UVP-TOUCH-MAX",
       "sshd_port": 32768,

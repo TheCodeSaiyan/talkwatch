@@ -26,7 +26,7 @@
             "event_data": {
               "to": "+447700900774",
               "from": "0002",
-              "from_mac": "6022320c0574",
+              "from_mac": "02bc04103b6f",
               "to_contact_id": 1,
               "from_user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
             },
@@ -43,7 +43,7 @@
             "event_uuid": "ad8f420e-a71a-415b-9ab2-92e018c6e570"
           }
         ],
-        "from_mac": "6022320c0574",
+        "from_mac": "02bc04103b6f",
         "from_id": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
         "from_contact_id": null,
         "from_did": "+441174960404",
@@ -83,7 +83,7 @@
             "event_data": {
               "to": "+447700900774",
               "from": "0002",
-              "from_mac": "6022320c0574",
+              "from_mac": "02bc04103b6f",
               "to_contact_id": 1,
               "from_user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
             },
@@ -118,7 +118,7 @@
             "event_uuid": "57694858-7db0-4b70-bed1-c950f9b26946"
           }
         ],
-        "from_mac": "6022320c0574",
+        "from_mac": "02bc04103b6f",
         "from_id": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
         "from_contact_id": null,
         "from_did": "+441174960404",

@@ -166,7 +166,7 @@
     "uuid": "7194cd2c-b67e-5478-9ca2-820f681ba4ad",
     "bom": "9505550169",
     "hwrev": 185098,
-    "mac": "F492BF9B5FEC",
+    "mac": "0283CE9EA9E7",
     "serialno": "248be4d2a835",
     "qrid": "YJ7aiM",
     "firmwareVersion": "5.1.33"
@@ -176,7 +176,7 @@
   "latestUpdate": null,
   "latestUpdateCheck": 1790724194263,
   "ledStatus": null,
-  "mac": "F492BF9B5FEC",
+  "mac": "0283CE9EA9E7",
   "memory": {
     "free": 85836,
     "total": 4040828,
@@ -827,17 +827,17 @@
     "create_time": 1693768635,
     "login_time": 1790724192,
     "extras": {
-      "previous_uid_sso_id": "e27c731a-50d4-4092-9d8a-0d23d073fdc5",
+      "previous_uid_sso_id": "7a5db04c-b085-1548-0ca0-7a33226c653c",
       "uid_avatar": "https://example.invalid/redacted/3"
     },
     "username": "",
     "local_account_exist": false,
     "password_revision": 0,
     "sso_account": "person3@example.invalid",
-    "sso_uuid": "498f450d-f4f0-4105-b7a7-d67dbb63d1ce",
+    "sso_uuid": "670478ec-c5b8-21ba-30ee-a50f54a1f1b2",
     "sso_username": "Riley4",
     "sso_picture": "https://example.invalid/redacted/4",
-    "uid_sso_id": "e27c731a-50d4-4092-9d8a-0d23d073fdc5",
+    "uid_sso_id": "7a5db04c-b085-1548-0ca0-7a33226c653c",
     "uid_sso_account": "person4@example.invalid",
     "uid_account_status": "ACTIVE",
     "groups": [

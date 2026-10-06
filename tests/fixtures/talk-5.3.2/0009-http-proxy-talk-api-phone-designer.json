@@ -16,7 +16,7 @@
       "time_24h": true,
       "quick_tiles": [
         {
-          "mac": "E438830D90F2",
+          "mac": "023C490FDF42",
           "name": "Frankie39",
           "type": "camera",
           "entityId": "64f4e01514960192e4000410",
@@ -29,7 +29,7 @@
           "entityId": "424b4f0d-662b-4e2e-aa16-182661c912b5"
         },
         {
-          "mac": "847848B2D917",
+          "mac": "022F33BD4470",
           "name": "Avery Price 40",
           "type": "camera",
           "entityId": "685bc990001c1003e423e3ab",
@@ -38,7 +38,7 @@
           "cameraRtspUrlMedium": "redacted-4"
         },
         {
-          "mac": "74ACB90B1A37",
+          "mac": "0229A89787A2",
           "name": "Avery41",
           "type": "camera",
           "entityId": "64f4e768024f1003e4000411",
