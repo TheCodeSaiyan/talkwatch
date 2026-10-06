@@ -1,8 +1,13 @@
+using System.Net;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using TalkWatch.Core.Alerts;
 using TalkWatch.Core.Calls;
 using TalkWatch.Data;
+using TalkWatch.Web.Components.Alerts;
 using TalkWatch.Web.Services;
 
 namespace TalkWatch.Web.Tests;
@@ -67,5 +72,21 @@ public sealed partial class AlertTests
         Assert.Contains(missed, m => m.OnNumber);
         Assert.Equal(missed.Where(m => m.Caller).Select(m => m.TalkUuid).Order(), byCaller.Hits.Select(x => x.Call.TalkUuid).Order());
         Assert.Equal(missed.Where(m => m.OnNumber).Select(m => m.TalkUuid).Order(), byNumber.Hits.Select(x => x.Call.TalkUuid).Order());
+    }
+
+    // The verdict is a figure in bold and the words after it: the space between them has to survive rendering, which drops
+    // a text node that is only whitespace, as the space closing the bold once was.
+    [Theory]
+    [InlineData(1, 1, "It would have run on 1 of the 1 call in the last 7 days that started it.")]
+    [InlineData(0, 3, "It would not have run of the 3 calls in the last 7 days that started it.")]
+    [InlineData(2, 500, "It would have run on 2 of the 500 calls in the last 7 days that started it (the latest 500).")]
+    public async Task What_a_tried_flow_would_have_done_reads_as_a_sentence(int hits, int considered, string expected)
+    {
+        await using var services = new ServiceCollection().BuildServiceProvider();
+        await using var renderer = new HtmlRenderer(services, NullLoggerFactory.Instance);
+        var html = await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<DryRunVerdict>(ParameterView.FromDictionary(
+            new Dictionary<string, object?> { [nameof(DryRunVerdict.Hits)] = hits, [nameof(DryRunVerdict.Considered)] = considered }))).ToHtmlString());
+
+        Assert.Equal(expected, WebUtility.HtmlDecode(System.Text.RegularExpressions.Regex.Replace(html, "<[^>]+>", "")).Trim());
     }
 }

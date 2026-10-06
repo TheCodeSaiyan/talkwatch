@@ -126,7 +126,7 @@ else if (_loaded)
                     }
                     else
                     {
-                        <p><b>@(tried.Hits.Count == 0 ? "It would not have run" : $"It would have run on {tried.Hits.Count}") </b>of the @tried.Considered @(tried.Considered == 1 ? "call" : "calls") in the last 7 days that started it@(tried.Considered >= AlertService.DryRunCalls ? " (the latest " + AlertService.DryRunCalls + ")" : "").</p>
+                        <DryRunVerdict Hits="tried.Hits.Count" Considered="tried.Considered" />
                         @if (tried.Hits.Count > 0)
                         {
                             <ul class="dry-run-hits">

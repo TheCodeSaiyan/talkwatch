@@ -1,0 +1,12 @@
+@* What a flow tried on past calls would have done, in a line: on how many of the calls that started it. *@
+@using TalkWatch.Web.Services
+
+<p><b>@(Hits == 0 ? "It would not have run" : $"It would have run on {Hits}")</b> of the @Considered @(Considered == 1 ? "call" : "calls") in the last 7 days that started it@(Considered >= AlertService.DryRunCalls ? " (the latest " + AlertService.DryRunCalls + ")" : "").</p>
+
+@code {
+    /// <summary>How many of the calls it would have run on.</summary>
+    [Parameter] public int Hits { get; set; }
+
+    /// <summary>How many calls in the last 7 days started it.</summary>
+    [Parameter] public int Considered { get; set; }
+}
