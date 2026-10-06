@@ -4,9 +4,9 @@
 #   scripts/upgrade-check.sh PREVIOUS CURRENT [LOG]
 #
 # PREVIOUS (the image last published) starts a clean install on environment variables alone, then CURRENT starts on the
-# same database, migrating it, and must come up healthy with no errors logged. A PREVIOUS that can't be pulled is
-# skipped, not failed, since the very first release has nothing to upgrade from. What went wrong is appended to LOG,
-# or printed when there's none.
+# same database and audio volume, migrating it, and must come up healthy with no errors logged. A PREVIOUS that can't
+# be pulled is skipped, not failed, since the very first release has nothing to upgrade from. What went wrong is
+# appended to LOG, or printed when there's none.
 set -uo pipefail
 
 previous="$1"
@@ -24,13 +24,16 @@ run="talkwatch-upgrade-$$"
 env=(-e "ConnectionStrings__TalkWatch=Host=$run-db;Database=talkwatch;Username=postgres;Password=ci-only"
     -e Bootstrap__AdminUsername=admin -e "Bootstrap__AdminPassword=ci only admin password")
 docker network create "$run" >/dev/null
-trap 'docker rm -f "$run-app" "$run-db" >/dev/null 2>&1; docker network rm "$run" >/dev/null 2>&1' EXIT
+# The audio volume carries over too, as it does on a real install: TalkWatch keeps the key its credentials are encrypted
+# with there (.keys/), so a new one on each start couldn't read what the last one stored.
+docker volume create "$run-audio" >/dev/null
+trap 'docker rm -f "$run-app" "$run-db" >/dev/null 2>&1; docker network rm "$run" >/dev/null 2>&1; docker volume rm "$run-audio" >/dev/null 2>&1' EXIT
 docker run -d --name "$run-db" --network "$run" -e POSTGRES_PASSWORD=ci-only -e POSTGRES_DB=talkwatch postgres:17-alpine >/dev/null
 until docker exec "$run-db" pg_isready -U postgres -d talkwatch >/dev/null 2>&1; do sleep 1; done
 
 for tag in "$previous" "$current"; do
     docker rm -f "$run-app" >/dev/null 2>&1 || true
-    docker run -d --name "$run-app" --network "$run" -p 127.0.0.1::8080 "${env[@]}" "$tag" >/dev/null
+    docker run -d --name "$run-app" --network "$run" -p 127.0.0.1::8080 -v "$run-audio:/data/audio" "${env[@]}" "$tag" >/dev/null
     port=$(docker port "$run-app" 8080 | head -1 | sed 's/.*://')
     healthy=false
     for _ in $(seq 1 90); do
