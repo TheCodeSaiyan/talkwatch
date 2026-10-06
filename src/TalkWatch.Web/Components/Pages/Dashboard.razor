@@ -163,7 +163,7 @@ else if (_stats is { } s)
                 {
                     <tr data-line="@($"{line.Kind}:{line.Key}")">
                         <td class="first"><b style="font-weight: 600">@line.Name</b></td>
-                        <td class="muted">@KindName(line.Kind)</td>
+                        <td class="muted">@LineKindNames.One(line.Kind)</td>
                         <td class="num">@line.Inbound</td>
                         <td class="num">@line.Answered</td>
                         <td class="num">@line.Missed</td>
@@ -181,17 +181,6 @@ else if (_stats is { } s)
     private static readonly int[] PeriodChoices = [7, 30, 90];
 
     private static string Seconds(TimeSpan? span) => span is { } s ? $"{Math.Round(s.TotalSeconds):0} s" : "–";
-
-    /// <summary>What a line is, in the words the rest of TalkWatch uses for it.</summary>
-    private static string KindName(LineKind kind) => kind switch
-    {
-        LineKind.Did => "Number",
-        LineKind.User => "Person",
-        LineKind.RingGroup => "Ring group",
-        LineKind.Attendant => "Switchboard",
-        LineKind.Queue => "Queue",
-        _ => "Outside number",
-    };
 
     [SupplyParameterFromQuery(Name = "days")] private int? Days { get; set; }
 

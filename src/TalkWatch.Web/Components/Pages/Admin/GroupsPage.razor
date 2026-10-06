@@ -82,7 +82,7 @@
                         @foreach (var line in mapping.Lines.OrderBy(l => l.Kind).ThenBy(l => l.Key))
                         {
                             <tr data-group-line="@($"{line.Kind}:{line.Key}")">
-                                <td class="first">@_names.GetValueOrDefault((line.Kind, line.Key), line.Key) <span class="muted" style="font-size: 12px">@line.Kind</span></td>
+                                <td class="first">@_names.GetValueOrDefault((line.Kind, line.Key), line.Key) <span class="muted" style="font-size: 12px">@LineKindNames.One(line.Kind)</span></td>
                                 <td>@(line.AllowRecordings ? "yes" : "")</td>
                                 <td>@(line.AllowVoicemail ? "yes" : "")</td>
                                 <td>@(line.AllowTranscripts ? "yes" : "")</td>
@@ -100,7 +100,7 @@
                 <select class="input" name="Line" required>
                     @foreach (var kind in _lines.GroupBy(l => l.Kind))
                     {
-                        <optgroup label="@kind.Key">
+                        <optgroup label="@LineKindNames.Many(kind.Key)">
                             @foreach (var line in kind)
                             {
                                 <option value="@($"{line.Kind}:{line.Key}")">@line.Name@(line.Ext is { Length: > 0 } ext ? $" ({ext})" : "")</option>

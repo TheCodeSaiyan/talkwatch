@@ -80,7 +80,7 @@ else
                                 var form = $"grant-{grant.Id:N}";
                                 <tr data-grant="@grant.Id" data-by-groups="@grant.ByGroups">
                                     <td class="first">@Name(grant)</td>
-                                    <td class="muted">@KindName(grant.Kind)</td>
+                                    <td class="muted">@LineKindNames.Many(grant.Kind)</td>
                                     <td><input type="checkbox" form="@form" name="AllowRecordings" value="true" checked="@grant.AllowRecordings" disabled="@grant.ByGroups" aria-label="Recordings" /></td>
                                     <td><input type="checkbox" form="@form" name="AllowVoicemail" value="true" checked="@grant.AllowVoicemail" disabled="@grant.ByGroups" aria-label="Voicemail" /></td>
                                     <td><input type="checkbox" form="@form" name="AllowTranscripts" value="true" checked="@grant.AllowTranscripts" disabled="@grant.ByGroups" aria-label="Transcripts" /></td>
@@ -112,7 +112,7 @@ else
                     <select class="input" name="Line" required>
                         @foreach (var group in _lines.GroupBy(l => l.Kind))
                         {
-                            <optgroup label="@KindName(group.Key)">
+                            <optgroup label="@LineKindNames.Many(group.Key)">
                                 @foreach (var line in group)
                                 {
                                     <option value="@($"{line.Kind}:{line.Key}")">@line.Name@(line.Ext is { Length: > 0 } ext ? $" ({ext})" : "")@(line.Present ? "" : " (no longer on the console)")</option>
@@ -296,14 +296,4 @@ else
         string.Concat((name ?? "?").Split(['.', ' ', '-', '_'], StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpperInvariant(p[0])));
 
     private string Name(Grant grant) => _names.GetValueOrDefault((grant.Kind, grant.Key), grant.Key);
-
-    private static string KindName(TalkWatch.Core.Calls.LineKind kind) => kind switch
-    {
-        TalkWatch.Core.Calls.LineKind.Did => "Numbers",
-        TalkWatch.Core.Calls.LineKind.User => "People (extensions)",
-        TalkWatch.Core.Calls.LineKind.RingGroup => "Ring groups",
-        TalkWatch.Core.Calls.LineKind.Attendant => "Switchboards",
-        TalkWatch.Core.Calls.LineKind.Queue => "Queues",
-        _ => "Contacts",
-    };
 }

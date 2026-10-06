@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -145,6 +146,26 @@ public sealed class OidcGroupMappingTests(TalkWatchApp talkwatch) : IClassFixtur
         Assert.Contains("data-group=\"sales\"", page, StringComparison.Ordinal);
         Assert.Equal(HttpStatusCode.Redirect, mapped.StatusCode);
         Assert.Equal(Roles.Viewer, await AsSystemAsync(app, (db, _) => db.GroupMappings.Where(m => m.Group == "night").Select(m => m.Role).SingleAsync(Ct)));
+    }
+
+    // A mapping's lines, and the lines it can be given, say what kind they are in words, never by the code's names.
+    [Fact]
+    public async Task The_mappings_page_names_each_kind_of_line_in_words()
+    {
+        using var provider = new FakeOidcProvider();
+        await using var app = Create(provider);
+        await app.Services.GetRequiredService<CallLogPoller>().RunOnceAsync(Ct);
+        await MapAsync(app, "sales", null, 10, (Sales, false));
+        using var admin = TalkWatchApp.Browser(app);
+        await TalkWatchApp.SignInAsync(admin, TalkWatchApp.AdminUsername, TalkWatchApp.AdminPassword);
+
+        var page = WebUtility.HtmlDecode(await admin.GetStringAsync(new Uri("/admin/groups", UriKind.Relative), Ct));
+
+        Assert.Matches($"data-group-line=\"Did:{Regex.Escape(Sales.Key)}\">\\s*<td class=\"first\">[^<]*<span class=\"muted\"[^>]*>Number</span>", page);
+        var groups = Regex.Matches(page, "<optgroup label=\"([^\"]+)\"").Select(m => m.Groups[1].Value).ToList();
+        Assert.Contains("Numbers", groups);
+        Assert.Contains("Switchboards", groups);
+        Assert.DoesNotContain(groups, g => g is "Did" or "User" or "RingGroup" or "Attendant" or "Queue" or "Contact");
     }
 
     private static string Token(string html) =>
