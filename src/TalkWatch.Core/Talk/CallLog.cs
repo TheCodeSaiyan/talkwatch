@@ -34,9 +34,10 @@ public sealed record CallLogRecord
     public string? RecordingFilename { get; init; }
     public string? Country { get; init; }
     public int? QualityScore { get; init; }
-    public bool IsVideoCall { get; init; }
-    public bool IsIntercomCall { get; init; }
-    public bool IsGroupIntercomCall { get; init; }
+    // Null for some calls on Talk 5.4.5 (seen on the live console), so none of the three is taken to be always there.
+    public bool? IsVideoCall { get; init; }
+    public bool? IsIntercomCall { get; init; }
+    public bool? IsGroupIntercomCall { get; init; }
 
     [JsonConverter(typeof(FlexibleIdConverter))] public string? FromId { get; init; }
     public string? FromMac { get; init; }

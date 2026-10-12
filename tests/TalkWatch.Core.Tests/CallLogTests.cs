@@ -29,6 +29,17 @@ public class CallLogTests
         }
     }
 
+    // Seen on the live console on Talk 5.4.5: a call with is_video_call null, which stopped every poll as a change of shape.
+    [Fact]
+    public void A_call_whose_video_and_intercom_flags_are_null_still_reads()
+    {
+        var page = System.Text.Json.JsonSerializer.Deserialize<CallLogPage>(
+            """{"records":[{"uuid":"c1","time":"2026-10-12T19:44:18.029Z","is_video_call":null,"is_intercom_call":null,"is_group_intercom_call":null}],"total_count":1}""",
+            TalkJson.Options)!;
+
+        Assert.Equal([null, null, null], new object?[] { page.Records[0].IsVideoCall, page.Records[0].IsIntercomCall, page.Records[0].IsGroupIntercomCall });
+    }
+
     [Fact]
     public void An_inbound_call_through_the_switchboard_touches_its_number_attendant_and_contacts()
     {
