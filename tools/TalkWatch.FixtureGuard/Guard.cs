@@ -52,6 +52,20 @@ public static partial class Guard
     private static partial Regex PhoneLike();
 
     /// <summary>Scans the given repository-relative paths under <paramref name="root"/>. Paths outside tests/fixtures are ignored.</summary>
+    // Masked addresses included: a console sends the owner's as ab****@domain.
+    [GeneratedRegex(@"[A-Za-z0-9._%+*-]+@([A-Za-z0-9-]+(?:[.][A-Za-z0-9-]+)+)")]
+    private static partial Regex EmailAddress();
+
+    // The domains reserved for examples (RFC 2606 and 6761), which the pseudonymiser writes and no one receives mail at.
+    private static bool IsExampleDomain(string domain)
+    {
+        var d = domain.ToLowerInvariant();
+        return d is "example.com" or "example.net" or "example.org"
+            || d.EndsWith(".example.com", StringComparison.Ordinal) || d.EndsWith(".example.net", StringComparison.Ordinal) || d.EndsWith(".example.org", StringComparison.Ordinal)
+            || d.EndsWith(".invalid", StringComparison.Ordinal) || d.EndsWith(".test", StringComparison.Ordinal)
+            || d.EndsWith(".example", StringComparison.Ordinal) || d.EndsWith(".localhost", StringComparison.Ordinal);
+    }
+
     public static IReadOnlyList<Finding> Scan(string root, IEnumerable<string> relativePaths)
     {
         var allowed = ReadAllowList(root);
@@ -106,6 +120,14 @@ public static partial class Guard
                 if ((Convert.ToByte(mac.Value[..2], 16) & 0x02) == 0)
                 {
                     yield return new Finding(path, lineNumber, mac.Value, "a manufacturer's MAC address; pseudonymise it to a locally administered one (02:...)");
+                }
+            }
+
+            foreach (Match email in EmailAddress().Matches(line))
+            {
+                if (!IsExampleDomain(email.Groups[1].Value))
+                {
+                    yield return new Finding(path, lineNumber, email.Value, "an e-mail address outside the example domains; pseudonymise it to personN@example.invalid");
                 }
             }
 

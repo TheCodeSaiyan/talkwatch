@@ -39,6 +39,22 @@ public sealed class GuardTests : IDisposable
     [InlineData(@"""mac"": ""02:c6:fd:bc:85:d6""")]
     public void A_locally_administered_mac_passes(string line) => Assert.Empty(ScanLine(line));
 
+    // An address outside the domains reserved for examples is someone's, masked or not: a console sends the owner's
+    // as ab****@domain, which once reached a fixture because the asterisks hid it from the pseudonymiser.
+    [Theory]
+    [InlineData(@"""email"": ""jane.smith@gmail.com""")]
+    [InlineData(@"""maskedEmail"": ""ja************@icloud.com""")]
+    [InlineData(@"""note"": ""write to Jane.Smith@Company.co.uk please""")]
+    public void A_real_email_address_in_a_fixture_is_reported(string line) =>
+        Assert.Contains(ScanLine(line), f => f.Reason.Contains("e-mail", StringComparison.Ordinal));
+
+    [Theory]
+    [InlineData(@"""email"": ""person1@example.invalid""")]
+    [InlineData(@"""email"": ""someone@example.com""")]
+    [InlineData(@"""email"": ""a@sub.example.org""")]
+    [InlineData(@"""email"": ""test@localhost.test""")]
+    public void An_address_on_a_reserved_example_domain_passes(string line) => Assert.Empty(ScanLine(line));
+
     [Fact]
     public void A_real_number_in_a_fixture_is_reported_with_its_line()
     {
