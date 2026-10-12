@@ -18,6 +18,20 @@ public class CompatibilityTests
         Assert.True(ConsoleVersions.IsPreRelease(versions.TalkChannel));
     }
 
+    // The newest capture: Talk 5.4.5 reports whether it can reach its cloud and whether it is degraded; both healthy then.
+    [Fact]
+    public async Task Talk_5_4_5_reports_its_cloud_and_load()
+    {
+        var talk = new TalkClient(new FixtureConsole(Path.Combine(Path.GetDirectoryName(FixtureConsole.DefaultDirectory)!, "talk-5.4.5")).CreateClient());
+
+        var info = await talk.GetInfoAsync(Ct);
+
+        Assert.Equal("5.4.5", info.Version);
+        Assert.Equal((false, false), (info.CloudConnectivity?.Degraded, info.Degradation?.Degraded));
+        Assert.Equal("0", TalkValue.Words(info.Degradation?.DegradationLevel));
+        Assert.Null(TalkValue.Time(info.CloudConnectivity?.Since));
+    }
+
     [Theory]
     [InlineData("5.1.33", "5.3.2", VersionFit.Tested)]
     [InlineData("5.1.33", "5.4.0", VersionFit.Tested)]

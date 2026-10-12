@@ -89,6 +89,7 @@ public sealed partial class CallLogPoller(
 
             // What the console runs, at least hourly: a newer or pre-release build is where endpoints change first.
             await versions.CheckIfDueAsync(cancellationToken);
+            await versions.CheckTalkServiceAsync(cancellationToken);
             await directory.RefreshIfDueAsync(cancellationToken);
             await health.CheckIfDueAsync(cancellationToken);
 

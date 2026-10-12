@@ -191,6 +191,11 @@ public sealed partial class LiveListener(
                 }
             }
 
+            if (message.Event == LiveMessage.DegradationUpdated)
+            {
+                versions.ApplyDegradation(message.Degradation());
+            }
+
             if (message.Transcript() is { } transcript)
             {
                 await transcripts.HandleAsync(transcript, cancellationToken);

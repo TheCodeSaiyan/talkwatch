@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace TalkWatch.Core.Talk;
@@ -11,6 +12,56 @@ public sealed record TalkInfo
     public string? UpdateChannel { get; init; }
 
     public string? HostDeviceModel { get; init; }
+
+    /// <summary>Since Talk 5.4.5: whether Talk can reach its cloud services. Older versions send nothing.</summary>
+    public TalkCloudConnectivity? CloudConnectivity { get; init; }
+
+    /// <summary>Since Talk 5.4.5: whether Talk is running degraded. Changes also arrive live, as DEGRADATION_UPDATED.</summary>
+    public TalkDegradation? Degradation { get; init; }
+}
+
+/// <summary>
+/// Whether Talk can reach its cloud services, as Talk 5.4.5 reports it. Only the healthy state has been seen, where reason
+/// and since are null, so their types are not known: they are kept as sent, and a shape Talk has not shown yet can't stop
+/// the version check.
+/// </summary>
+public sealed record TalkCloudConnectivity
+{
+    public bool? Degraded { get; init; }
+    public JsonElement? Reason { get; init; }
+    public JsonElement? Since { get; init; }
+}
+
+/// <summary>Whether Talk is running degraded, as Talk 5.4.5 reports it. As with the cloud, only the healthy state has been seen.</summary>
+public sealed record TalkDegradation
+{
+    public bool? Degraded { get; init; }
+    public JsonElement? DegradationLevel { get; init; }
+    public JsonElement? LoadLevel { get; init; }
+    public bool? TargetedForSuspension { get; init; }
+    public JsonElement? SuspendedAt { get; init; }
+    public JsonElement? Since { get; init; }
+}
+
+/// <summary>Reading the loosely typed values Talk sends in its service state.</summary>
+public static class TalkValue
+{
+    /// <summary>A string or number as words ("no_route" reads "no route"), or null for anything else.</summary>
+    public static string? Words(JsonElement? value) => value switch
+    {
+        { ValueKind: JsonValueKind.String } s when !string.IsNullOrWhiteSpace(s.GetString()) => s.GetString()!.Replace('_', ' '),
+        { ValueKind: JsonValueKind.Number } n => n.GetRawText(),
+        _ => null,
+    };
+
+    /// <summary>A time sent as an ISO string, or as Unix seconds or milliseconds; null for anything else.</summary>
+    public static DateTimeOffset? Time(JsonElement? value) => value switch
+    {
+        { ValueKind: JsonValueKind.String } s when DateTimeOffset.TryParse(s.GetString(), System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var t) => t,
+        { ValueKind: JsonValueKind.Number } n when n.TryGetInt64(out var unix) && unix > 0 =>
+            unix > 100_000_000_000 ? DateTimeOffset.FromUnixTimeMilliseconds(unix) : DateTimeOffset.FromUnixTimeSeconds(unix),
+        _ => null,
+    };
 }
 
 /// <summary><c>GET /proxy/talk/api/ucore/system_info</c>: the console's UniFi OS version and release channel.</summary>
