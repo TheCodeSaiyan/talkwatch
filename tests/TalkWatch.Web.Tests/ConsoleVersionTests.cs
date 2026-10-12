@@ -40,7 +40,7 @@ public sealed class ConsoleVersionTests(TalkWatchApp talkwatch) : IClassFixture<
         await PollAsync(app);
         var page = await HeaderAsync(app);
 
-        Assert.Equal(ConsoleVersions.Tested, Platform(app).Versions);
+        Assert.Equal(ConsoleVersions.TestedFrom, Platform(app).Versions);
         Assert.Equal(VersionFit.Tested, Platform(app).Fit);
         Assert.True(Platform(app).PreRelease);
         Assert.Equal(1, await HistoryAsync(app));
@@ -55,15 +55,16 @@ public sealed class ConsoleVersionTests(TalkWatchApp talkwatch) : IClassFixture<
         await using var app = talkwatch.Create(console);
         await PollAsync(app);
 
-        console.Overrides[InfoPath] = """{"version":"5.4.0","update_channel":"release"}""";
+        console.Overrides[InfoPath] = """{"version":"5.5.0","update_channel":"release"}""";
         await app.Services.GetRequiredService<ConsoleVersionMonitor>().CheckAsync(Ct);
         var page = await HeaderAsync(app);
 
-        Assert.Equal("5.4.0", Platform(app).Versions!.Talk);
+        Assert.Equal("5.5.0", Platform(app).Versions!.Talk);
         Assert.Equal(VersionFit.NewerUntested, Platform(app).Fit);
         Assert.Equal("5.3.2", Platform(app).Previous!.Talk);
         Assert.Equal(2, await HistoryAsync(app));
         Assert.Contains("Not yet tested", page, StringComparison.Ordinal);
+        Assert.Contains("tested: Talk 5.3.2 to 5.4.5, UniFi OS 5.1.33", page, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -89,13 +90,13 @@ public sealed class ConsoleVersionTests(TalkWatchApp talkwatch) : IClassFixture<
         await using var app = talkwatch.Create(console);
         await PollAsync(app);
 
-        console.Overrides[InfoPath] = """{"version":"5.4.0","update_channel":"release-candidate"}""";
+        console.Overrides[InfoPath] = """{"version":"5.5.0","update_channel":"release-candidate"}""";
         await app.Services.GetRequiredService<ConsoleVersionMonitor>().CheckAsync(Ct);
         console.Drifted = true;
         await PollAsync(app);
         var page = await HeaderAsync(app);
 
         Assert.Contains("changed shape", page, StringComparison.Ordinal);
-        Assert.Contains("5.3.2 → 5.4.0", page, StringComparison.Ordinal);
+        Assert.Contains("5.3.2 → 5.5.0", page, StringComparison.Ordinal);
     }
 }

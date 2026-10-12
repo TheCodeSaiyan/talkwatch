@@ -1,0 +1,52 @@
+{
+  "minutes": {
+    "standard": {
+      "planned": 3216,
+      "overage": 0,
+      "international": 0,
+      "metered": 0,
+      "trial": 0.11,
+      "quantity": 6000
+    }
+  },
+  "sms": {
+    "standard": {
+      "planned": 0,
+      "overage": 0,
+      "international": 0,
+      "metered": 0,
+      "trial": 0,
+      "quantity": 100
+    }
+  },
+  "cnam": {
+    "standard": {
+      "planned": 0,
+      "overage": 0,
+      "international": 0,
+      "metered": 0,
+      "trial": 0,
+      "quantity": 0
+    }
+  },
+  "transcriptions": {
+    "standard": {
+      "planned": 969,
+      "overage": 0,
+      "international": 0,
+      "metered": 0,
+      "trial": 1,
+      "quantity": 7200
+    }
+  },
+  "softphone": {
+    "standard": {
+      "planned": 0,
+      "overage": 0,
+      "international": 0,
+      "metered": 0,
+      "trial": 0,
+      "quantity": 0
+    }
+  }
+}

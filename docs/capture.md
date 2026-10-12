@@ -59,6 +59,24 @@ dotnet run --project tools/TalkWatch.Capture -- fetch --console https://<console
 
 This also shows whether that account's role is enough, which is one of the questions the spike has to answer. `--paths <file>` takes a hand-written list instead, one path per line.
 
+## Webhooks (optional)
+
+Talk 5.4.5 added webhooks for call events. To record what they send, run a receiver on a machine the console can reach:
+
+```sh
+dotnet run --project tools/TalkWatch.Capture -- listen --port 8787 --out webhooks.twcap --unifi-os <version> --talk <version>
+```
+
+It prints the addresses it listens on. Point a webhook in Talk at one of them, such as `http://<this machine>:8787/talk/post`, and make some calls. Each request is sealed into the archive as it arrives, its headers included, so the file is safe to stop at any moment with Ctrl+C. It answers 200 to everything.
+
+What Talk 5.4.5 sends, from the capture in `tests/fixtures/talk-5.4.5-webhooks`:
+
+- One JSON body per event, the same seven fields every time: `event`, `call_id`, `direction`, `caller_number`, `caller_name`, `dialed_number`, and `timestamp` in milliseconds. A GET webhook sends the same fields as a query string, after a stray comma (`/talk/get,?event=...`).
+- Only `call_started`, `call_answered`, `call_completed` and `call_cancelled` were seen. Two calls of seven sent `call_started` and nothing after it, so a webhook alone can't say how every call ended. Nothing says who answered, or anything about voicemail or parking.
+- No signature. The username and password set in Talk arrive as HTTP Basic authentication, over plain HTTP if the address is.
+
+The live WebSocket TalkWatch already reads carries all of this and more, which is why TalkWatch doesn't use webhooks.
+
 ## 4. Check what was captured
 
 ```sh
@@ -76,8 +94,9 @@ dotnet run --project tools/TalkWatch.Capture -- fixtures talk-ui.twcap fetched.t
 `--include` keeps only paths that start with one of the given prefixes, separated by commas. The console's own system events are large and are not what TalkWatch reads. Exact duplicate responses are always left out, because a capture repeats many requests.
 
 - Phone numbers become fictional ones in the same style: a mobile stays a mobile, `+44` stays `+44`. The same real number gets the same fictional one in every file, so records still join up.
-- Names and free text are found by property name and replaced. E-mail addresses, MAC addresses and public IP addresses are replaced wherever they appear.
+- Names and free text are found by property name and replaced. A query string is treated the same way, by each parameter's name. E-mail addresses, MAC addresses and public IP addresses are replaced wherever they appear.
 - Audio is replaced and listed in `tests/fixtures/synthetic-audio.sha256`. WAV becomes a tone of the same format and length. MP3, which is what Talk serves, becomes silence with the same frames, so it has the same bit rate, size and decoded length. ID3 tags, which can carry names, are dropped. Other audio formats are refused, and other binary content (such as camera snapshots) is left out.
+- Request headers recorded by `listen` keep their names; `Authorization` and cookies are replaced.
 - Postal addresses, coordinates, birth dates, card digits, titles, the console's hostname, secrets (tokens, keys, webhook and camera stream URLs), serials and SIDs, avatar links and public IPv6 addresses are replaced by fixed or keyed fakes. Keyed fakes keep their length, so records still join across files.
 - Ids, extension numbers, timestamps, private IP addresses and the shape of every payload are kept, because the shape is what the fixtures are for. Times sent as strings are kept only in fields named as times, such as `received_at`.
 

@@ -10,6 +10,7 @@ try
         ["cert", var console] => await Cert(new Uri(console)),
         ["import-har", var har, .. var rest] => ImportHar(har, Options.Parse(rest, allowPositional: false)),
         ["fetch", .. var rest] => await Fetch(Options.Parse(rest, allowPositional: false)),
+        ["listen", .. var rest] => await Listen(Options.Parse(rest, allowPositional: false)),
         ["list", .. var archives] when archives.Length > 0 => List(archives),
         ["fixtures", .. var rest] => Fixtures(Options.Parse(rest)),
         _ => Usage(),
@@ -39,6 +40,10 @@ static int Usage()
                 (--paths <file> | --paths-from <capture.twcap>) [--unifi-os <version>] [--talk <version>] [--note <text>]
               Sign in (password from TALKWATCH_CONSOLE_PASSWORD) and GET each path. --paths-from re-requests every
               GET path found in an earlier capture.
+
+          listen --port <port> --out <capture.twcap> [--unifi-os <version>] [--talk <version>] [--note <text>]
+              Receive webhooks on every address of this machine, sealing each request (body and headers) into the
+              archive as it arrives. Answers 200 to anything. Stop with Ctrl+C.
 
           list <capture.twcap>...
               Show what each archive holds. Paths are pseudonymised, and no bodies are shown.
@@ -103,6 +108,84 @@ static async Task<int> Fetch(Options options)
 
     new CaptureArchive(options.Manifest("fetch"), entries).Save(options.Required("--out"), key);
     Console.WriteLine($"{entries.Count} responses sealed into {options.Required("--out")}.");
+    return 0;
+}
+
+static async Task<int> Listen(Options options)
+{
+    var key = CaptureKey.FromEnvironment();
+    var output = options.Required("--out");
+    var port = int.Parse(options.Required("--port"), System.Globalization.CultureInfo.InvariantCulture);
+    var manifest = options.Manifest("webhook");
+    var entries = new List<CaptureEntry>();
+    var gate = new object();
+
+    using var stop = new CancellationTokenSource();
+    Console.CancelKeyPress += (_, e) =>
+    {
+        e.Cancel = true;
+        stop.Cancel();
+    };
+
+    var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Any, port);
+    listener.Start();
+    foreach (var address in System.Net.Dns.GetHostAddresses(System.Net.Dns.GetHostName())
+        .Where(a => a.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork))
+    {
+        Console.WriteLine($"Listening on http://{address}:{port}/");
+    }
+
+    Console.WriteLine($"Each request is sealed into {output} as it arrives. Ctrl+C to stop.");
+    try
+    {
+        while (true)
+        {
+            var client = await listener.AcceptTcpClientAsync(stop.Token);
+            _ = Task.Run(async () =>
+            {
+                using (client)
+                {
+                    try
+                    {
+                        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(stop.Token);
+                        timeout.CancelAfter(TimeSpan.FromSeconds(30));
+                        var stream = client.GetStream();
+                        var received = await WebhookRecorder.ReadAsync(stream, DateTimeOffset.UtcNow, timeout.Token);
+                        if (received is null)
+                        {
+                            return;
+                        }
+
+                        await stream.WriteAsync(WebhookRecorder.Reply, timeout.Token);
+                        lock (gate)
+                        {
+                            entries.AddRange(received);
+                            new CaptureArchive(manifest, entries).Save(output, key);
+                            var hook = received[0];
+                            Console.WriteLine($"{entries.Count / 2,4}  {DateTime.Now:HH:mm:ss}  {hook.Method,-6} {hook.Body.Length,7:N0} B  {hook.ContentType ?? "-"}");
+                        }
+                    }
+                    catch (Exception e) when (e is IOException or InvalidDataException or OperationCanceledException)
+                    {
+                        Console.Error.WriteLine($"A request was not recorded: {e.GetType().Name}: {e.Message}");
+                    }
+                }
+            });
+        }
+    }
+    catch (OperationCanceledException)
+    {
+    }
+    finally
+    {
+        listener.Stop();
+    }
+
+    lock (gate)
+    {
+        Console.WriteLine($"{entries.Count / 2} requests sealed into {output}.");
+    }
+
     return 0;
 }
 

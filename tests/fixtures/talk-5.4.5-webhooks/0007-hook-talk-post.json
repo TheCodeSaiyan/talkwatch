@@ -1,0 +1,9 @@
+{
+  "event": "call_started",
+  "call_id": "b20ca0e9-164d-402f-aae6-bff52c29c252",
+  "direction": "out",
+  "caller_number": "0002",
+  "caller_name": "Nico Archer 2",
+  "dialed_number": "+447700900880",
+  "timestamp": 1791833552024
+}

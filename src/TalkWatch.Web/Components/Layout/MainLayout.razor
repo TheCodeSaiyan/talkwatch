@@ -62,7 +62,7 @@
 @* Only what needs someone shows here; a healthy system says so with the freshness dot in the rail instead. *@
 <AuthorizeView>
     <Authorized>
-        @if (Status.Drifted || Status.LastError is not null || (Platform.Versions is not null && (Platform.Fit is not TalkWatch.Core.Talk.VersionFit.Tested || Platform.PreRelease)))
+        @if (Status.Drifted || Status.LastError is not null || Platform.CloudDown || Platform.Degraded || (Platform.Versions is not null && (Platform.Fit is not TalkWatch.Core.Talk.VersionFit.Tested || Platform.PreRelease)))
         {
             <div class="attention" role="status">
                 @if (Status.Drifted)
@@ -79,6 +79,19 @@
                 {
                     <p class="warn" data-status="warn"><b>The console could not be reached at the last poll.</b> What you see is from @(Status.LastSuccess?.ToLocalTime().ToString("HH:mm") ?? "before then").</p>
                 }
+                @if (Platform.CloudDown)
+                {
+                    <p class="warn" data-status="cloud">
+                        <b>Talk can't reach its cloud services</b>@(TalkWatch.Core.Talk.TalkValue.Words(Platform.Cloud?.Reason) is { } why ? $" ({why})" : "")@(TalkWatch.Core.Talk.TalkValue.Time(Platform.Cloud?.Since) is { } since ? $", since {since.ToLocalTime():yyyy-MM-dd HH:mm}" : "").
+                        Calls to and from outside numbers may not get through until it can. Calls are still being copied.
+                    </p>
+                }
+                @if (Platform.Degraded)
+                {
+                    <p class="warn" data-status="degraded">
+                        <b>Talk reports it is running degraded</b>@(TalkWatch.Core.Talk.TalkValue.Words(Platform.Degradation?.DegradationLevel) is { } level ? $" (level {level})" : "")@(TalkWatch.Core.Talk.TalkValue.Time(Platform.Degradation?.Since) is { } since ? $", since {since.ToLocalTime():yyyy-MM-dd HH:mm}" : "").@(Platform.Degradation?.TargetedForSuspension == true ? " It says it may suspend service." : "")
+                    </p>
+                }
                 @if (Platform.Versions is { } versions && (Platform.Fit is not TalkWatch.Core.Talk.VersionFit.Tested || Platform.PreRelease))
                 {
                     <p class="warn" data-platform>
@@ -86,7 +99,7 @@
                         UniFi OS @versions.UnifiOs@(TalkWatch.Core.Talk.ConsoleVersions.IsPreRelease(versions.UnifiOsChannel) ? $" ({versions.UnifiOsChannel})" : "").
                         @if (Platform.Fit is TalkWatch.Core.Talk.VersionFit.NewerUntested or TalkWatch.Core.Talk.VersionFit.OlderUntested)
                         {
-                            <text> Not yet tested with TalkWatch (tested: Talk @TalkWatch.Core.Talk.ConsoleVersions.Tested.Talk, UniFi OS @TalkWatch.Core.Talk.ConsoleVersions.Tested.UnifiOs).</text>
+                            <text> Not yet tested with TalkWatch (tested: Talk @TalkWatch.Core.Talk.ConsoleVersions.TestedTalk, UniFi OS @TalkWatch.Core.Talk.ConsoleVersions.TestedUnifiOs).</text>
                         }
                         @if (Platform.PreRelease)
                         {

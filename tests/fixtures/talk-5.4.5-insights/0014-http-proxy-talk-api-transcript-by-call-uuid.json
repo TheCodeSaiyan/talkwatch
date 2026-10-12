@@ -1,0 +1,180 @@
+{
+  "id": "234cec0db2e44c809eb1d4d7b589c910",
+  "type": "analytics",
+  "source": "call",
+  "status": "COMPLETED",
+  "context": {
+    "call_sid": "CAf27aeefc9aea86fbf227d19d6163556d",
+    "call_date": "2026-10-12T19:05:27.380Z",
+    "call_uuid": "95fd4298-0b3f-4b7c-be0e-e928cea1b6f0",
+    "caller_name": "Nico Archer 1",
+    "dialed_name": "Morgan2",
+    "call_country": "GB",
+    "call_duration": 102,
+    "caller_number": "+447700900774",
+    "dialed_number": "+441174960404",
+    "call_direction": "in",
+    "call_timestamp": 1791831927380,
+    "answered_by_name": "Nico Archer 1",
+    "caller_entity_id": "contact_1",
+    "dialed_entity_id": "sa_15",
+    "answered_by_number": "0002",
+    "answered_by_entity_id": "user_abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+  },
+  "analytics": {
+    "lines": [],
+    "summary": "",
+    "duration": 55,
+    "sentiment": 0,
+    "sentimentClassification": "neutral"
+  },
+  "document": "",
+  "vector": "",
+  "sum_vector": "",
+  "updated_at": "2026-10-12T19:10:06.514Z",
+  "created_at": "2026-10-12T19:07:12.846Z",
+  "call_rec": {
+    "uuid": "95fd4298-0b3f-4b7c-be0e-e928cea1b6f0",
+    "from": "+447700900774",
+    "to": "+441174960404",
+    "direction": "in",
+    "status": [
+      "accepted",
+      "ringing",
+      "accepted",
+      "parked",
+      "accepted",
+      "ringing",
+      "cancelled"
+    ],
+    "time": "2026-10-12T19:05:27.380Z",
+    "duration": 102,
+    "recording": true,
+    "quality_score": 100,
+    "quality_data": null,
+    "from_mac": null,
+    "answered_by_mac": "02ab5bf4146a",
+    "from_id": null,
+    "to_id": null,
+    "to_group_id": null,
+    "from_contact_id": 1,
+    "to_contact_id": null,
+    "from_did": null,
+    "twilio_call_sid": "CAf27aeefc9aea86fbf227d19d6163556d",
+    "block_rule_id": null,
+    "vm_data": {},
+    "is_video_call": false,
+    "to_smart_attendant_id": 15,
+    "to_smart_attendant_title": "Title 4",
+    "call_events": [
+      {
+        "time": "2026-10-12T19:05:27.411Z",
+        "event": "call_started",
+        "event_data": {
+          "to": "+441174960404",
+          "from": "+447700900774",
+          "from_contact_id": 1,
+          "to_smart_attendant_id": 15
+        },
+        "event_uuid": "b0ffa14e-ac99-43fb-9953-c3e5b458ed6c"
+      },
+      {
+        "time": "2026-10-12T19:05:46.286Z",
+        "event": "keypress",
+        "event_data": {
+          "key": "3"
+        },
+        "event_uuid": "cb13f4b5-71ce-4a1b-b157-e1dbfbb441f3"
+      },
+      {
+        "time": "2026-10-12T19:05:46.294Z",
+        "event": "entered_sa_menu",
+        "event_data": {
+          "sa_id": 15,
+          "sa_item_id": 19,
+          "sa_item_key": 3,
+          "sa_item_type": "ivr",
+          "sa_item_title": "Title 1"
+        },
+        "event_uuid": "85f20c0c-8810-4ea4-90eb-30df11e250ac"
+      },
+      {
+        "time": "2026-10-12T19:06:07.105Z",
+        "event": "seq_call_trying_endpoints",
+        "event_data": {
+          "user_uuids": [
+            "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+          ],
+          "device_macs": [
+            "02ab5bf4146a"
+          ]
+        },
+        "event_uuid": "d400af4f-b4f7-4f7c-bd68-e99030e4c2e9"
+      },
+      {
+        "time": "2026-10-12T19:06:13.031Z",
+        "event": "call_accepted",
+        "event_data": {
+          "accepted_by": "0002",
+          "accepted_by_user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+          "accepted_by_device_mac": "02ab5bf4146a"
+        },
+        "event_uuid": "43200639-52c5-4f4d-b312-058a1ac31dbe"
+      },
+      {
+        "time": "2026-10-12T19:06:16.596Z",
+        "event": "call_parked",
+        "event_data": {
+          "parking_lot_uuid": "c4d04912-1f2a-4712-bf86-1571832bc550",
+          "parked_by_user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+        },
+        "event_uuid": "dd5454ae-7c61-4edd-9cfe-355692e45025"
+      },
+      {
+        "time": "2026-10-12T19:06:34.065Z",
+        "event": "call_unparked",
+        "event_data": {
+          "unparked_by_user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+        },
+        "event_uuid": "0766a2bd-5847-449f-9ae6-3cdc6667df4d"
+      },
+      {
+        "time": "2026-10-12T19:07:05.594Z",
+        "event": "seq_call_trying_endpoints",
+        "event_data": {
+          "contact_uuids": [
+            "7624c978-2957-44f4-a42a-93ccd47a0bb8"
+          ]
+        },
+        "event_uuid": "ba131f9d-4f4a-401f-879b-1f07f124e717"
+      },
+      {
+        "time": "2026-10-12T19:07:09.711Z",
+        "event": "call_hangup",
+        "event_data": {
+          "hangup_cause": "cancelled"
+        },
+        "event_uuid": "af87883d-b647-4f11-a857-f52a12b8a887"
+      }
+    ],
+    "answered_by": "0002",
+    "answered_by_user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+    "answered_by_contact_id": null,
+    "rung_or_skipped_user_uuids": [
+      "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+    ],
+    "deleted_for_user_uuids": [],
+    "is_read_by_user_uuids": [
+      "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+    ],
+    "is_intercom_call": false,
+    "time_unix": "9775550163",
+    "from_caller_name": "Nico Archer 1",
+    "is_group_intercom_call": false,
+    "answered_by_group_id": null,
+    "country": "GB",
+    "to_user_name": null,
+    "to_queue_id": null,
+    "recording_filename": "20261012_200613_447700900774_-3229-7539-48-83-01914980281-7539-48-83-234972_95fd42.mp3"
+  }
+}

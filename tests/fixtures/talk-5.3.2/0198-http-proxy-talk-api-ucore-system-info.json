@@ -1291,7 +1291,7 @@
     "isOwner": true,
     "isSuperAdmin": true,
     "isMember": false,
-    "maskedEmail": "ni************@icloud.com",
+    "maskedEmail": "person1@example.invalid",
     "accessMask": 106462,
     "permissionMask": 16382
   },

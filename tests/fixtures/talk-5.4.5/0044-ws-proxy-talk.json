@@ -1,0 +1,8 @@
+{
+  "event": "USERS_ON_ACTIVE_CALLS",
+  "data": {
+    "user_ids": [
+      "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+    ]
+  }
+}

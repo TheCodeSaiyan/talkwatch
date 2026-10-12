@@ -32,12 +32,13 @@ public static class LiveCalls
         // Outbound from then on, so it is live until its chronicle has an end.
         var live = c.Outcome == CallOutcome.InProgress
             || (c.Outcome is CallOutcome.Outbound or CallOutcome.Answered && !ch.Steps.Any(s => s.Kind == StepKind.Ended));
-        var last = ch.Steps.LastOrDefault(s => s.Kind is StepKind.Menu or StepKind.Ringing or StepKind.Skipped or StepKind.Answered or StepKind.Voicemail);
+        var last = ch.Steps.LastOrDefault(s => s.Kind is StepKind.Menu or StepKind.Ringing or StepKind.Skipped or StepKind.Answered or StepKind.Voicemail or StepKind.Parked);
         var state = !live ? "ended" : last?.Kind switch
         {
             StepKind.Answered => "connected",
             StepKind.Ringing or StepKind.Skipped => "ringing",
             StepKind.Menu => "menu",
+            StepKind.Parked => "parked",
             _ when c.Outcome == CallOutcome.Outbound => "calling",
             StepKind.Voicemail => "voicemail",
             _ => "routing",
@@ -70,6 +71,7 @@ public static class LiveCalls
         "connected" => "Connected",
         "voicemail" => "Leaving voicemail",
         "calling" => "Calling",
+        "parked" => "Parked",
         _ => "Just came in",
     };
 

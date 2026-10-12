@@ -1,0 +1,40 @@
+[
+  {
+    "time": "2026-10-05T19:11:57.902Z",
+    "event": "entered_sa_menu",
+    "event_data": {
+      "sa_id": 15,
+      "sa_item_id": 18,
+      "sa_item_key": 2,
+      "sa_item_type": "ivr",
+      "sa_item_title": "Title 3"
+    },
+    "event_uuid": "aebc24ad-11dc-47e9-a773-62728eb6cdb6"
+  },
+  {
+    "time": "2026-10-05T19:11:57.902Z",
+    "event": "keypress",
+    "event_data": {
+      "key": "2"
+    },
+    "event_uuid": "f0067475-236a-4a23-bf07-8bba26c44d99"
+  },
+  {
+    "time": "2026-10-05T19:12:13.468Z",
+    "event": "call_sent_to_voicemail",
+    "event_data": {
+      "recipient_user_uuids": [
+        "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+      ]
+    },
+    "event_uuid": "79cbc50b-6366-4dc7-aa0e-499c160cb753"
+  },
+  {
+    "time": "2026-10-05T19:12:16.762Z",
+    "event": "call_hangup",
+    "event_data": {
+      "hangup_cause": "normal_end"
+    },
+    "event_uuid": "468fc9fc-608f-4e24-b20b-294c0c0b9419"
+  }
+]

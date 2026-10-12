@@ -1,0 +1,730 @@
+{
+  "records": [
+    {
+      "time": "2026-10-03T18:05:50.630Z",
+      "from": "+447700900774",
+      "to": "+441144960042",
+      "answered_by": null,
+      "status": "accepted",
+      "duration": 66,
+      "recording_filename": null,
+      "is_video_call": false,
+      "is_intercom_call": false,
+      "is_group_intercom_call": false,
+      "direction": "in",
+      "uuid": "1062cf0d-f3f9-41cc-a7c0-7c5ba31f9e34",
+      "country": "GB",
+      "recording": false,
+      "quality_score": 100,
+      "vm_data": {},
+      "call_events": [
+        {
+          "time": "2026-10-03T18:05:50.670Z",
+          "event": "call_started",
+          "event_data": {
+            "to": "+441144960042",
+            "from": "+447700900774",
+            "from_contact_id": 1,
+            "to_smart_attendant_id": 45
+          },
+          "event_uuid": "f6affc64-cda2-4738-8313-c94684a50873"
+        },
+        {
+          "time": "2026-10-03T18:06:15.033Z",
+          "event": "seq_call_trying_endpoints",
+          "event_data": {
+            "contact_uuids": [
+              "ac7a4901-2722-4e41-9f20-87f95df72cb2"
+            ]
+          },
+          "event_uuid": "d6abeb23-d450-4cbf-9c1c-e352b95eb8c6"
+        },
+        {
+          "time": "2026-10-03T18:06:56.720Z",
+          "event": "call_hangup",
+          "event_data": {
+            "hangup_cause": "refused"
+          },
+          "event_uuid": "0c3e1256-3c33-44d8-981d-e3f86128a6af"
+        }
+      ],
+      "from_mac": null,
+      "from_id": null,
+      "from_contact_id": 1,
+      "from_did": null,
+      "from_caller_name": "Nico Archer 1",
+      "to_id": null,
+      "to_group_id": null,
+      "to_contact_id": null,
+      "to_smart_attendant_id": 45,
+      "to_smart_attendant_title": "Title 5",
+      "to_queue_id": null,
+      "answered_by_mac": null,
+      "answered_by_user_uuid": null,
+      "answered_by_contact_id": null,
+      "answered_by_group_id": null
+    },
+    {
+      "time": "2026-06-26T14:30:06.688Z",
+      "from": "0002",
+      "to": "0004",
+      "answered_by": null,
+      "status": "refused",
+      "duration": 0,
+      "recording_filename": null,
+      "is_video_call": false,
+      "is_intercom_call": false,
+      "is_group_intercom_call": true,
+      "direction": null,
+      "uuid": "67af4f8f-fc7f-41bd-bec7-dbdd05f26ea8",
+      "country": null,
+      "recording": false,
+      "quality_score": null,
+      "vm_data": {},
+      "call_events": [
+        {
+          "time": "2026-06-26T14:30:06.779Z",
+          "event": "call_started",
+          "event_data": {
+            "to": "0004",
+            "from": "0002",
+            "from_mac": "02ab5bf4146a",
+            "to_group_id": 1,
+            "from_user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+          },
+          "event_uuid": "68bb6794-a229-45b8-9dc3-f7397e00893e"
+        },
+        {
+          "time": "2026-06-26T14:30:06.922Z",
+          "event": "call_hangup",
+          "event_data": {
+            "hangup_cause": "refused"
+          },
+          "event_uuid": "bffb28c6-b485-4dc4-ac74-b831910fda63"
+        }
+      ],
+      "from_mac": "02ab5bf4146a",
+      "from_id": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+      "from_contact_id": null,
+      "from_did": null,
+      "from_caller_name": null,
+      "to_id": null,
+      "to_group_id": 1,
+      "to_contact_id": null,
+      "to_smart_attendant_id": null,
+      "to_smart_attendant_title": null,
+      "to_queue_id": null,
+      "answered_by_mac": null,
+      "answered_by_user_uuid": null,
+      "answered_by_contact_id": null,
+      "answered_by_group_id": null
+    },
+    {
+      "time": "2026-06-26T14:30:03.129Z",
+      "from": "0002",
+      "to": "0004",
+      "answered_by": null,
+      "status": "refused",
+      "duration": 0,
+      "recording_filename": null,
+      "is_video_call": false,
+      "is_intercom_call": false,
+      "is_group_intercom_call": true,
+      "direction": null,
+      "uuid": "0b408ab3-9e0d-4cec-b6a3-54a30548dde2",
+      "country": null,
+      "recording": false,
+      "quality_score": null,
+      "vm_data": {},
+      "call_events": [
+        {
+          "time": "2026-06-26T14:30:03.263Z",
+          "event": "call_started",
+          "event_data": {
+            "to": "0004",
+            "from": "0002",
+            "from_mac": "02ab5bf4146a",
+            "to_group_id": 1,
+            "from_user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+          },
+          "event_uuid": "b00f8080-6d49-4709-89b6-027d5c9357d4"
+        },
+        {
+          "time": "2026-06-26T14:30:03.648Z",
+          "event": "call_hangup",
+          "event_data": {
+            "hangup_cause": "refused"
+          },
+          "event_uuid": "2dbc2f1a-16dc-4f19-b258-33c69be6a857"
+        }
+      ],
+      "from_mac": "02ab5bf4146a",
+      "from_id": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+      "from_contact_id": null,
+      "from_did": null,
+      "from_caller_name": null,
+      "to_id": null,
+      "to_group_id": 1,
+      "to_contact_id": null,
+      "to_smart_attendant_id": null,
+      "to_smart_attendant_title": null,
+      "to_queue_id": null,
+      "answered_by_mac": null,
+      "answered_by_user_uuid": null,
+      "answered_by_contact_id": null,
+      "answered_by_group_id": null
+    },
+    {
+      "time": "2026-05-12T14:58:02.548Z",
+      "from": "0002",
+      "to": "0004",
+      "answered_by": null,
+      "status": "refused",
+      "duration": 1,
+      "recording_filename": null,
+      "is_video_call": false,
+      "is_intercom_call": false,
+      "is_group_intercom_call": true,
+      "direction": null,
+      "uuid": "65937e75-9ced-4223-8669-5e842417968f",
+      "country": null,
+      "recording": false,
+      "quality_score": null,
+      "vm_data": {},
+      "call_events": [
+        {
+          "time": "2026-05-12T14:58:03.001Z",
+          "event": "call_started",
+          "event_data": {
+            "to": "0004",
+            "from": "0002",
+            "from_mac": "02ab5bf4146a",
+            "to_group_id": 1,
+            "from_user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+          },
+          "event_uuid": "fd7cffdf-19fb-4989-a0ce-6892e9c6af7c"
+        },
+        {
+          "time": "2026-05-12T14:58:03.181Z",
+          "event": "call_hangup",
+          "event_data": {
+            "hangup_cause": "refused"
+          },
+          "event_uuid": "0d5a1d2b-152f-439d-af9f-59b322e0fa4e"
+        }
+      ],
+      "from_mac": "02ab5bf4146a",
+      "from_id": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+      "from_contact_id": null,
+      "from_did": null,
+      "from_caller_name": null,
+      "to_id": null,
+      "to_group_id": 1,
+      "to_contact_id": null,
+      "to_smart_attendant_id": null,
+      "to_smart_attendant_title": null,
+      "to_queue_id": null,
+      "answered_by_mac": null,
+      "answered_by_user_uuid": null,
+      "answered_by_contact_id": null,
+      "answered_by_group_id": null
+    },
+    {
+      "time": "2026-03-10T14:35:03.587Z",
+      "from": "+441154960697",
+      "to": "+441144960042",
+      "answered_by": null,
+      "status": "accepted",
+      "duration": 22,
+      "recording_filename": null,
+      "is_video_call": false,
+      "is_intercom_call": false,
+      "is_group_intercom_call": false,
+      "direction": "in",
+      "uuid": "0f40878b-ae11-4900-addf-cc9e11911560",
+      "country": "GB",
+      "recording": false,
+      "quality_score": 0,
+      "vm_data": {},
+      "call_events": [
+        {
+          "time": "2026-03-10T14:35:03.672Z",
+          "event": "call_started",
+          "event_data": {
+            "to": "+441144960042",
+            "from": "+441154960697",
+            "to_smart_attendant_id": 45
+          },
+          "event_uuid": "a8320f22-166a-4859-b7a3-92b388990650"
+        },
+        {
+          "time": "2026-03-10T14:35:25.157Z",
+          "event": "call_hangup",
+          "event_data": {
+            "hangup_cause": "refused"
+          },
+          "event_uuid": "fafbb66f-d90d-490e-96d7-d4818cceb9f4"
+        }
+      ],
+      "from_mac": null,
+      "from_id": null,
+      "from_contact_id": null,
+      "from_did": null,
+      "from_caller_name": null,
+      "to_id": null,
+      "to_group_id": null,
+      "to_contact_id": null,
+      "to_smart_attendant_id": 45,
+      "to_smart_attendant_title": "Title 5",
+      "to_queue_id": null,
+      "answered_by_mac": null,
+      "answered_by_user_uuid": null,
+      "answered_by_contact_id": null,
+      "answered_by_group_id": null
+    },
+    {
+      "time": "2026-03-10T14:33:42.487Z",
+      "from": "+447700900455",
+      "to": "+441144960042",
+      "answered_by": null,
+      "status": "accepted",
+      "duration": 22,
+      "recording_filename": null,
+      "is_video_call": false,
+      "is_intercom_call": false,
+      "is_group_intercom_call": false,
+      "direction": "in",
+      "uuid": "db8ab71e-c24e-4af5-b00a-b8f506621bd2",
+      "country": "GB",
+      "recording": false,
+      "quality_score": 0,
+      "vm_data": {},
+      "call_events": [
+        {
+          "time": "2026-03-10T14:33:42.548Z",
+          "event": "call_started",
+          "event_data": {
+            "to": "+441144960042",
+            "from": "+447700900455",
+            "to_smart_attendant_id": 45
+          },
+          "event_uuid": "6762e61f-1768-4cd8-9892-e4aadf00dffa"
+        },
+        {
+          "time": "2026-03-10T14:34:04.068Z",
+          "event": "call_hangup",
+          "event_data": {
+            "hangup_cause": "refused"
+          },
+          "event_uuid": "d4c02042-2728-47f7-843a-85590ffe243b"
+        }
+      ],
+      "from_mac": null,
+      "from_id": null,
+      "from_contact_id": null,
+      "from_did": null,
+      "from_caller_name": null,
+      "to_id": null,
+      "to_group_id": null,
+      "to_contact_id": null,
+      "to_smart_attendant_id": 45,
+      "to_smart_attendant_title": "Title 5",
+      "to_queue_id": null,
+      "answered_by_mac": null,
+      "answered_by_user_uuid": null,
+      "answered_by_contact_id": null,
+      "answered_by_group_id": null
+    },
+    {
+      "time": "2026-03-10T14:21:28.502Z",
+      "from": "+447700900241",
+      "to": "+441144960042",
+      "answered_by": null,
+      "status": "accepted",
+      "duration": 21,
+      "recording_filename": null,
+      "is_video_call": false,
+      "is_intercom_call": false,
+      "is_group_intercom_call": false,
+      "direction": "in",
+      "uuid": "ccba1ef8-11a9-486d-ae3f-582455d5ec6a",
+      "country": "GB",
+      "recording": false,
+      "quality_score": 0,
+      "vm_data": {},
+      "call_events": [
+        {
+          "time": "2026-03-10T14:21:28.552Z",
+          "event": "call_started",
+          "event_data": {
+            "to": "+441144960042",
+            "from": "+447700900241",
+            "to_smart_attendant_id": 45
+          },
+          "event_uuid": "57773020-17b0-41e9-86e1-024d03c5d88c"
+        },
+        {
+          "time": "2026-03-10T14:21:50.019Z",
+          "event": "call_hangup",
+          "event_data": {
+            "hangup_cause": "refused"
+          },
+          "event_uuid": "a8ed10ef-7f88-4d1c-a9bf-2214e70bacd3"
+        }
+      ],
+      "from_mac": null,
+      "from_id": null,
+      "from_contact_id": null,
+      "from_did": null,
+      "from_caller_name": null,
+      "to_id": null,
+      "to_group_id": null,
+      "to_contact_id": null,
+      "to_smart_attendant_id": 45,
+      "to_smart_attendant_title": "Title 5",
+      "to_queue_id": null,
+      "answered_by_mac": null,
+      "answered_by_user_uuid": null,
+      "answered_by_contact_id": null,
+      "answered_by_group_id": null
+    },
+    {
+      "time": "2026-03-10T14:19:29.488Z",
+      "from": "+447700900455",
+      "to": "+441144960042",
+      "answered_by": null,
+      "status": "accepted",
+      "duration": 22,
+      "recording_filename": null,
+      "is_video_call": false,
+      "is_intercom_call": false,
+      "is_group_intercom_call": false,
+      "direction": "in",
+      "uuid": "3cb8fa1b-a204-4381-bd72-1a8fac818d83",
+      "country": "GB",
+      "recording": false,
+      "quality_score": 0,
+      "vm_data": {},
+      "call_events": [
+        {
+          "time": "2026-03-10T14:19:29.572Z",
+          "event": "call_started",
+          "event_data": {
+            "to": "+441144960042",
+            "from": "+447700900455",
+            "to_smart_attendant_id": 45
+          },
+          "event_uuid": "14c27936-7bf6-4849-9ebc-7a18f3cd06f9"
+        },
+        {
+          "time": "2026-03-10T14:19:51.401Z",
+          "event": "call_hangup",
+          "event_data": {
+            "hangup_cause": "refused"
+          },
+          "event_uuid": "8a1e2815-d564-455c-9f04-0e0cfefc82d4"
+        }
+      ],
+      "from_mac": null,
+      "from_id": null,
+      "from_contact_id": null,
+      "from_did": null,
+      "from_caller_name": null,
+      "to_id": null,
+      "to_group_id": null,
+      "to_contact_id": null,
+      "to_smart_attendant_id": 45,
+      "to_smart_attendant_title": "Title 5",
+      "to_queue_id": null,
+      "answered_by_mac": null,
+      "answered_by_user_uuid": null,
+      "answered_by_contact_id": null,
+      "answered_by_group_id": null
+    },
+    {
+      "time": "2026-03-10T14:09:00.325Z",
+      "from": "+447700900455",
+      "to": "+441144960042",
+      "answered_by": null,
+      "status": "accepted",
+      "duration": 11,
+      "recording_filename": null,
+      "is_video_call": false,
+      "is_intercom_call": false,
+      "is_group_intercom_call": false,
+      "direction": "in",
+      "uuid": "340ed14a-9109-4e5d-92b3-9f9658bcfa67",
+      "country": "GB",
+      "recording": false,
+      "quality_score": null,
+      "vm_data": {},
+      "call_events": [
+        {
+          "time": "2026-03-10T14:09:00.419Z",
+          "event": "call_started",
+          "event_data": {
+            "to": "+441144960042",
+            "from": "+447700900455",
+            "to_smart_attendant_id": 45
+          },
+          "event_uuid": "102d0382-a714-46a0-b65a-2772f46922bf"
+        },
+        {
+          "time": "2026-03-10T14:09:10.928Z",
+          "event": "call_hangup",
+          "event_data": {
+            "hangup_cause": "refused"
+          },
+          "event_uuid": "c107b4ef-8fe1-4cdf-bf4c-de15f7943a63"
+        }
+      ],
+      "from_mac": null,
+      "from_id": null,
+      "from_contact_id": null,
+      "from_did": null,
+      "from_caller_name": null,
+      "to_id": null,
+      "to_group_id": null,
+      "to_contact_id": null,
+      "to_smart_attendant_id": 45,
+      "to_smart_attendant_title": "Title 5",
+      "to_queue_id": null,
+      "answered_by_mac": null,
+      "answered_by_user_uuid": null,
+      "answered_by_contact_id": null,
+      "answered_by_group_id": null
+    },
+    {
+      "time": "2025-12-11T19:45:52.989Z",
+      "from": "0002",
+      "to": "0004",
+      "answered_by": null,
+      "status": "refused",
+      "duration": 0,
+      "recording_filename": null,
+      "is_video_call": false,
+      "is_intercom_call": false,
+      "is_group_intercom_call": true,
+      "direction": null,
+      "uuid": "d3f656d3-8fa0-454c-9359-efb5556ed3bc",
+      "country": null,
+      "recording": false,
+      "quality_score": null,
+      "vm_data": {},
+      "call_events": [
+        {
+          "time": "2025-12-11T19:45:53.186Z",
+          "event": "call_started",
+          "event_data": {
+            "to": "0004",
+            "from": "0002",
+            "from_mac": "02ab5bf4146a",
+            "to_group_id": 1,
+            "from_user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+          },
+          "event_uuid": "eb7ed649-3c14-4f8d-a69e-ae89a9cf52ef"
+        },
+        {
+          "time": "2025-12-11T19:45:53.411Z",
+          "event": "call_hangup",
+          "event_data": {
+            "hangup_cause": "refused"
+          },
+          "event_uuid": "2f357492-909a-47e8-85c6-758eae96cbca"
+        }
+      ],
+      "from_mac": "02ab5bf4146a",
+      "from_id": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+      "from_contact_id": null,
+      "from_did": null,
+      "from_caller_name": null,
+      "to_id": null,
+      "to_group_id": 1,
+      "to_contact_id": null,
+      "to_smart_attendant_id": null,
+      "to_smart_attendant_title": null,
+      "to_queue_id": null,
+      "answered_by_mac": null,
+      "answered_by_user_uuid": null,
+      "answered_by_contact_id": null,
+      "answered_by_group_id": null
+    },
+    {
+      "time": "2025-12-01T18:22:33.059Z",
+      "from": "0002",
+      "to": "+447700900774",
+      "answered_by": null,
+      "status": "refused",
+      "duration": 0,
+      "recording_filename": null,
+      "is_video_call": false,
+      "is_intercom_call": false,
+      "is_group_intercom_call": false,
+      "direction": "out",
+      "uuid": "206a1abf-8a6c-4844-9c05-f9c09ddab922",
+      "country": "GB",
+      "recording": false,
+      "quality_score": null,
+      "vm_data": {},
+      "call_events": [
+        {
+          "time": "2025-12-01T18:22:33.148Z",
+          "event": "call_started",
+          "event_data": {
+            "to": "+447700900774",
+            "from": "0002",
+            "from_mac": "02ab5bf4146a",
+            "to_contact_id": 1,
+            "from_user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+          },
+          "event_uuid": "bb679447-9150-46ad-88fd-c5a8996e9110"
+        },
+        {
+          "time": "2025-12-01T18:22:33.238Z",
+          "event": "skipped_endpoints",
+          "event_data": {
+            "user_uuids": [],
+            "device_macs": [],
+            "contact_uuids": [
+              "2157f4dd-9ec8-4f47-8ef4-2cb67ac991ef"
+            ],
+            "external_dids": []
+          },
+          "event_uuid": "f07e47bc-599f-4724-90b6-ad47f5ff60dc"
+        },
+        {
+          "time": "2025-12-01T18:22:33.424Z",
+          "event": "call_hangup",
+          "event_data": {
+            "hangup_cause": "refused"
+          },
+          "event_uuid": "12c41f61-29c4-4b2f-83e6-62f0a4588050"
+        }
+      ],
+      "from_mac": "02ab5bf4146a",
+      "from_id": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+      "from_contact_id": null,
+      "from_did": "",
+      "from_caller_name": "Nico Archer 1",
+      "to_id": null,
+      "to_group_id": null,
+      "to_contact_id": 1,
+      "to_smart_attendant_id": null,
+      "to_smart_attendant_title": null,
+      "to_queue_id": null,
+      "answered_by_mac": null,
+      "answered_by_user_uuid": null,
+      "answered_by_contact_id": null,
+      "answered_by_group_id": null
+    },
+    {
+      "time": "2025-11-30T13:00:00.629Z",
+      "from": "0002",
+      "to": "0004",
+      "answered_by": null,
+      "status": "refused",
+      "duration": 0,
+      "recording_filename": null,
+      "is_video_call": false,
+      "is_intercom_call": false,
+      "is_group_intercom_call": true,
+      "direction": null,
+      "uuid": "e0fbe83e-fdfc-44dc-a286-8ef1a0b982d7",
+      "country": null,
+      "recording": false,
+      "quality_score": null,
+      "vm_data": {},
+      "call_events": [
+        {
+          "time": "2025-11-30T13:00:00.729Z",
+          "event": "call_started",
+          "event_data": {
+            "to": "0004",
+            "from": "0002",
+            "from_mac": "02ab5bf4146a",
+            "to_group_id": 1,
+            "from_user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+          },
+          "event_uuid": "b0c5ffd2-0f81-4537-8293-a5bb44012cb4"
+        },
+        {
+          "time": "2025-11-30T13:00:00.965Z",
+          "event": "call_hangup",
+          "event_data": {
+            "hangup_cause": "refused"
+          },
+          "event_uuid": "b54c6fb4-5c43-4726-a53e-6f0bdd9a3dc6"
+        }
+      ],
+      "from_mac": "02ab5bf4146a",
+      "from_id": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+      "from_contact_id": null,
+      "from_did": null,
+      "from_caller_name": null,
+      "to_id": null,
+      "to_group_id": 1,
+      "to_contact_id": null,
+      "to_smart_attendant_id": null,
+      "to_smart_attendant_title": null,
+      "to_queue_id": null,
+      "answered_by_mac": null,
+      "answered_by_user_uuid": null,
+      "answered_by_contact_id": null,
+      "answered_by_group_id": null
+    },
+    {
+      "time": "2025-11-30T12:40:16.074Z",
+      "from": "+447700900774",
+      "to": "+441174960404",
+      "answered_by": null,
+      "status": "accepted",
+      "duration": 20,
+      "recording_filename": null,
+      "is_video_call": false,
+      "is_intercom_call": false,
+      "is_group_intercom_call": false,
+      "direction": "in",
+      "uuid": "e3d0879a-b97e-4831-ada1-72d6fad84e6d",
+      "country": "GB",
+      "recording": false,
+      "quality_score": 0,
+      "vm_data": {},
+      "call_events": [
+        {
+          "time": "2025-11-30T12:40:16.139Z",
+          "event": "call_started",
+          "event_data": {
+            "to": "+441174960404",
+            "from": "+447700900774",
+            "to_smart_attendant_id": 1
+          },
+          "event_uuid": "e1bd8d4c-2cb3-4e1c-b2a1-ef0a2215deff"
+        },
+        {
+          "time": "2025-11-30T12:40:35.849Z",
+          "event": "call_hangup",
+          "event_data": {
+            "hangup_cause": "refused"
+          },
+          "event_uuid": "78e66ed5-b76b-48c3-af3e-089883a27415"
+        }
+      ],
+      "from_mac": null,
+      "from_id": null,
+      "from_contact_id": 1,
+      "from_did": null,
+      "from_caller_name": null,
+      "to_id": null,
+      "to_group_id": null,
+      "to_contact_id": null,
+      "to_smart_attendant_id": 1,
+      "to_smart_attendant_title": "Title 8",
+      "to_queue_id": null,
+      "answered_by_mac": null,
+      "answered_by_user_uuid": null,
+      "answered_by_contact_id": null,
+      "answered_by_group_id": null
+    }
+  ],
+  "total_count": "13"
+}

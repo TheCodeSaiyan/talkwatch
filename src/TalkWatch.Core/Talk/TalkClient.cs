@@ -71,6 +71,10 @@ public sealed class TalkClient(HttpClient http)
         return new ConsoleVersions(system?.Hardware?.FirmwareVersion, system?.ReleaseChannel, talk?.Version, talk?.UpdateChannel);
     }
 
+    /// <summary>Talk's own version and service state: since 5.4.5, whether it can reach its cloud and whether it is degraded.</summary>
+    public async Task<TalkInfo> GetInfoAsync(CancellationToken cancellationToken) =>
+        (await GetAsync<TalkInfo>("/proxy/talk/api/info", cancellationToken)).Value ?? new TalkInfo();
+
     /// <summary>Users, ring groups and numbers: every line the console knows, with the configuration that routes calls.</summary>
     public async Task<LineDirectory> GetDirectoryAsync(NumberNormaliser numbers, CancellationToken cancellationToken)
     {

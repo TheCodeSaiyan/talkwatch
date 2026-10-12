@@ -1,0 +1,11 @@
+[
+  {
+    "id": 1,
+    "dids": [],
+    "direction": "in+out",
+    "record_announcement_text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod ",
+    "record_announcement_file_path": "/data/unifi-talk/call_record_announcements/1.mp3",
+    "should_record_internal_calls": true,
+    "play_record_announcement_for_internal_calls": false
+  }
+]

@@ -73,6 +73,9 @@ public sealed record LiveMessage(string Event, JsonElement Data)
     public const string UserStoreUpdated = "USER_STORE_UPDATED";
     public const string UsersOnActiveCalls = "USERS_ON_ACTIVE_CALLS";
 
+    /// <summary>Since Talk 5.4.5: Talk's degradation changed; the data is the same object /api/info carries.</summary>
+    public const string DegradationUpdated = "DEGRADATION_UPDATED";
+
     /// <summary>Talk has finished (or failed) transcribing a call; the data is the transcript itself.</summary>
     public const string TranscriptUpdated = "AI_TRANSCRIBE_TASK_UPDATE";
 
@@ -110,6 +113,10 @@ public sealed record LiveMessage(string Event, JsonElement Data)
         Data.ValueKind == JsonValueKind.Object && Data.TryGetProperty("records", out var records) && records.ValueKind == JsonValueKind.Array
             ? records.Deserialize<List<CallLogRecord>>(TalkJson.Options) ?? []
             : [];
+
+    /// <summary>For <see cref="DegradationUpdated"/>: whether Talk is running degraded now; null for any other message.</summary>
+    public TalkDegradation? Degradation() =>
+        Event == DegradationUpdated && Data.ValueKind == JsonValueKind.Object ? Data.Deserialize<TalkDegradation>(TalkJson.Options) : null;
 
     public IReadOnlyList<TalkDevice> Devices() =>
         Data.ValueKind == JsonValueKind.Array ? Data.Deserialize<List<TalkDevice>>(TalkJson.Options) ?? [] : [];

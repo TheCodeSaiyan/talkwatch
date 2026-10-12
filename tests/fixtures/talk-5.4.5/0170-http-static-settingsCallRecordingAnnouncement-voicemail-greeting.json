@@ -1,0 +1,14 @@
+[
+  {
+    "key": "static_settingsCallRecordingAnnouncement_voicemail_greeting",
+    "value": {
+      "default": false,
+      "voice_type": "voice2",
+      "greeting_type": "generated",
+      "voice_language": "en-GB",
+      "greeting_filename": "call_recording_announcement_greeting.mp3",
+      "generated_greeting_text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmo"
+    },
+    "updated_at": "2025-11-30T12:41:18.839Z"
+  }
+]

@@ -90,7 +90,7 @@ VPN, or Tailscale, set up on its Console page.
   expected, TalkWatch stops writing rather than store something wrong, and says
   so on every page. The console keeps its log, so nothing is lost while a fix
   is on its way.
-- **It's been run against one console**: UniFi OS 5.1.33, Talk 5.3.2. Other
+- **It's been run against one console**: UniFi OS 5.1.33, Talk 5.3.2 and 5.4.5. Other
   versions may well work; reports either way are welcome.
 - **It only reads.** Answering, holding and transferring stay on the handset.
 - Ring groups aren't yet recognised from a call that only rang the members,

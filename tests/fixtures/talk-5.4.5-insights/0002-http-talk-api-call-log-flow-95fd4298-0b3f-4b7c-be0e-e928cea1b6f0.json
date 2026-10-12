@@ -1,0 +1,83 @@
+[
+  {
+    "time": "2026-10-12T19:05:27.411Z",
+    "event": "call_started",
+    "event_data": {
+      "to": "+441174960404",
+      "from": "+447700900774",
+      "from_contact_id": 1,
+      "to_smart_attendant_id": 15
+    },
+    "event_uuid": "b0ffa14e-ac99-43fb-9953-c3e5b458ed6c"
+  },
+  {
+    "time": "2026-10-12T19:05:46.294Z",
+    "event": "entered_sa_menu",
+    "event_data": {
+      "sa_id": 15,
+      "sa_item_id": 19,
+      "sa_item_key": 3,
+      "sa_item_type": "ivr",
+      "sa_item_title": "Title 1"
+    },
+    "event_uuid": "85f20c0c-8810-4ea4-90eb-30df11e250ac"
+  },
+  {
+    "time": "2026-10-12T19:06:07.105Z",
+    "event": "seq_call_trying_endpoints",
+    "event_data": {
+      "user_uuids": [
+        "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+      ],
+      "device_macs": [
+        "02ab5bf4146a"
+      ]
+    },
+    "event_uuid": "d400af4f-b4f7-4f7c-bd68-e99030e4c2e9"
+  },
+  {
+    "time": "2026-10-12T19:06:13.031Z",
+    "event": "call_accepted",
+    "event_data": {
+      "accepted_by": "0002",
+      "accepted_by_user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+      "accepted_by_device_mac": "02ab5bf4146a"
+    },
+    "event_uuid": "43200639-52c5-4f4d-b312-058a1ac31dbe"
+  },
+  {
+    "time": "2026-10-12T19:06:16.596Z",
+    "event": "call_parked",
+    "event_data": {
+      "parking_lot_uuid": "c4d04912-1f2a-4712-bf86-1571832bc550",
+      "parked_by_user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+    },
+    "event_uuid": "dd5454ae-7c61-4edd-9cfe-355692e45025"
+  },
+  {
+    "time": "2026-10-12T19:06:34.065Z",
+    "event": "call_unparked",
+    "event_data": {
+      "unparked_by_user_uuid": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+    },
+    "event_uuid": "0766a2bd-5847-449f-9ae6-3cdc6667df4d"
+  },
+  {
+    "time": "2026-10-12T19:07:05.594Z",
+    "event": "seq_call_trying_endpoints",
+    "event_data": {
+      "contact_uuids": [
+        "7624c978-2957-44f4-a42a-93ccd47a0bb8"
+      ]
+    },
+    "event_uuid": "ba131f9d-4f4a-401f-879b-1f07f124e717"
+  },
+  {
+    "time": "2026-10-12T19:07:09.711Z",
+    "event": "call_hangup",
+    "event_data": {
+      "hangup_cause": "cancelled"
+    },
+    "event_uuid": "af87883d-b647-4f11-a857-f52a12b8a887"
+  }
+]

@@ -1,0 +1,282 @@
+[
+  {
+    "filename": "0001_FFFFFF_landscape1.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0002_FFFFFF_landscape1.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0003_FFFFFF_landscape1.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0004_FFFFFF_landscape1.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0005_FFFFFF_landscape1.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0006_FFFFFF_landscape1.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0007_FFFFFF_landscape1.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0008_000000_landscape1.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0009_FFFFFF_landscape1.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "001_FFFFFF_mountain.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "002_000000_sky.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "003_000000_lake.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "004_FFFFFF_desert.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "005_000000_flowers.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "006_FFFFFF_planet.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "007_FFFFFF_moon.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "008_000000_abstract.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "009_FFFFFF_abstract2.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "010_FFFFFF_abstract3.jpeg",
+    "orientation": "landscape",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "a601d3a7-900b-4e0a-b7a6-b42cf15cc83b.jpeg",
+    "orientation": "landscape",
+    "type": "custom",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0001_FFFFFF_portrait1.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0002_FFFFFF_portrait1.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0003_FFFFFF_portrait1.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0004_FFFFFF_portrait1.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0005_FFFFFF_portrait1.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0006_FFFFFF_portrait1.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0007_FFFFFF_portrait1.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0008_000000_portrait1.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "0009_FFFFFF_portrait1.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "001_FFFFFF_mountain.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "002_FFFFFF_planet.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "003_000000_sky.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "004_000000_balls.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "005_000000_branches.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "006_FFFFFF_moon.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "007_000000_flower.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "008_FFFFFF_art.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "009_FFFFFF_sea4.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "010_FFFFFF_cave2.jpeg",
+    "orientation": "portrait",
+    "type": "standard",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  },
+  {
+    "filename": "a601d3a7-900b-4e0a-b7a6-b42cf15cc83b.jpeg",
+    "orientation": "portrait",
+    "type": "custom",
+    "predefined_text_color": "Lorem i",
+    "predefined_text_color_top_bar": "Lorem i"
+  }
+]

@@ -53,6 +53,11 @@ under the rail on every page:
   the time it says.
 - **An untested Talk or UniFi OS version**, or a pre-release channel, where
   endpoints can still change.
+- **Talk can't reach its cloud services**, with Talk's reason and since when.
+  Checked each poll, from Talk 5.4.5 on. Calls to and from outside numbers
+  may not get through meanwhile; calls already made are still copied.
+- **Talk reports it is running degraded**, and at what level, the moment the
+  live feed says so (Talk 5.4.5 on).
 
 Nothing's lost while copying is stopped: the console keeps its call log, and
 TalkWatch catches up once it can read it again. See [Upgrading](../upgrading.md).

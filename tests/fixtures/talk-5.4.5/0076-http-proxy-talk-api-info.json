@@ -1,0 +1,64 @@
+{
+  "version": "5.4.5",
+  "setup_complete": true,
+  "default_country_code": "+44",
+  "default_country": "GB",
+  "controller_region": "England",
+  "controller_region_code": "ENG",
+  "controller_latitude": 0.0,
+  "controller_longitude": 0.0,
+  "install_region": "uk",
+  "ivr_custom_recording_max_mb": 5,
+  "vm_custom_greeting_max_mb": 5,
+  "has_custom_gateways": false,
+  "is_hdd_available": true,
+  "is_ssd_available": false,
+  "call_recordings_available": true,
+  "has_switchboard": true,
+  "has_enabled_gateways": false,
+  "host_device_name": "Emerson10",
+  "host_device_model": "UDMPRO",
+  "host_device_serial": "248be4d2a835",
+  "anonymous_controller_id": "3eed9993-6eb8-0656-226e-d6ef22fb2f42",
+  "owner_sso_id": "86e630a3-f6bf-c94f-c8a6-636541bd97fc",
+  "uid_adopted": true,
+  "uid": {
+    "keep_users": true,
+    "env": {
+      "name": "Casey11",
+      "api": "https://example.ui.com/gw",
+      "admin_portal": "https://example.ui.com/cloud",
+      "login_portal": ""
+    }
+  },
+  "update_channel": "release-candidate",
+  "identity_service_status": {
+    "uid": {
+      "enabled": false,
+      "running": false
+    },
+    "talk": {
+      "is_installed": true,
+      "is_configured": true,
+      "running": true,
+      "assigned": false,
+      "updating": false,
+      "enabled": false
+    }
+  },
+  "region_has_talk_service_support": true,
+  "cloud_connectivity": {
+    "degraded": false,
+    "reason": null,
+    "since": null
+  },
+  "degradation": {
+    "degraded": false,
+    "degradation_level": 0,
+    "load_level": null,
+    "pressures": [],
+    "targeted_for_suspension": false,
+    "suspended_at": null,
+    "since": null
+  }
+}

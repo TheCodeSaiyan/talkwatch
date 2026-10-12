@@ -1,0 +1,30 @@
+[
+  {
+    "time": "2026-10-11T11:51:14.714Z",
+    "event": "call_started",
+    "event_data": {
+      "to": "+441144960042",
+      "from": "+447700900435",
+      "to_smart_attendant_id": 45
+    },
+    "event_uuid": "10891e03-c9cc-4a1e-8fe2-c6139c5f1736"
+  },
+  {
+    "time": "2026-10-11T11:51:27.653Z",
+    "event": "seq_call_trying_endpoints",
+    "event_data": {
+      "contact_uuids": [
+        "ac7a4901-2722-4e41-9f20-87f95df72cb2"
+      ]
+    },
+    "event_uuid": "28269673-7ab5-441d-acad-b9d6984e842c"
+  },
+  {
+    "time": "2026-10-11T11:51:46.755Z",
+    "event": "call_hangup",
+    "event_data": {
+      "hangup_cause": "cancelled"
+    },
+    "event_uuid": "db7d59b3-2ce8-4d67-bbab-1227c09cff99"
+  }
+]
