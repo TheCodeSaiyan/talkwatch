@@ -3,7 +3,8 @@
 @inject DemoScenarios Scenarios
 
 @* The demo's scenarios, floating at the foot of every page: pick one and watch it play out on Now and Operator, a step
-   every few seconds, as a real call would. Folds down to a tab. Only in demo mode. *@
+   every few seconds, as a real call would. One kind of scenario shows at a time, chosen from the row above, so the bar
+   stays low however many there are. Folds down to a tab. Only in demo mode. *@
 <aside class="demobar@(_open ? "" : " shut")" aria-label="Try a scenario" data-demobar>
     <button type="button" class="demobar-tab" aria-expanded="@(_open ? "true" : "false")" @onclick="() => _open = !_open">
         <svg class="ico s" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l9 5-9 5z"></path></svg>
@@ -16,26 +17,34 @@
     @if (_open)
     {
         <div class="demobar-body">
-            @foreach (var group in DemoScenarios.All.GroupBy(s => s.Category))
-            {
-                <div class="demobar-group" role="group" aria-label="@group.Key">
-                    <span class="eyebrow">@group.Key</span>
-                    <div class="demobar-buttons">
-                        @foreach (var scenario in group)
+            <div class="seg demobar-kinds" role="group" aria-label="Kinds of scenario">
+                @foreach (var kind in Kinds)
+                {
+                    <button type="button" aria-pressed="@(kind == _kind ? "true" : "false")" @onclick="() => _kind = kind">
+                        @kind
+                        @if (DemoScenarios.All.Any(s => s.Category == kind && _mine.Contains(s.Id)))
                         {
-                            var playing = _mine.Contains(scenario.Id);
-                            <button type="button" class="btn sm@(playing ? " playing" : "")" title="@scenario.Hint"
-                                    disabled="@(playing || Scenarios.Playing >= DemoScenarios.MaxPlaying)" @onclick="() => Play(scenario.Id)">
-                                @if (playing)
-                                {
-                                    <span class="st" data-s="routing"><i></i></span>
-                                }
-                                @scenario.Label
-                            </button>
+                            <span class="st" data-s="routing" title="Playing"><i></i></span>
                         }
-                    </div>
+                    </button>
+                }
+            </div>
+            <div class="demobar-group" role="group" aria-label="@_kind">
+                <div class="demobar-buttons">
+                    @foreach (var scenario in DemoScenarios.All.Where(s => s.Category == _kind))
+                    {
+                        var playing = _mine.Contains(scenario.Id);
+                        <button type="button" class="btn sm@(playing ? " playing" : "")" title="@scenario.Hint"
+                                disabled="@(playing || Scenarios.Playing >= DemoScenarios.MaxPlaying)" @onclick="() => Play(scenario.Id)">
+                            @if (playing)
+                            {
+                                <span class="st" data-s="routing"><i></i></span>
+                            }
+                            @scenario.Label
+                        </button>
+                    }
                 </div>
-            }
+            </div>
             <p class="demobar-note">@(Scenarios.Playing >= DemoScenarios.MaxPlaying ? $"{DemoScenarios.MaxPlaying} are playing, the most at once. One will finish in a moment." : "Each plays out over a minute or so. Watch Now or Operator as it does.")</p>
             <button type="button" class="iconbtn demobar-close" aria-label="Fold the scenarios away" @onclick="() => _open = false">×</button>
         </div>
@@ -44,6 +53,10 @@
 
 @code {
     private bool _open = true;
+
+    // The kinds of scenario, in the order they are listed, and the one showing.
+    private static readonly string[] Kinds = [.. DemoScenarios.All.Select(s => s.Category).Distinct()];
+    private string _kind = Kinds[0];
 
     // The scenarios this visitor set going that are still playing.
     private readonly HashSet<string> _mine = new(StringComparer.Ordinal);
