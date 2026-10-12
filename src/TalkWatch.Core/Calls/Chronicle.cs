@@ -14,6 +14,7 @@ public enum StepKind
     Skipped,
     Answered,
     Voicemail,
+    Parked,
     Ended,
     Other,
 }
@@ -71,7 +72,7 @@ public sealed record Chronicle(IReadOnlyList<ChronicleStep> Steps, IReadOnlyList
         }
 
         string? ContactName(string uuid) => names.Contact(uuid) ?? (answeredOn.TryGetValue(uuid, out var n) ? Who(n, names) : null);
-        DateTimeOffset? start = null, menuAt = null, ringAt = null, answerAt = null, voicemailAt = null, endAt = null;
+        DateTimeOffset? start = null, menuAt = null, ringAt = null, answerAt = null, voicemailAt = null, endAt = null, parkedAt = null;
 
         foreach (var e in ordered)
         {
@@ -149,7 +150,10 @@ public sealed record Chronicle(IReadOnlyList<ChronicleStep> Steps, IReadOnlyList
 
                 case "call_accepted":
                     answerAt ??= e.Time;
-                    var by = (Text(d, "accepted_by_contact_uuid") is { } c ? ContactName(c) : null) ?? Who(Text(d, "accepted_by"), names) ?? "Someone";
+                    // Talk 5.4.5 names a user who answered, with their extension in accepted_by; a name beats the extension.
+                    var by = (Text(d, "accepted_by_contact_uuid") is { } c ? ContactName(c) : null)
+                        ?? (Text(d, "accepted_by_user_uuid") is { } u ? names.User(u) : null)
+                        ?? Who(Text(d, "accepted_by"), names) ?? "Someone";
                     var rang = ringAt is { } r ? e.Time - r : (TimeSpan?)null;
                     steps.Add(new(e.Time, StepKind.Answered, rang is { } wait ? $"{by} answered after {Seconds(wait)}" : $"{by} answered", null, by));
                     break;
@@ -166,6 +170,21 @@ public sealed record Chronicle(IReadOnlyList<ChronicleStep> Steps, IReadOnlyList
 
                 case "vm_recording_canceled":
                     steps.Add(new(e.Time, StepKind.Voicemail, "Caller hung up before leaving a message", null));
+                    break;
+
+                case "call_parked":
+                    // Talk 5.4.5 logs who parked the call and which lot (parking_lot_uuid), but not the slot.
+                    parkedAt = e.Time;
+                    var parker = Text(d, "parked_by_user_uuid") is { } p ? names.User(p) : null;
+                    steps.Add(new(e.Time, StepKind.Parked, parker is null ? "The call was parked" : $"{parker} parked the call", null, parker));
+                    break;
+
+                case "call_unparked":
+                    // Picked up from the lot: the call is connected again, so it reads as an answer.
+                    var picker = Text(d, "unparked_by_user_uuid") is { } q ? names.User(q) : null;
+                    var held = parkedAt is { } parked ? $" after {Seconds(e.Time - parked)}" : "";
+                    steps.Add(new(e.Time, StepKind.Answered, $"{picker ?? "Someone"} picked up the parked call{held}", null, picker));
+                    parkedAt = null;
                     break;
 
                 case "call_hangup":
@@ -214,6 +233,7 @@ public sealed record Chronicle(IReadOnlyList<ChronicleStep> Steps, IReadOnlyList
         StepKind.Ringing or StepKind.Skipped => "ringing",
         StepKind.Answered => "talking",
         StepKind.Voicemail => "leaving a message",
+        StepKind.Parked => "parked",
         _ => null,
     };
 

@@ -249,7 +249,7 @@
         var names = await ChronicleLoader.NamesAsync(db, current.SelectMany(c => new[] { c.FromE164, c.ToE164, c.AnsweredByE164 }));
         var chronicles = await ChronicleLoader.ForAsync(db, current, names);
         var live = current.Select(c => LiveCalls.Of(c, chronicles[c.Id], names)).ToList();
-        _waiting = [.. live.Where(c => c.State is "ringing" or "menu" or "routing")];
+        _waiting = [.. live.Where(c => c.State is "ringing" or "menu" or "routing" or "parked")];
         _talking = [.. live.Where(c => c.State is "connected" or "voicemail" or "calling")];
 
         // The switchboards: their tree, where today's callers went, and where each caller in one is now.

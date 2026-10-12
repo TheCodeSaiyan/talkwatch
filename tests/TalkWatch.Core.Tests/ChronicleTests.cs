@@ -165,4 +165,55 @@ public class ChronicleTests
             Assert.All(c.Band, b => Assert.True(b.Length > TimeSpan.Zero));
         }
     }
+
+    // Talk 5.4.5 names the user who answered (accepted_by_user_uuid), with their extension in accepted_by; before, a user's
+    // answer carried no accepted_by at all, so the route could only read "Someone".
+    [Fact]
+    public void A_user_who_answered_is_named_rather_than_their_extension()
+    {
+        var c = Chronicle.Build(
+        [
+            At(0, "call_started", """{"to":"+441144960042","from":"+447700900083"}"""),
+            At(2, "seq_call_trying_endpoints", """{"user_uuids":["u-priya"]}"""),
+            At(13, "call_accepted", """{"accepted_by":"0002","accepted_by_user_uuid":"u-priya","accepted_by_device_mac":"02ab5bf4146a"}"""),
+            At(40, "call_hangup", """{"hangup_cause":"normal_end"}"""),
+        ], "in", Names);
+
+        Assert.Equal("Priya Shah answered after 11s", c.Steps.Single(s => s.Kind == StepKind.Answered).Text);
+        Assert.Equal("Priya Shah", c.Steps.Single(s => s.Kind == StepKind.Answered).Subject);
+    }
+
+    // The shape of a parked call on Talk 5.4.5: answered, parked, picked up from the lot 89 seconds later.
+    [Fact]
+    public void A_parked_call_says_who_parked_it_and_who_picked_it_up()
+    {
+        var c = Chronicle.Build(
+        [
+            At(0, "call_started", """{"to":"+441144960042","from":"+447700900083"}"""),
+            At(2, "seq_call_trying_endpoints", """{"user_uuids":["u-priya"]}"""),
+            At(13, "call_accepted", """{"accepted_by":"0002","accepted_by_user_uuid":"u-priya"}"""),
+            At(27, "call_parked", """{"parking_lot_uuid":"c4d04912-1f2a-4712-bf86-1571832bc550","parked_by_user_uuid":"u-priya"}"""),
+            At(116, "call_unparked", """{"unparked_by_user_uuid":"u-priya"}"""),
+            At(127, "call_hangup", """{"hangup_cause":"normal_end"}"""),
+        ], "in", Names);
+
+        Assert.Equal(
+            ["Call came in on Main Office", "Ringing Priya Shah", "Priya Shah answered after 11s", "Priya Shah parked the call", "Priya Shah picked up the parked call after 1:29", "Call ended"],
+            c.Steps.Select(s => s.Text));
+        Assert.Equal(StepKind.Parked, c.Steps[3].Kind);
+        Assert.Equal(StepKind.Answered, c.Steps[4].Kind);
+        Assert.Equal(TimeSpan.FromSeconds(11), c.TimeToAnswer);
+    }
+
+    [Fact]
+    public void A_parked_call_whose_people_the_directory_cannot_name_still_reads()
+    {
+        var c = Chronicle.Build(
+        [
+            At(0, "call_parked", """{"parked_by_user_uuid":"u-unknown"}"""),
+            At(5, "call_unparked", "{}"),
+        ], "in", Names);
+
+        Assert.Equal(["The call was parked", "Someone picked up the parked call after 5s"], c.Steps.Select(s => s.Text));
+    }
 }
