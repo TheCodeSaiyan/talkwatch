@@ -1,0 +1,12 @@
+{
+  "accept": "*/*",
+  "content-type": "application/json",
+  "authorization": "redacted-1",
+  "user-agent": "",
+  "sentry-trace": "0",
+  "baggage": "0",
+  "content-length": "213",
+  "accept-encoding": "Lorem ipsum dolor sit amet,",
+  "host": "10.10.11.187:8787",
+  "connection": "keep-alive"
+}

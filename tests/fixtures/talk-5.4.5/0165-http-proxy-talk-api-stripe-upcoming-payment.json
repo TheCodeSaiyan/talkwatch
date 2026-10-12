@@ -1,0 +1,26 @@
+{
+  "upcoming_payment": 19.18,
+  "metered_amount_minutes": 0,
+  "metered_amount_sms": 0,
+  "metered_amount_cnam": 0,
+  "metered_amount_softphone": 0,
+  "subscription_amount": 15.98,
+  "subscription_plans": {
+    "standard": {
+      "amount": 15.98,
+      "count": 2
+    },
+    "premium": {
+      "amount": 0,
+      "count": 0
+    }
+  },
+  "tax_amount": 3.2,
+  "credit_amount": 0,
+  "payment_method": {
+    "brand": "Sky62",
+    "exp_month": 4,
+    "exp_year": 2030,
+    "last4": "0000"
+  }
+}

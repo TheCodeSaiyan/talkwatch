@@ -1,0 +1,12 @@
+{
+  "event": "DEGRADATION_UPDATED",
+  "data": {
+    "degraded": false,
+    "degradation_level": 0,
+    "load_level": null,
+    "pressures": [],
+    "targeted_for_suspension": false,
+    "suspended_at": null,
+    "since": null
+  }
+}

@@ -1,0 +1,75 @@
+[
+  {
+    "id": 1,
+    "data": {
+      "theme": "dark",
+      "title": "Title 18",
+      "ringtone": {
+        "type": "standard",
+        "title": "Title 19"
+      },
+      "settings": [
+        "lockscreen",
+        "update",
+        "advanced"
+      ],
+      "time_24h": true,
+      "quick_tiles": [
+        {
+          "mac": "02136CDC0A28",
+          "name": "Frankie50",
+          "type": "camera",
+          "entityId": "64f4e01514960192e4000410"
+        },
+        {
+          "name": "Jordan Baker 33",
+          "type": "paging",
+          "entityId": "424b4f0d-662b-4e2e-aa16-182661c912b5"
+        },
+        {
+          "mac": "026A186E4422",
+          "name": "Avery Price 51",
+          "type": "camera",
+          "entityId": "685bc990001c1003e423e3ab",
+          "consoleMac": null
+        },
+        {
+          "mac": "024AA827889A",
+          "name": "Avery52",
+          "type": "camera",
+          "entityId": "64f4e768024f1003e4000411",
+          "consoleMac": null
+        }
+      ],
+      "applications": [
+        "protect",
+        "uid",
+        "access"
+      ],
+      "call_waiting": true,
+      "auto_text_color": true,
+      "portrait_wallpaper": {
+        "type": "custom",
+        "filename": "a601d3a7-900b-4e0a-b7a6-b42cf15cc83b.jpeg",
+        "orientation": "portrait",
+        "predefined_text_color": "Lorem i",
+        "predefined_text_color_top_bar": "Lorem i"
+      },
+      "landscape_wallpaper": {
+        "type": "custom",
+        "filename": "a601d3a7-900b-4e0a-b7a6-b42cf15cc83b.jpeg",
+        "orientation": "landscape",
+        "predefined_text_color": "Lorem i",
+        "predefined_text_color_top_bar": "Lorem i"
+      },
+      "text_color_portrait": "Lorem i",
+      "text_color_landscape": "Lorem i",
+      "intercom_reject_incoming": false,
+      "text_color_top_bar_portrait": "Lorem i",
+      "text_color_top_bar_landscape": "Lorem i"
+    },
+    "assigned_users": [
+      "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+    ]
+  }
+]

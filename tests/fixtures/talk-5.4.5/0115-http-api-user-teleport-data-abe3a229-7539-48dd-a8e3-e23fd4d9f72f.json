@@ -1,0 +1,18 @@
+{
+  "min_net_version": "7.4.106",
+  "net_version_ok": true,
+  "net_application_available": true,
+  "teleport_feature_supported": true,
+  "teleport_data": {
+    "token_id": "692ad3c3dfce0c2a0dbb33cc",
+    "site_name": "Quinn53"
+  },
+  "teleport_invite_status": "accepted",
+  "available_sites": [
+    {
+      "description": "Lorem i",
+      "id": "64f4d993413e22010633b4b6",
+      "name": "Quinn53"
+    }
+  ]
+}

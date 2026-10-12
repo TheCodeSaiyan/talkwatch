@@ -1,0 +1,43 @@
+[
+  {
+    "time": "2026-10-12T19:04:19.974Z",
+    "event": "call_started",
+    "event_data": {
+      "to": "+441174960404",
+      "from": "+447700900774",
+      "from_contact_id": 1,
+      "to_smart_attendant_id": 15
+    },
+    "event_uuid": "ad1a71a8-d8be-476f-aea9-7747c3a3a76e"
+  },
+  {
+    "time": "2026-10-12T19:04:43.199Z",
+    "event": "entered_sa_menu",
+    "event_data": {
+      "sa_id": 15,
+      "sa_item_id": 19,
+      "sa_item_key": 3,
+      "sa_item_type": "ivr",
+      "sa_item_title": "Title 1"
+    },
+    "event_uuid": "ce259863-bdb3-4ce7-8039-8942e8c0a554"
+  },
+  {
+    "time": "2026-10-12T19:04:58.801Z",
+    "event": "call_sent_to_voicemail",
+    "event_data": {
+      "recipient_user_uuids": [
+        "abe3a229-7539-48dd-a8e3-e23fd4d9f72f"
+      ]
+    },
+    "event_uuid": "af0003a2-50aa-4548-8811-1411c094303e"
+  },
+  {
+    "time": "2026-10-12T19:04:59.323Z",
+    "event": "call_hangup",
+    "event_data": {
+      "hangup_cause": "normal_end"
+    },
+    "event_uuid": "f3fdbe20-3652-4a81-8c2c-ab85cdbff6de"
+  }
+]

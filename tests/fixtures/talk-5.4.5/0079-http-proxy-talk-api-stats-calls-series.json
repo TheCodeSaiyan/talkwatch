@@ -1,0 +1,11 @@
+[
+  {
+    "groupkey": "2026-10-12T13:20:00.000Z",
+    "direction": "in",
+    "count": "1",
+    "answered": "0",
+    "aggregates": {
+      "voicemailed": 0
+    }
+  }
+]

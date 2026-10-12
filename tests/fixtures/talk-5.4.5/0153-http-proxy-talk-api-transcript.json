@@ -1,0 +1,812 @@
+{
+  "transcripts": [
+    {
+      "id": "de7c88052b194edb8b4a901438a04675",
+      "type": "analytics",
+      "source": "call",
+      "status": "COMPLETED",
+      "context": {
+        "call_date": "2026-10-07T12:31:36.821Z",
+        "call_uuid": "5895401e-835c-4dab-a6f1-b838690f9d30",
+        "caller_name": "Nico Archer 7",
+        "dialed_name": "Nico Archer 7",
+        "call_country": "GB",
+        "call_duration": 27,
+        "caller_number": "0002",
+        "dialed_number": "+447700900774",
+        "call_direction": "out",
+        "call_timestamp": 1791376296821,
+        "answered_by_name": "Nico Archer 7",
+        "caller_entity_id": "user_abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+        "dialed_entity_id": "contact_1",
+        "answered_by_number": "+447700900774",
+        "answered_by_entity_id": "contact_1"
+      },
+      "analytics": {
+        "lines": [
+          {
+            "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labor",
+            "speaker": "Robin55",
+            "line_end_time": 6.789,
+            "line_start_time": 0,
+            "line_word_confidence": [0.996,0.996,0.995,0.996,0.993,0.996,0.997,0.987,0.996,0.994,0.993,0,0.959,0.996,0.993,0.996,0
+            ],
+            "line_word_start_time": [0.209,0.529,0.889,1.049,1.37,1.809,2.009,2.41,3.13,3.41,3.859,
+              null,5.289,5.69,5.889,6.09,
+              null
+            ]
+          }
+        ],
+        "summary": "",
+        "duration": 7,
+        "sentiment": 0,
+        "sentimentClassification": "neutral"
+      },
+      "document": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labor",
+      "vector": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labor",
+      "sum_vector": "",
+      "updated_at": "2026-10-07T12:33:48.675Z",
+      "created_at": "2026-10-07T12:32:06.173Z",
+      "place": "1"
+    },
+    {
+      "id": "fc89d3a3fce24ec6ad0d193d6fc2c85e",
+      "type": "analytics",
+      "source": "call",
+      "status": "COMPLETED",
+      "context": {
+        "call_date": "2026-09-30T00:06:48.720Z",
+        "call_uuid": "a289ee94-5403-4f99-9dc6-852fcc3d8eac",
+        "caller_name": "Nico Archer 7",
+        "dialed_name": "Nico Archer 7",
+        "call_country": "GB",
+        "call_duration": 44,
+        "caller_number": "0002",
+        "dialed_number": "+447700900774",
+        "call_direction": "out",
+        "call_timestamp": 1790726808720,
+        "answered_by_name": "Nico Archer 7",
+        "caller_entity_id": "user_abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+        "dialed_entity_id": "contact_1",
+        "answered_by_number": "+447700900774",
+        "answered_by_entity_id": "contact_1"
+      },
+      "analytics": {
+        "lines": [
+          {
+            "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmo",
+            "speaker": "Robin55",
+            "line_end_time": 4.579,
+            "line_start_time": 0,
+            "line_word_confidence": [0.999,0.999,0.999,0.999,1,0.999,0.999,0.999,0.999,1,0.999,0
+            ],
+            "line_word_start_time": [0.17,0.49,0.81,1.008,1.2,1.769,2.009,2.41,3.15,3.41,3.809,
+              null
+            ]
+          },
+          {
+            "line": "Lo",
+            "speaker": "Harper54",
+            "line_end_time": 6.079,
+            "line_start_time": 5.71,
+            "line_word_confidence": [0.004
+            ],
+            "line_word_start_time": [5.719
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit ",
+            "speaker": "Harper54",
+            "line_end_time": 13.81,
+            "line_start_time": 8.069,
+            "line_word_confidence": [0.884,0,0.957,0.6395714285714286,0
+            ],
+            "line_word_start_time": [8.159,
+              null,8.619,9.159,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit amet, consectet",
+            "speaker": "Harper54",
+            "line_end_time": 18.67,
+            "line_start_time": 14.38,
+            "line_word_confidence": [0.996,0.996,0.997,0.998,0.97,0.996,0.996,0
+            ],
+            "line_word_start_time": [14.39,14.63,14.909,15.96,17.03,17.67,18.03,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit amet, c",
+            "speaker": "Harper54",
+            "line_end_time": 24.139,
+            "line_start_time": 20.36,
+            "line_word_confidence": [0.995,0.996,0.984,0.991,0.983,0
+            ],
+            "line_word_start_time": [20.5,21.17,22.53,23.17,23.69,
+              null
+            ]
+          },
+          {
+            "line": "Lo",
+            "speaker": "Robin55",
+            "line_end_time": 36.959,
+            "line_start_time": 36.119,
+            "line_word_confidence": [0.06,0
+            ],
+            "line_word_start_time": [36.38,
+              null
+            ]
+          }
+        ],
+        "summary": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipisci",
+        "duration": 38,
+        "sentiment": 0,
+        "sentimentClassification": "neutral"
+      },
+      "document": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adi",
+      "vector": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing el",
+      "sum_vector": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipisc",
+      "updated_at": "2026-09-30T00:08:46.660Z",
+      "created_at": "2026-09-30T00:07:34.981Z",
+      "place": "2"
+    },
+    {
+      "id": "6c49c95323a842af99c1eeefea9c6e4e",
+      "type": "analytics",
+      "source": "call",
+      "status": "COMPLETED",
+      "context": {
+        "call_date": "2026-09-30T00:04:45.440Z",
+        "call_uuid": "08b76ac7-1057-41e2-a746-2f4180c702d0",
+        "caller_name": "Nico Archer 7",
+        "dialed_name": "Nico Archer 7",
+        "call_country": "GB",
+        "call_duration": 37,
+        "caller_number": "0002",
+        "dialed_number": "+447700900774",
+        "call_direction": "out",
+        "call_timestamp": 1790726685440,
+        "answered_by_name": "Nico Archer 7",
+        "caller_entity_id": "user_abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+        "dialed_entity_id": "contact_1",
+        "answered_by_number": "+447700900774",
+        "answered_by_entity_id": "contact_1"
+      },
+      "analytics": {
+        "lines": [
+          {
+            "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit am",
+            "speaker": "Robin55",
+            "line_end_time": 8.939,
+            "line_start_time": 0,
+            "line_word_confidence": [0.997,0.997,0.996,0.997,0.996,0.997,0.999,0.99,0.997,0.996,0.996,0,0.996,0.998,0.996,0.998,0,0.839,0.998,0.996,0.994,0.994,0.928,0.996,0.996,0.996,0
+            ],
+            "line_word_start_time": [0.17,0.529,0.85,1.039,1.35,1.769,2.009,2.41,3.13,3.41,3.809,
+              null,5.289,5.61,5.889,6.09,
+              null,6.769,6.889,7.05,7.25,7.61,7.969,8.13,8.289,8.449,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ips",
+            "speaker": "Harper54",
+            "line_end_time": 13.76,
+            "line_start_time": 12.949,
+            "line_word_confidence": [0.997,0.997,0
+            ],
+            "line_word_start_time": [13.029,13.239,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit a",
+            "speaker": "Harper54",
+            "line_end_time": 18.77,
+            "line_start_time": 16.37,
+            "line_word_confidence": [0.94,0.998,0.999,0.999,0
+            ],
+            "line_word_start_time": [16.459,16.62,16.86,17.219,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit a",
+            "speaker": "Harper54",
+            "line_end_time": 21.909,
+            "line_start_time": 20.76,
+            "line_word_confidence": [0.995,0,0.136,0.991,0.983,0
+            ],
+            "line_word_start_time": [20.85,
+              null,21.1,21.129,21.35,
+              null
+            ]
+          },
+          {
+            "line": "Lo",
+            "speaker": "Harper54",
+            "line_end_time": 25.7,
+            "line_start_time": 25.049,
+            "line_word_confidence": [0.843
+            ],
+            "line_word_start_time": [25.059
+            ]
+          },
+          {
+            "line": "Lorem ipsum dol",
+            "speaker": "Harper54",
+            "line_end_time": 28.489,
+            "line_start_time": 26.549,
+            "line_word_confidence": [0.991,0.997,0.939,0,0.753,0
+            ],
+            "line_word_start_time": [26.639,26.84,27.04,
+              null,27.61,
+              null
+            ]
+          }
+        ],
+        "summary": "Lorem ipsum dolor sit amet",
+        "duration": 32,
+        "sentiment": 0,
+        "sentimentClassification": "neutral"
+      },
+      "document": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore e",
+      "vector": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incid",
+      "sum_vector": "Lorem ipsum dolor sit amet, ",
+      "updated_at": "2026-09-30T00:08:27.626Z",
+      "created_at": "2026-09-30T00:05:24.746Z",
+      "place": "3"
+    },
+    {
+      "id": "5f455df520244f46b2fd73c928f64b4b",
+      "type": "analytics",
+      "source": "call",
+      "status": "COMPLETED",
+      "context": {
+        "call_date": "2025-12-21T12:40:17.758Z",
+        "call_uuid": "8a6fd52e-c111-4a3e-96c5-51913eb22f23",
+        "caller_name": "Nico Archer 7",
+        "dialed_name": "Alex Turner 41",
+        "call_country": "GB",
+        "call_duration": 77,
+        "caller_number": "0002",
+        "dialed_number": "+447700900880",
+        "call_direction": "out",
+        "call_timestamp": 1766320817758,
+        "answered_by_name": "Alex Turner 41",
+        "caller_entity_id": "user_abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+        "dialed_entity_id": "contact_2",
+        "answered_by_number": "+447700900880",
+        "answered_by_entity_id": "contact_2"
+      },
+      "analytics": {
+        "lines": [
+          {
+            "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmo",
+            "speaker": "Robin55",
+            "line_end_time": 4.539,
+            "line_start_time": 0,
+            "line_word_confidence": [0.999,1,0.999,0.999,1,1,1,1,0.999,1,0.999,0
+            ],
+            "line_word_start_time": [0.129,0.449,0.769,0.97,1.169,1.73,1.929,2.369,3.079,3.329,3.759,
+              null
+            ]
+          },
+          {
+            "line": "Lorem",
+            "speaker": "Robin55",
+            "line_end_time": 5.69,
+            "line_start_time": 5.21,
+            "line_word_confidence": [0.996,0
+            ],
+            "line_word_start_time": [5.219,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ",
+            "speaker": "Harper54",
+            "line_end_time": 6.53,
+            "line_start_time": 5.78,
+            "line_word_confidence": [0.996,0
+            ],
+            "line_word_start_time": [5.889,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ",
+            "speaker": "Robin55",
+            "line_end_time": 9.02,
+            "line_start_time": 7.59,
+            "line_word_confidence": [0.991,0
+            ],
+            "line_word_start_time": [7.599,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor ",
+            "speaker": "Harper54",
+            "line_end_time": 10.779,
+            "line_start_time": 8.609,
+            "line_word_confidence": [0.966,0,0.992,0
+            ],
+            "line_word_start_time": [9.659,
+              null,10.1,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum do",
+            "speaker": "Harper54",
+            "line_end_time": 13.09,
+            "line_start_time": 12.319,
+            "line_word_confidence": [0.996,0.67,0.868,0
+            ],
+            "line_word_start_time": [12.439,12.609,12.619,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit a",
+            "speaker": "Robin55",
+            "line_end_time": 15.329,
+            "line_start_time": 12.829,
+            "line_word_confidence": [0.996,0,0.641,0,0.964,0.901,0
+            ],
+            "line_word_start_time": [12.93,
+              null,14.35,
+              null,14.399,14.64,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eius",
+            "speaker": "Harper54",
+            "line_end_time": 20.94,
+            "line_start_time": 15.75,
+            "line_word_confidence": [0.996,0,0.309,0.062,0.941,0.635,0.781,0.996,0.963,0.996,0.997,0,0.986,0,0.999,0.996,0.996,0,0.977,0
+            ],
+            "line_word_start_time": [16.318,
+              null,16.649,16.659,16.68,16.909,16.92,17.04,17.479,18.02,18.239,
+              null,18.719,
+              null,19.319,19.559,19.68,
+              null,20.28,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipisci",
+            "speaker": "Harper54",
+            "line_end_time": 31.049,
+            "line_start_time": 21.6,
+            "line_word_confidence": [0.996,0.997,0.997,0.997,0.999,0.998,0.998,0.999,0.997,0.942,0.996,0.56,0.499,0.999,0.999,0.999,0.999,0.999,0.998,0.993,0.999,0.999,0.999,0,0.615,0.996,0.999,0.998,0.998,0.693,0.997,0.991,0.998,0.998,0.995,0.999,0.998,0.995,0.993,0
+            ],
+            "line_word_start_time": [21.77,21.889,22,22.129,22.25,22.45,22.69,23.17,23.29,23.7,23.85,24.04,24.09,24.17,24.29,24.409,24.569,24.719,24.959,25.209,25.37,25.569,25.889,
+              null,26.53,27.569,27.77,27.969,28.209,28.489,28.809,29.129,29.569,29.77,29.93,30.049,30.36,30.45,30.61,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, se",
+            "speaker": "Robin55",
+            "line_end_time": 35.889,
+            "line_start_time": 31.92,
+            "line_word_confidence": [0.252,0,0.858,0.997,0.996,0.795,0.995,0,0.837,0.996,0.997,0.996,0.999,0.999,0.999,0.999,0
+            ],
+            "line_word_start_time": [32.229,
+              null,33.77,33.849,34.009,34.209,34.25,
+              null,34.68,34.799,34.95,35.13,35.169,35.25,35.369,35.45,
+              null
+            ]
+          },
+          {
+            "line": "Lore",
+            "speaker": "Harper54",
+            "line_end_time": 34.389,
+            "line_start_time": 33.68,
+            "line_word_confidence": [0.902,0
+            ],
+            "line_word_start_time": [33.889,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit amet, consectetur ad",
+            "speaker": "Harper54",
+            "line_end_time": 39.36,
+            "line_start_time": 36.529,
+            "line_word_confidence": [0.982,0,0.993,0.998,0.997,0.997,0.997,0.999,0.996,0.997,0
+            ],
+            "line_word_start_time": [36.619,
+              null,37.099,37.34,37.819,38.119,38.259,38.419,38.7,38.9,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna ",
+            "speaker": "Robin55",
+            "line_end_time": 47.709,
+            "line_start_time": 40.02,
+            "line_word_confidence": [0.504,0,0.978,0.998,0,0.797,0,0.976,0.874,0,0.94,0,0.033,0,0.994,0,0.997,0.997,0.999,0.996,0.999,0.997,0.996,0.996,0.997,0.999,0.999,0.998
+            ],
+            "line_word_start_time": [40.11,
+              null,40.47,40.63,
+              null,40.95,
+              null,41.069,41.27,
+              null,41.729,
+              null,42.259,
+              null,43.549,
+              null,44.04,44.47,44.63,44.74,45.75,45.869,46.31,46.509,46.63,46.75,46.909,47.13
+            ]
+          },
+          {
+            "line": "Lo",
+            "speaker": "Harper54",
+            "line_end_time": 43.25,
+            "line_start_time": 42.549,
+            "line_word_confidence": [0.96
+            ],
+            "line_word_start_time": [42.639
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod ",
+            "speaker": "Harper54",
+            "line_end_time": 50.34,
+            "line_start_time": 47.52,
+            "line_word_confidence": [0.962,0,0.996,0,0.996,0,0.975,0.996,0.996,0.997,0.997,0.997,0.996,0.996,0,0.385,0.749,0.996,0.991,0.993,0
+            ],
+            "line_word_start_time": [47.639,
+              null,47.81,
+              null,48.169,
+              null,48.409,48.569,48.729,48.889,48.97,49.09,49.169,49.33,
+              null,49.45,49.61,49.729,49.81,49.889,
+              null
+            ]
+          },
+          {
+            "line": "Lor",
+            "speaker": "Robin55",
+            "line_end_time": 51.52,
+            "line_start_time": 50.909,
+            "line_word_confidence": [0.549,0
+            ],
+            "line_word_start_time": [51.08,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, ",
+            "speaker": "Harper54",
+            "line_end_time": 54.27,
+            "line_start_time": 51.869,
+            "line_word_confidence": [0.975,0.949,0.997,0.999,0.999,0.999,0.999,0.998,0.999,0,0.886,0.999,0.999,0.996,0
+            ],
+            "line_word_start_time": [51.959,52.15,52.24,52.36,52.52,52.639,52.759,52.88,53.08,
+              null,53.25,53.439,53.599,53.759,
+              null
+            ]
+          },
+          {
+            "line": "Lor",
+            "speaker": "Robin55",
+            "line_end_time": 55.84,
+            "line_start_time": 54.849,
+            "line_word_confidence": [0.492,0
+            ],
+            "line_word_start_time": [54.86,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed",
+            "speaker": "Harper54",
+            "line_end_time": 63.09,
+            "line_start_time": 56.75,
+            "line_word_confidence": [0.996,0.997,0,0.996,0,0.999,0.999,0,0.996,0,0.999,0.999,0.588,0.81,0.948,0.995,0,0.625,0.762,0
+            ],
+            "line_word_start_time": [56.84,57.2,
+              null,57.56,
+              null,58.069,58.439,
+              null,59.159,
+              null,60.56,60.84,62.18,62.189,62.2,62.279,
+              null,62.659,62.759,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor si",
+            "speaker": "Robin55",
+            "line_end_time": 59.349,
+            "line_start_time": 57.849,
+            "line_word_confidence": [0.977,0.864,0.748,0.034,0.043,0
+            ],
+            "line_word_start_time": [57.939,58.18,58.299,58.529,58.779,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ",
+            "speaker": "Robin55",
+            "line_end_time": 62.099,
+            "line_start_time": 61.36,
+            "line_word_confidence": [0.793,0
+            ],
+            "line_word_start_time": [61.529,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit amet, con",
+            "speaker": "Robin55",
+            "line_end_time": 64.959,
+            "line_start_time": 63.56,
+            "line_word_confidence": [0.247,0,0.806,0.334,0.993,0.05,0.226,0
+            ],
+            "line_word_start_time": [63.869,
+              null,64,64.279,64.29,64.41,64.569,
+              null
+            ]
+          },
+          {
+            "line": "Lorem",
+            "speaker": "Harper54",
+            "line_end_time": 65.61,
+            "line_start_time": 65.16,
+            "line_word_confidence": [0.996,0
+            ],
+            "line_word_start_time": [65.18,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit",
+            "speaker": "Robin55",
+            "line_end_time": 67.309,
+            "line_start_time": 65.98,
+            "line_word_confidence": [0.996,0,0.646,0.599,0.985,0.996,0
+            ],
+            "line_word_start_time": [65.989,
+              null,66.66,66.669,66.68,66.83,
+              null
+            ]
+          }
+        ],
+        "summary": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed d",
+        "duration": 68,
+        "sentiment": 0.4,
+        "sentimentClassification": "neutral"
+      },
+      "document": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetu",
+      "vector": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, se",
+      "sum_vector": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor s",
+      "updated_at": "2025-12-21T12:43:52.350Z",
+      "created_at": "2025-12-21T12:41:37.467Z",
+      "place": "4"
+    },
+    {
+      "id": "081a898ed02920180097fe137c1bda76",
+      "type": "analytics",
+      "source": "call",
+      "status": "COMPLETED",
+      "context": {
+        "call_date": "2025-12-16T22:51:40.719Z",
+        "call_uuid": "8d5da659-b613-4b96-84b3-72868f249bbb",
+        "caller_name": "Nico Archer 7",
+        "dialed_name": "Nico Archer 7",
+        "call_country": "GB",
+        "call_duration": 6,
+        "caller_number": "0002",
+        "dialed_number": "+447700900774",
+        "call_direction": "out",
+        "call_timestamp": 1765925500719,
+        "answered_by_name": "Nico Archer 7",
+        "caller_entity_id": "user_abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+        "dialed_entity_id": "contact_1",
+        "answered_by_number": "+447700900774",
+        "answered_by_entity_id": "contact_1"
+      },
+      "analytics": {
+        "lines": [
+          {
+            "line": "Lorem ipsum dolor sit amet, consectetur adipisci",
+            "speaker": "Robin55",
+            "line_end_time": 3.42,
+            "line_start_time": 0,
+            "line_word_confidence": [0.997,0.998,0.997,0.997,0.997,0.997,0.998,0.989,0
+            ],
+            "line_word_start_time": [0.129,0.449,0.769,0.97,1.289,1.519,1.929,2.369,
+              null
+            ]
+          }
+        ],
+        "summary": "",
+        "duration": 3,
+        "sentiment": 0,
+        "sentimentClassification": "neutral"
+      },
+      "document": "Lorem ipsum dolor sit amet, consectetur adipisci",
+      "vector": "Lorem ipsum dolor sit amet, consectetur adipiscin",
+      "sum_vector": "",
+      "updated_at": "2025-12-16T22:53:29.154Z",
+      "created_at": "2025-12-16T22:51:48.577Z",
+      "place": "5"
+    },
+    {
+      "id": "61252812c9e74ab19669bbe5fc143306",
+      "type": "analytics",
+      "source": "call",
+      "status": "COMPLETED",
+      "context": {
+        "call_date": "2025-12-10T22:27:33.118Z",
+        "call_uuid": "821c4394-3237-493d-a3a0-79e8b6675eb2",
+        "caller_name": "Nico Archer 7",
+        "dialed_name": "Alex Turner 41",
+        "call_country": "GB",
+        "call_duration": 34,
+        "caller_number": "0002",
+        "dialed_number": "+447700900880",
+        "call_direction": "out",
+        "call_timestamp": 1765405653118,
+        "answered_by_name": "Alex Turner 41",
+        "caller_entity_id": "user_abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+        "dialed_entity_id": "contact_2",
+        "answered_by_number": "+447700900880",
+        "answered_by_entity_id": "contact_2"
+      },
+      "analytics": {
+        "lines": [
+          {
+            "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmo",
+            "speaker": "Robin55",
+            "line_end_time": 4.48,
+            "line_start_time": 0,
+            "line_word_confidence": [0.997,1,0.999,0.999,1,1,1,1,0.999,1,0.999,0
+            ],
+            "line_word_start_time": [0.09,0.409,0.73,0.97,1.129,1.69,1.929,2.329,3.079,3.329,3.73,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit amet",
+            "speaker": "Harper54",
+            "line_end_time": 9.22,
+            "line_start_time": 7.75,
+            "line_word_confidence": [0.993,0.999,0.999,0.996,0.996,0.999,0
+            ],
+            "line_word_start_time": [7.96,8.159,8.319,8.439,8.56,8.72,
+              null
+            ]
+          },
+          {
+            "line": "Lo",
+            "speaker": "Robin55",
+            "line_end_time": 10.67,
+            "line_start_time": 9.649,
+            "line_word_confidence": [0.9
+            ],
+            "line_word_start_time": [9.659
+            ]
+          },
+          {
+            "line": "Lore",
+            "speaker": "Harper54",
+            "line_end_time": 14.409,
+            "line_start_time": 12.96,
+            "line_word_confidence": [0.571,0
+            ],
+            "line_word_start_time": [13.13,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor ",
+            "speaker": "Robin55",
+            "line_end_time": 16.54,
+            "line_start_time": 14.859,
+            "line_word_confidence": [0.689,0.966,0,0.005,0.925,0
+            ],
+            "line_word_start_time": [14.989,15.229,
+              null,15.979,15.989,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ip",
+            "speaker": "Harper54",
+            "line_end_time": 15.97,
+            "line_start_time": 15.069,
+            "line_word_confidence": [0.476,0
+            ],
+            "line_word_start_time": [15.079,
+              null
+            ]
+          },
+          {
+            "line": "Lorem ipsum dolor sit",
+            "speaker": "Harper54",
+            "line_end_time": 19.36,
+            "line_start_time": 18.299,
+            "line_word_confidence": [0.996,0.981,0.995,0.988,0
+            ],
+            "line_word_start_time": [18.479,18.629,18.639,18.799,
+              null
+            ]
+          },
+          {
+            "line": "Lor",
+            "speaker": "Robin55",
+            "line_end_time": 22.579,
+            "line_start_time": 20.879,
+            "line_word_confidence": [0.911,0
+            ],
+            "line_word_start_time": [20.969,
+              null
+            ]
+          }
+        ],
+        "summary": "Lorem ipsum dolor sit amet",
+        "duration": 22,
+        "sentiment": 1.3,
+        "sentimentClassification": "neutral"
+      },
+      "document": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consect",
+      "vector": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur",
+      "sum_vector": "Lorem ipsum dolor sit amet, ",
+      "updated_at": "2025-12-10T22:30:49.812Z",
+      "created_at": "2025-12-10T22:28:09.664Z",
+      "place": "6"
+    },
+    {
+      "id": "d2c6c29749234e1082d87cd240b9036c",
+      "type": "analytics",
+      "source": "call",
+      "status": "COMPLETED",
+      "context": {
+        "call_date": "2025-12-01T18:38:20.639Z",
+        "call_uuid": "569e6261-0085-40ff-bb2e-cbee1788fb27",
+        "caller_name": "Nico Archer 7",
+        "dialed_name": "Nico Archer 7",
+        "call_country": "GB",
+        "call_duration": 23,
+        "caller_number": "0002",
+        "dialed_number": "+447700900774",
+        "call_direction": "out",
+        "call_timestamp": 1764614300639,
+        "answered_by_name": "Nico Archer 7",
+        "caller_entity_id": "user_abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+        "dialed_entity_id": "contact_1",
+        "answered_by_number": "+447700900774",
+        "answered_by_entity_id": "contact_1"
+      },
+      "analytics": {
+        "lines": [
+          {
+            "line": "Lorem ipsum dolor sit amet, consectetur adipiscing ",
+            "speaker": "Robin55",
+            "line_end_time": 3.24,
+            "line_start_time": 0,
+            "line_word_confidence": [0.209,0.416,0.916,0.996,0.993,0.996,0.996,0.985,0.9
+            ],
+            "line_word_start_time": [0.079,0.23,0.55,0.73,1.049,1.49,1.7,2.13,2.829
+            ]
+          }
+        ],
+        "summary": "",
+        "duration": 3,
+        "sentiment": 0,
+        "sentimentClassification": "neutral"
+      },
+      "document": "Lorem ipsum dolor sit amet, consectetur adipiscing ",
+      "vector": "Lorem ipsum dolor sit amet, consectetur adipiscin",
+      "sum_vector": "",
+      "updated_at": "2025-12-01T18:39:27.426Z",
+      "created_at": "2025-12-01T18:38:45.811Z",
+      "place": "7"
+    }
+  ],
+  "total_count": 7
+}

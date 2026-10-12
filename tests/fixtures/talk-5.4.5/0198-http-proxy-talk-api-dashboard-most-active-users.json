@@ -1,0 +1,14 @@
+{
+  "total_user_calls": 1,
+  "users": [
+    {
+      "ulp_id": "abe3a229-7539-48dd-a8e3-e23fd4d9f72f",
+      "inbound_calls": 1,
+      "outbound_calls": 0,
+      "internal_calls": 0,
+      "total_calls": 1,
+      "total_duration_sec": 0,
+      "ratio": 1
+    }
+  ]
+}

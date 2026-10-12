@@ -1,0 +1,47 @@
+[
+  {
+    "cameraId": "64f4e16485550168e40003ed",
+    "mac": "028E8F3A685C",
+    "name": "Avery Price 51",
+    "status": "offline",
+    "adoptedInAccessApp": false,
+    "consoleMac": null,
+    "consoleName": null
+  },
+  {
+    "cameraId": "661289e900211c03e4002681",
+    "mac": "02863DB8BCD3",
+    "name": "Casey Price 60",
+    "status": "offline",
+    "adoptedInAccessApp": false,
+    "consoleMac": null,
+    "consoleName": null
+  },
+  {
+    "cameraId": "64f4e768024f1003e4000411",
+    "mac": "024AA827889A",
+    "name": "Avery52",
+    "status": "online",
+    "adoptedInAccessApp": false,
+    "consoleMac": null,
+    "consoleName": null
+  },
+  {
+    "cameraId": "64f4e01514960192e4000410",
+    "mac": "02136CDC0A28",
+    "name": "Frankie50",
+    "status": "online",
+    "adoptedInAccessApp": false,
+    "consoleMac": null,
+    "consoleName": null
+  },
+  {
+    "cameraId": "685bc990001c1003e423e3ab",
+    "mac": "026A186E4422",
+    "name": "Alex Osborne 61",
+    "status": "online",
+    "adoptedInAccessApp": false,
+    "consoleMac": null,
+    "consoleName": null
+  }
+]

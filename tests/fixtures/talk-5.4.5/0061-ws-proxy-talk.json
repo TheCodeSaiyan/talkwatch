@@ -1,0 +1,7 @@
+{
+  "event": "BITRATE_UPDATE",
+  "data": {
+    "bytesPerSecond": 16414.8,
+    "activeCalls": 1
+  }
+}

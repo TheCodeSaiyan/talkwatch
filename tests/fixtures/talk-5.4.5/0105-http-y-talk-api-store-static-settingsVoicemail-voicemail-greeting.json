@@ -1,0 +1,14 @@
+[
+  {
+    "key": "static_settingsVoicemail_voicemail_greeting",
+    "value": {
+      "default": false,
+      "voice_type": "voice2",
+      "greeting_type": "generated",
+      "voice_language": "en-GB",
+      "greeting_filename": "global_voicemail_greeting.mp3",
+      "generated_greeting_text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum d"
+    },
+    "updated_at": "2026-02-09T14:24:35.997Z"
+  }
+]

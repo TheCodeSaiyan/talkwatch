@@ -1,0 +1,6 @@
+{
+  "event": "ONGOING_EVENTS_UPDATE",
+  "data": {
+    "ongoing_event_count": "0"
+  }
+}

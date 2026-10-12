@@ -1,0 +1,454 @@
+{
+  "consoleShortname": "Jordan14",
+  "consoleName": "Emerson10",
+  "systemStartupUnix": 1790965251638,
+  "gatewayIp": "192.168.1.1",
+  "talkServiceEnabled": true,
+  "uosVersion": "5.1.33",
+  "talkVersion": "5.4.5",
+  "serviceHealth": {
+    "health_data": [
+      {
+        "timestamp_start": 1791744000,
+        "timestamp_end": 1791745200,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791745200,
+        "timestamp_end": 1791746400,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791746400,
+        "timestamp_end": 1791747600,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791747600,
+        "timestamp_end": 1791748800,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791748800,
+        "timestamp_end": 1791750000,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791750000,
+        "timestamp_end": 1791751200,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791751200,
+        "timestamp_end": 1791752400,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791752400,
+        "timestamp_end": 1791753600,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791753600,
+        "timestamp_end": 1791754800,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791754800,
+        "timestamp_end": 1791756000,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791756000,
+        "timestamp_end": 1791757200,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791757200,
+        "timestamp_end": 1791758400,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791758400,
+        "timestamp_end": 1791759600,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791759600,
+        "timestamp_end": 1791760800,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791760800,
+        "timestamp_end": 1791762000,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791762000,
+        "timestamp_end": 1791763200,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791763200,
+        "timestamp_end": 1791764400,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791764400,
+        "timestamp_end": 1791765600,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791765600,
+        "timestamp_end": 1791766800,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791766800,
+        "timestamp_end": 1791768000,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791768000,
+        "timestamp_end": 1791769200,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791769200,
+        "timestamp_end": 1791770400,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791770400,
+        "timestamp_end": 1791771600,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791771600,
+        "timestamp_end": 1791772800,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791772800,
+        "timestamp_end": 1791774000,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791774000,
+        "timestamp_end": 1791775200,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791775200,
+        "timestamp_end": 1791776400,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791776400,
+        "timestamp_end": 1791777600,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791777600,
+        "timestamp_end": 1791778800,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791778800,
+        "timestamp_end": 1791780000,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791780000,
+        "timestamp_end": 1791781200,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791781200,
+        "timestamp_end": 1791782400,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791782400,
+        "timestamp_end": 1791783600,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791783600,
+        "timestamp_end": 1791784800,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791784800,
+        "timestamp_end": 1791786000,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791786000,
+        "timestamp_end": 1791787200,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791787200,
+        "timestamp_end": 1791788400,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791788400,
+        "timestamp_end": 1791789600,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791789600,
+        "timestamp_end": 1791790800,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791790800,
+        "timestamp_end": 1791792000,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791792000,
+        "timestamp_end": 1791793200,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791793200,
+        "timestamp_end": 1791794400,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791794400,
+        "timestamp_end": 1791795600,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791795600,
+        "timestamp_end": 1791796800,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791796800,
+        "timestamp_end": 1791798000,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791798000,
+        "timestamp_end": 1791799200,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791799200,
+        "timestamp_end": 1791800400,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791800400,
+        "timestamp_end": 1791801600,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791801600,
+        "timestamp_end": 1791802800,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791802800,
+        "timestamp_end": 1791804000,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791804000,
+        "timestamp_end": 1791805200,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791805200,
+        "timestamp_end": 1791806400,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791806400,
+        "timestamp_end": 1791807600,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791807600,
+        "timestamp_end": 1791808800,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791808800,
+        "timestamp_end": 1791810000,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791810000,
+        "timestamp_end": 1791811200,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791811200,
+        "timestamp_end": 1791812400,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791812400,
+        "timestamp_end": 1791813600,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791813600,
+        "timestamp_end": 1791814800,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791814800,
+        "timestamp_end": 1791816000,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791816000,
+        "timestamp_end": 1791817200,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791817200,
+        "timestamp_end": 1791818400,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791818400,
+        "timestamp_end": 1791819600,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791819600,
+        "timestamp_end": 1791820800,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791820800,
+        "timestamp_end": 1791822000,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791822000,
+        "timestamp_end": 1791823200,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791823200,
+        "timestamp_end": 1791824400,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791824400,
+        "timestamp_end": 1791825600,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791825600,
+        "timestamp_end": 1791826800,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791826800,
+        "timestamp_end": 1791828000,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791828000,
+        "timestamp_end": 1791829200,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791829200,
+        "timestamp_end": 1791830400,
+        "health_score": 100,
+        "events": []
+      },
+      {
+        "timestamp_start": 1791830400,
+        "timestamp_end": 1791831600,
+        "health_score": 100,
+        "events": []
+      }
+    ]
+  },
+  "deviceCount": "1",
+  "onlineDevicesCount": 1,
+  "offlineDevicesCount": "0"
+}

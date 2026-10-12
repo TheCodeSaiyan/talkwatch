@@ -1,0 +1,17 @@
+{
+  "address": {
+    "sid": "AD4dbb72ea076df1aa3672c53e284face4",
+    "customer_name": "Lorem ipsum dol",
+    "street": "1 Example Street",
+    "street_secondary": "",
+    "city": "Exampleton",
+    "region": "Exampleshire",
+    "postal_code": "ZZ99 9ZZ",
+    "iso_country": "GB",
+    "state": "Exampleshire",
+    "address_type": null
+  },
+  "pending_changes": false,
+  "all_active": true,
+  "all_inactive": false
+}

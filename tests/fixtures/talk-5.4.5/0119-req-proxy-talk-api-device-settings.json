@@ -1,0 +1,39 @@
+{
+  "mac": "02ab5bf4146a",
+  "settings": {
+    "display_name": "Jordan Hughes 2",
+    "contact_list": [1
+    ],
+    "additional_config": {
+      "outgoing_number": null,
+      "ext": "0002",
+      "can_start_intercom_calls": true,
+      "can_start_group_intercom_calls": true,
+      "voicemail_enabled": true,
+      "accept_queue_calls": null,
+      "voicemail_timeout": null,
+      "device_mac": "02ab5bf4146a",
+      "status": "Available",
+      "redirect": {
+        "number": "",
+        "entity": "",
+        "target_did": ""
+      },
+      "active_ring_flow_id": 1,
+      "greeting_file_updated": false,
+      "greeting_file": null,
+      "greeting_file_props": null,
+      "greeting_filename": null,
+      "greeting_type": "default",
+      "generated_greeting_text": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum d",
+      "voice_type": "voice1",
+      "voice_language": "en-GB",
+      "device_vm_greeting": {
+        "custom_greeting_path": null,
+        "is_user_recorded": false
+      },
+      "display_incoming_call_number_format": "+E.164",
+      "sip_password": "redacted-2"
+    }
+  }
+}

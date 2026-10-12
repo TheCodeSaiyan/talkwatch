@@ -1,0 +1,203 @@
+{
+  "id": "2300fc01214960670dba3b982d18ca895f",
+  "type": "analytics",
+  "source": "call",
+  "status": "COMPLETED",
+  "context": {
+    "call_sid": "CA0e88dcde6eb029610d794bb7e43fdf95",
+    "call_date": "2026-10-08T12:05:27.370Z",
+    "call_uuid": "a8cd9709-b192-42e3-93ac-a7b5f0246d20",
+    "caller_name": null,
+    "dialed_name": "Casey31",
+    "call_country": "GB",
+    "call_duration": 91,
+    "caller_number": "+447700900330",
+    "dialed_number": "+441144960042",
+    "call_direction": "in",
+    "call_timestamp": 1791461127370,
+    "answered_by_name": "Charlie Vaughan 39",
+    "caller_entity_id": null,
+    "dialed_entity_id": "sa_45",
+    "answered_by_number": "+447700900210",
+    "answered_by_entity_id": "contact_3"
+  },
+  "analytics": {
+    "lines": [
+      {
+        "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipis",
+        "speaker": "Harper54",
+        "line_end_time": 11.239,
+        "line_start_time": 0,
+        "line_word_confidence": [0.905,0.99,0.961,0.981,0.996,0,0.851,0.998,0.998,0.996,0.998,0.999,0.999,0.999,0.999,0.998,0.999,0,0.996,0.999,0.996,0.999,0.997,0.997,0.995,0,0.749,0.759,0.997,0.999,0,0.707,0.997,0.998,0.996,0
+        ],
+        "line_word_start_time": [0.029,0.17,0.25,0.759,1.33,
+          null,2.13,2.289,2.609,2.73,2.93,3.549,3.849,4.369,4.489,4.73,5,
+          null,5.769,6.01,6.17,6.369,6.769,7.05,7.25,
+          null,7.889,7.969,8.569,8.77,
+          null,9.96,9.97,10.329,10.609,
+          null
+        ]
+      },
+      {
+        "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmo",
+        "speaker": "Robin55",
+        "line_end_time": 36.369,
+        "line_start_time": 12.199,
+        "line_word_confidence": [0.998,0.996,0,0.607,0,0.996,0,0.995,0.999,0,0.847,0,0.999,0,0.548,0,0.264,0,0.99,0.998,0.996,0.999,0.993,0.999,0.999,0,0.958,0.997,0.736,0,0.996,0.997,0,0.74,0.999,0.996,0.996,0.996,0.999,0.999,0.996,0.997,0,0.503,0,0.996,0.973,0.997,0.999,0.956,0.996,0.997,0.999,0.996,0,0.746,0,0.992,0,0.996,0.995,0.999,0.9,0,0.997,0.998,0,0.996,0,0.66,0,0.998,0.999,0.999,0.999,0,0.839,0.989,0.996,0.996,0.987,0.996,0,0.813,0,0.996,0.999,0.996,0
+        ],
+        "line_word_start_time": [12.359,12.569,
+          null,13.01,
+          null,13.779,
+          null,13.97,14.13,
+          null,14.409,
+          null,14.77,
+          null,15.529,
+          null,16.479,
+          null,16.69,16.85,16.93,17.129,17.45,17.85,18.04,
+          null,18.93,19.29,19.569,
+          null,19.809,20.09,
+          null,20.409,20.69,21.04,21.129,21.61,21.889,22.129,22.37,22.489,
+          null,23.399,
+          null,23.809,23.889,24.17,24.29,24.649,24.93,25.049,25.45,26.409,
+          null,27.049,
+          null,28.01,
+          null,28.329,28.53,29.129,29.409,
+          null,29.809,29.93,
+          null,30.37,
+          null,30.69,
+          null,30.969,31.09,31.209,31.569,
+          null,32.45,32.529,32.729,32.849,32.93,34.33,
+          null,34.61,
+          null,35.33,35.49,35.68,
+          null
+        ]
+      },
+      {
+        "line": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor si",
+        "speaker": "Robin55",
+        "line_end_time": 49.77,
+        "line_start_time": 36.75,
+        "line_word_confidence": [0.952,0,0.996,0.999,0.997,0.999,0.998,0.998,0.999,0.996,0.996,0,0.204,0.205,0.996,0.889,0.567,0,0.454,0.825,0.5,0,0.984,0.989,0.997,0.909,0,0.95,0.997,0,0.98,0.999,0.997,0,0.996
+        ],
+        "line_word_start_time": [36.979,
+          null,37.36,37.479,37.68,37.84,37.959,38.04,38.159,38.279,38.479,
+          null,39.049,39.18,39.689,39.84,41.31,
+          null,43.33,43.479,45.029,
+          null,46.569,46.759,46.959,47.2,
+          null,47.759,47.959,
+          null,48.479,48.669,48.799,
+          null,49.439
+        ]
+      },
+      {
+        "line": "Lorem ipsum dolor sit amet, consectet",
+        "speaker": "Robin55",
+        "line_end_time": 53.11,
+        "line_start_time": 50.389,
+        "line_word_confidence": [0.835,0,0.967,0,0.996,0.987,0.996,0.996,0,0.762,0.997,0
+        ],
+        "line_word_start_time": [50.479,
+          null,51.279,
+          null,51.479,51.54,51.68,51.84,
+          null,52.529,52.72,
+          null
+        ]
+      }
+    ],
+    "summary": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna a",
+    "duration": 54,
+    "sentiment": 1.7,
+    "sentimentClassification": "neutral"
+  },
+  "document": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing e",
+  "vector": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum ",
+  "sum_vector": "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+  "updated_at": "2026-10-08T12:08:46.304Z",
+  "created_at": "2026-10-08T12:07:01.018Z",
+  "call_rec": {
+    "uuid": "a8cd9709-b192-42e3-93ac-a7b5f0246d20",
+    "from": "+447700900330",
+    "to": "+441144960042",
+    "direction": "in",
+    "status": [
+      "accepted",
+      "ringing",
+      "accepted",
+      "normal_end"
+    ],
+    "time": "2026-10-08T12:05:27.370Z",
+    "duration": 91,
+    "recording": true,
+    "quality_score": 100,
+    "quality_data": null,
+    "from_mac": null,
+    "answered_by_mac": null,
+    "from_id": null,
+    "to_id": null,
+    "to_group_id": null,
+    "from_contact_id": null,
+    "to_contact_id": null,
+    "from_did": null,
+    "twilio_call_sid": "CA0e88dcde6eb029610d794bb7e43fdf95",
+    "block_rule_id": null,
+    "vm_data": {},
+    "is_video_call": false,
+    "to_smart_attendant_id": 45,
+    "to_smart_attendant_title": "Title 1",
+    "call_events": [
+      {
+        "time": "2026-10-08T12:05:27.420Z",
+        "event": "call_started",
+        "event_data": {
+          "to": "+441144960042",
+          "from": "+447700900330",
+          "to_smart_attendant_id": 45
+        },
+        "event_uuid": "9009671c-6d76-4d0b-a0f0-fa5366176573"
+      },
+      {
+        "time": "2026-10-08T12:05:40.348Z",
+        "event": "seq_call_trying_endpoints",
+        "event_data": {
+          "contact_uuids": [
+            "ac7a4901-2722-4e41-9f20-87f95df72cb2"
+          ]
+        },
+        "event_uuid": "0bb0c8bf-28af-4671-b69f-3d701f7648b5"
+      },
+      {
+        "time": "2026-10-08T12:06:03.648Z",
+        "event": "call_accepted",
+        "event_data": {
+          "accepted_by": "+447700900210",
+          "accepted_by_contact_id": 3,
+          "accepted_by_contact_uuid": "ac7a4901-2722-4e41-9f20-87f95df72cb2"
+        },
+        "event_uuid": "b06d22fb-e82d-4aef-94b6-e9a49e65688e"
+      },
+      {
+        "time": "2026-10-08T12:06:58.275Z",
+        "event": "call_hangup",
+        "event_data": {
+          "hangup_cause": "normal_end"
+        },
+        "event_uuid": "af294b1b-c49a-4423-96de-41bd8eec528b"
+      }
+    ],
+    "answered_by": "+447700900210",
+    "answered_by_user_uuid": null,
+    "answered_by_contact_id": 3,
+    "rung_or_skipped_user_uuids": [],
+    "deleted_for_user_uuids": [],
+    "is_read_by_user_uuids": [],
+    "is_intercom_call": false,
+    "time_unix": "5215550194",
+    "from_caller_name": null,
+    "is_group_intercom_call": false,
+    "answered_by_group_id": null,
+    "country": "GB",
+    "to_user_name": null,
+    "to_queue_id": null,
+    "recording_filename": "20261008_130603_447700900330_-01914980820-01314960734_a8cd97.mp3"
+  }
+}
