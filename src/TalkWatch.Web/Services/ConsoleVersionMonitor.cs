@@ -43,7 +43,7 @@ public sealed partial class ConsoleVersionMonitor(
             var now = clock.GetUtcNow();
             var versions = await session.Client.GetVersionsAsync(cancellationToken);
             platform.CheckedAt = now;
-            platform.Fit = Compatibility.Assess(versions, ConsoleVersions.Tested);
+            platform.Fit = Compatibility.Assess(versions, ConsoleVersions.TestedFrom, ConsoleVersions.TestedTo);
 
             using var scope = scopes.CreateScope();
             scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UseSystemScope();
@@ -76,7 +76,7 @@ public sealed partial class ConsoleVersionMonitor(
             platform.Versions = versions;
             if (platform.Fit is not VersionFit.Tested)
             {
-                LogUntested(logger, versions.UnifiOs, versions.Talk, ConsoleVersions.Tested.UnifiOs, ConsoleVersions.Tested.Talk);
+                LogUntested(logger, versions.UnifiOs, versions.Talk, ConsoleVersions.TestedUnifiOs, ConsoleVersions.TestedTalk);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

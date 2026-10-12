@@ -37,8 +37,19 @@ public sealed record ConsoleSystemInfo
 /// <summary>What the console is running, and on which channels.</summary>
 public sealed record ConsoleVersions(string? UnifiOs, string? UnifiOsChannel, string? Talk, string? TalkChannel)
 {
-    /// <summary>The versions TalkWatch was built and tested against: the ones the discovery spike captured.</summary>
-    public static readonly ConsoleVersions Tested = new("5.1.33", "release-candidate", "5.3.2", "release-candidate");
+    /// <summary>The oldest versions TalkWatch was tested against: the ones the discovery spike captured, which the fixtures replay.</summary>
+    public static readonly ConsoleVersions TestedFrom = new("5.1.33", "release-candidate", "5.3.2", "release-candidate");
+
+    /// <summary>The newest versions TalkWatch was tested against, from a capture after the console's last update.</summary>
+    public static readonly ConsoleVersions TestedTo = new("5.1.33", "release-candidate", "5.4.5", "release-candidate");
+
+    /// <summary>The tested Talk versions as words, such as "5.3.2 to 5.4.5".</summary>
+    public static string TestedTalk => Range(TestedFrom.Talk, TestedTo.Talk);
+
+    /// <summary>The tested UniFi OS versions as words.</summary>
+    public static string TestedUnifiOs => Range(TestedFrom.UnifiOs, TestedTo.UnifiOs);
+
+    private static string Range(string? from, string? to) => from == to ? to ?? "" : $"{from} to {to}";
 
     public static bool IsPreRelease(string? channel) =>
         channel is not null && !channel.Equals("release", StringComparison.OrdinalIgnoreCase) && !channel.Equals("stable", StringComparison.OrdinalIgnoreCase);
@@ -46,7 +57,7 @@ public sealed record ConsoleVersions(string? UnifiOs, string? UnifiOsChannel, st
 
 public enum VersionFit
 {
-    /// <summary>The exact versions TalkWatch was tested against.</summary>
+    /// <summary>Within the versions TalkWatch was tested against, oldest to newest.</summary>
     Tested,
 
     /// <summary>Newer than tested. Most updates do not touch what TalkWatch reads; the drift check catches those that do.</summary>
@@ -61,23 +72,22 @@ public enum VersionFit
 
 public static class Compatibility
 {
-    /// <summary>How <paramref name="running"/> compares with <paramref name="tested"/>; the worse of UniFi OS and Talk.</summary>
-    public static VersionFit Assess(ConsoleVersions running, ConsoleVersions tested)
+    /// <summary>How <paramref name="running"/> compares with the tested range; the worse of UniFi OS and Talk.</summary>
+    public static VersionFit Assess(ConsoleVersions running, ConsoleVersions testedFrom, ConsoleVersions testedTo)
     {
-        var os = Compare(running.UnifiOs, tested.UnifiOs);
-        var talk = Compare(running.Talk, tested.Talk);
+        var os = Compare(running.UnifiOs, testedFrom.UnifiOs, testedTo.UnifiOs);
+        var talk = Compare(running.Talk, testedFrom.Talk, testedTo.Talk);
         return new[] { os, talk }.Max();
     }
 
-    private static VersionFit Compare(string? running, string? tested)
+    private static VersionFit Compare(string? running, string? from, string? to)
     {
-        if (!TryParse(running, out var r) || !TryParse(tested, out var t))
+        if (!TryParse(running, out var r) || !TryParse(from, out var f) || !TryParse(to, out var t))
         {
             return VersionFit.Unknown;
         }
 
-        var order = r.CompareTo(t);
-        return order == 0 ? VersionFit.Tested : order > 0 ? VersionFit.NewerUntested : VersionFit.OlderUntested;
+        return r.CompareTo(t) > 0 ? VersionFit.NewerUntested : r.CompareTo(f) < 0 ? VersionFit.OlderUntested : VersionFit.Tested;
     }
 
     // Versions such as 5.3.2 or 5.1.33; anything after a '-' or '+' (build tags) is ignored.

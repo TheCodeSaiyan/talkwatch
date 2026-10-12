@@ -86,7 +86,7 @@
                         UniFi OS @versions.UnifiOs@(TalkWatch.Core.Talk.ConsoleVersions.IsPreRelease(versions.UnifiOsChannel) ? $" ({versions.UnifiOsChannel})" : "").
                         @if (Platform.Fit is TalkWatch.Core.Talk.VersionFit.NewerUntested or TalkWatch.Core.Talk.VersionFit.OlderUntested)
                         {
-                            <text> Not yet tested with TalkWatch (tested: Talk @TalkWatch.Core.Talk.ConsoleVersions.Tested.Talk, UniFi OS @TalkWatch.Core.Talk.ConsoleVersions.Tested.UnifiOs).</text>
+                            <text> Not yet tested with TalkWatch (tested: Talk @TalkWatch.Core.Talk.ConsoleVersions.TestedTalk, UniFi OS @TalkWatch.Core.Talk.ConsoleVersions.TestedUnifiOs).</text>
                         }
                         @if (Platform.PreRelease)
                         {
