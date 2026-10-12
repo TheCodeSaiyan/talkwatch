@@ -122,6 +122,11 @@ public sealed partial class Pseudonymiser(byte[] key)
     [GeneratedRegex(@"(^|_)sid$", RegexOptions.IgnoreCase)]
     private static partial Regex SidField();
 
+    // A Twilio SID (an account, call or document id: two letters and 32 hex digits), found by its shape where no field
+    // name says what it is, such as a response that is the bare string.
+    [GeneratedRegex(@"(?<![A-Za-z0-9])[A-Z]{2}[0-9a-f]{32}(?![A-Za-z0-9])")]
+    private static partial Regex TwilioSid();
+
     private readonly Dictionary<string, string> _secrets = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _links = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _ipv6 = new(StringComparer.OrdinalIgnoreCase);
@@ -375,6 +380,9 @@ public sealed partial class Pseudonymiser(byte[] key)
     // Numbers, e-mail addresses, MAC addresses and public IPs, wherever they appear in a string.
     private string Scrub(string text)
     {
+        // Before the numbers, whose digit runs would otherwise be changed inside it and leave the rest of it real.
+        text = TwilioSid().Replace(text, m => KeyedLike(m.Value, "sid"));
+
         // A replacement can differ in length from what it replaced, and a neighbouring run of digits can then join
         // it into a new, real-looking number. So replace until nothing but fictional numbers is left.
         for (var pass = 0; ; pass++)
@@ -494,7 +502,10 @@ public sealed partial class Pseudonymiser(byte[] key)
         }
 
         var fake = new string(body);
-        return real[..keep] + (real.Skip(keep).Any(char.IsAsciiLetterLower) ? fake.ToLowerInvariant() : fake);
+        // A Twilio account or API key SID keeps upper-case hex: secret scanners match the lower-case form, and a fake
+        // in that shape is refused by push protection as if it were the real one.
+        var scannerShaped = purpose == "sid" && real.Length == 34 && real[..2] is "AC" or "SK";
+        return real[..keep] + (!scannerShaped && real.Skip(keep).Any(char.IsAsciiLetterLower) ? fake.ToLowerInvariant() : fake);
     }
 
     private static bool IsPublic(string candidate)

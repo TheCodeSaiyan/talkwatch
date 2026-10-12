@@ -425,4 +425,21 @@ public class PseudonymiserTests
         Assert.StartsWith("/talk/get?event=call_started&caller_name=", path, StringComparison.Ordinal);
         Assert.Contains("&timestamp=", path, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void A_twilio_sid_is_replaced_wherever_it_appears()
+    {
+        // number/porting/subacc_sid answers with the account's SID as a bare JSON string: no field name to go by.
+        // Split, or push protection takes this made-up SID for a real one.
+        const string Sid = "AC" + "0123456789abcdef0123456789abcdef";
+        var pseudonymiser = new Pseudonymiser(Key);
+
+        var text = pseudonymiser.Text($"\"{Sid}\"", isCsv: false);
+        var field = (string)JsonNode.Parse(pseudonymiser.Json($$"""{"account_sid":"{{Sid}}"}"""))!["account_sid"]!;
+
+        Assert.DoesNotContain(Sid, text, StringComparison.Ordinal);
+        Assert.Equal(Sid.Length + 2, text.Length);
+        Assert.Equal($"\"{field}\"", text);
+        Assert.DoesNotMatch("AC[0-9a-f]{32}", text);
+    }
 }
