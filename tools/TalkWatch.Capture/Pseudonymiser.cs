@@ -55,7 +55,7 @@ public sealed partial class Pseudonymiser(byte[] key)
     private static partial Regex ProseField();
 
     // Property names that contain a trigger word but hold something that is never personal.
-    [GeneratedRegex(@"^(filename|file_name|typename|type_name|username_attribute|content_?type|content_?length|text_?direction)$|file_?name$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^(filename|file_name|typename|type_name|username_attribute|content[_-]?type|content[_-]?length|text_?direction)$|file_?name$", RegexOptions.IgnoreCase)]
     private static partial Regex NotPersonal();
 
     // Menu, group and attendant titles are chosen by the business, and often name it.
@@ -71,7 +71,8 @@ public sealed partial class Pseudonymiser(byte[] key)
 
     private readonly Dictionary<string, string> _hosts = new(StringComparer.Ordinal);
 
-    [GeneratedRegex(@"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")]
+    // The local part may arrive masked with asterisks (maskedEmail), which still gives the domain and the first letters away.
+    [GeneratedRegex(@"[A-Za-z0-9._%+*\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")]
     private static partial Regex Email();
 
     [GeneratedRegex(@"\b(?:[0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}\b")]
@@ -100,7 +101,7 @@ public sealed partial class Pseudonymiser(byte[] key)
     private static partial Regex IPv6();
 
     // Values that grant access. Only strings are replaced, so a flag such as sharedTokens: true is left alone.
-    [GeneratedRegex(@"(^|_)(token|secret|password|passwd|auth_key|api_key|hashed_key|private_key|webhook)$|rtsp|slack_url|teams_url", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(^|_)(token|secret|password|passwd|auth_key|api_key|hashed_key|private_key|webhook)$|^(authorization|proxy-authorization|cookie|set-cookie)$|rtsp|slack_url|teams_url", RegexOptions.IgnoreCase)]
     private static partial Regex SecretField();
 
     [GeneratedRegex(@"^(street|street_?secondary|street2|address_?line_?\d?|city|town|county|postal_?code|postcode|zip|zip_?code)$", RegexOptions.IgnoreCase)]
@@ -176,7 +177,34 @@ public sealed partial class Pseudonymiser(byte[] key)
     }
 
     /// <summary>A URL path and query, with any number or e-mail address in it replaced.</summary>
-    public string Path(string pathAndQuery) => Scrub(pathAndQuery);
+    public string Path(string pathAndQuery)
+    {
+        var mark = pathAndQuery.IndexOf('?', StringComparison.Ordinal);
+        if (mark < 0)
+        {
+            return Scrub(pathAndQuery);
+        }
+
+        // A query holds named fields just as a body does (a GET webhook sends the whole call in one), so each value
+        // goes through the same rules by its name rather than only the number and address patterns.
+        var query = pathAndQuery[(mark + 1)..].Split('&').Select(pair =>
+        {
+            var equals = pair.IndexOf('=', StringComparison.Ordinal);
+            if (equals < 0)
+            {
+                return Scrub(pair);
+            }
+
+            var name = Uri.UnescapeDataString(pair[..equals]);
+            FieldNames.Add(name);
+            var value = Uri.UnescapeDataString(pair[(equals + 1)..].Replace('+', ' '));
+            // A time is still scrubbed like a number: the guard reads a path as one string, where only fictional
+            // numbers pass, so a kept timestamp would have the output refused.
+            var replaced = Guard.TimeField().IsMatch(name) ? Scrub(value) : Value(name, value);
+            return $"{pair[..equals]}={Uri.EscapeDataString(replaced)}";
+        });
+        return Scrub(pathAndQuery[..mark]) + "?" + string.Join('&', query);
+    }
 
     // Streams from reader to writer rather than through a node tree, so repeated keys and key order are copied
     // exactly as the console sent them. A node tree refuses a repeated key.

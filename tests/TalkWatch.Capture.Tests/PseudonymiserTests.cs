@@ -389,4 +389,40 @@ public class PseudonymiserTests
         Assert.DoesNotContain("acme", output, StringComparison.Ordinal);
         Assert.Equal("https://example.ui.com/gw", (string)json["uid"]!["env"]!["api"]!);
     }
+
+    [Fact]
+    public void A_masked_email_address_is_replaced_like_any_other()
+    {
+        // The console sends the owner's address part masked; the masking must not stop it being recognised.
+        var json = JsonNode.Parse(new Pseudonymiser(Key).Json("""{"maskedEmail":"ja************@example.co.uk"}"""))!;
+
+        Assert.Matches(@"^person\d+@example\.invalid$", (string)json["maskedEmail"]!);
+    }
+
+    [Fact]
+    public void Credentials_in_recorded_request_headers_are_redacted()
+    {
+        // The listen command records a webhook's headers, and Talk sends its webhook credentials as Basic auth.
+        var output = new Pseudonymiser(Key).Json("""{"authorization":"Basic dXNlcjpodW50ZXIy","cookie":"TOKEN=abc","content-type":"application/json"}""");
+        var json = JsonNode.Parse(output)!;
+
+        Assert.DoesNotContain("dXNlcjpodW50ZXIy", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("TOKEN=abc", output, StringComparison.Ordinal);
+        Assert.StartsWith("redacted-", (string)json["authorization"]!, StringComparison.Ordinal);
+        Assert.Equal("application/json", (string)json["content-type"]!);
+    }
+
+    [Fact]
+    public void A_query_string_is_pseudonymised_by_its_field_names()
+    {
+        // A GET webhook sends the call in its query, names and all.
+        var path = new Pseudonymiser(Key).Path(
+            "/talk/get?event=call_started&caller_name=Jane+Smith&caller_number=%2B442071234567&timestamp=1791833481655");
+
+        Assert.DoesNotContain("Jane", path, StringComparison.Ordinal);
+        Assert.DoesNotContain("Smith", path, StringComparison.Ordinal);
+        Assert.DoesNotContain("2071234567", path, StringComparison.Ordinal);
+        Assert.StartsWith("/talk/get?event=call_started&caller_name=", path, StringComparison.Ordinal);
+        Assert.Contains("&timestamp=", path, StringComparison.Ordinal);
+    }
 }
