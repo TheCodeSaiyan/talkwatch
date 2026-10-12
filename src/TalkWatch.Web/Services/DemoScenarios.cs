@@ -14,7 +14,8 @@ public sealed record DemoScenario(string Id, string Category, string Label, stri
 /// so Now and Operator show it as it happens. Only in demo mode, where nothing here can reach a real console.
 /// </summary>
 public sealed partial class DemoScenarios(
-    FixtureConsole console, CallLogPoller poller, LiveStatus live, LineDirectorySync directory, TimeProvider clock, ILogger<DemoScenarios> logger)
+    FixtureConsole console, CallLogPoller poller, LiveStatus live, LineDirectorySync directory, LiveListener listener, TimeProvider clock,
+    ILogger<DemoScenarios> logger)
 {
     public static readonly IReadOnlyList<DemoScenario> All =
     [
@@ -22,13 +23,21 @@ public sealed partial class DemoScenarios(
         new("missed", "Calls", "Missed", "Rings the support team until the caller gives up."),
         new("voicemail", "Calls", "Voicemail", "Nobody answers, so the caller leaves a message."),
         new("outside", "Calls", "Outside phone answers", "Put through to an outside phone, which picks up."),
+        new("parked", "More calls", "Parked and picked up", "Answered, parked for a moment, then picked up again."),
+        new("call-back", "More calls", "Missed, then called back", "A missed call, then someone rings the caller back, which clears it from the call-back list."),
+        new("poor-line", "More calls", "Poor line", "An answered call Talk scores 48 of 100 for quality, which the example flows alert on."),
+        new("rush", "More calls", "A rush of calls", "Six callers in about a minute: some answered, some missed, one to voicemail, one through the menu."),
         new("menu", "Switchboard", "Presses 1, then 2", "Into Sales and billing, then Billing, then rings the team."),
         new("wrong-key", "Switchboard", "Presses a wrong key", "Presses 7, which isn't an option, then 2 for Technical support."),
         new("menu-hangup", "Switchboard", "Hangs up in the menu", "Presses 1, listens, and hangs up before choosing again."),
         new("missed-alert", "Alerts", "Missed call alert", "A missed call, which the example flows alert on."),
         new("hangup-alert", "Alerts", "Hang-up alert", "Hangs up during the greeting, which the example flows alert on."),
+        new("repeat-caller", "Alerts", "Caller tries again", "The same caller is missed twice in a row, which the example flows treat as urgent."),
         new("dnd", "People", "Do not disturb", "Someone in the team goes do-not-disturb for a minute."),
         new("busy", "People", "On a call", "Someone in the team is on a call for a minute."),
+        new("handset-offline", "Phones", "Handset goes offline", "A desk phone drops off the network for a minute, which raises an alert."),
+        new("cloud-down", "Phones", "Talk loses its cloud", "Talk can't reach its cloud services for a minute; the strip under the rail says so."),
+        new("degraded", "Phones", "Talk under strain", "Talk reports it is running degraded for a minute; the strip under the rail says so."),
     ];
 
     /// <summary>How many scenarios can play at once: the demo is shared, and a crowd of calls says nothing more.</summary>
@@ -45,7 +54,8 @@ public sealed partial class DemoScenarios(
     // The main switchboard, on its own number, and the options a caller takes through it, as the capture has them.
     private const string MainNumber = "+441174960404", DemoLine = "+441144960042";
     private const int MainSwitchboard = 15, FrontDesk = 45;
-    private static readonly string[] Callers = ["+447700900232", "+447700900880", "+447700900417", "+447700900111"];
+    private static readonly string[] Callers =
+        ["+447700900232", "+447700900880", "+447700900417", "+447700900111", "+447700900345", "+447700900678", "+447700900519", "+447700900790"];
     private int _caller;
 
     /// <summary>Starts a scenario, done when it has played out; null when it is unknown or as many as allowed are playing.</summary>
@@ -87,6 +97,14 @@ public sealed partial class DemoScenarios(
     {
         "answered" => RingAsync(Answer.Member, ct),
         "missed" or "missed-alert" => RingAsync(Answer.Nobody, ct),
+        "parked" => ParkedAsync(ct),
+        "call-back" => CallBackAsync(ct),
+        "poor-line" => RingAsync(Answer.Member, ct, quality: 48),
+        "rush" => RushAsync(ct),
+        "repeat-caller" => RepeatCallerAsync(ct),
+        "handset-offline" => HandsetOfflineAsync(ct),
+        "cloud-down" => TalkStateAsync(cloud: true, ct),
+        "degraded" => TalkStateAsync(cloud: false, ct),
         "voicemail" => RingAsync(Answer.Voicemail, ct),
         "outside" => RingAsync(Answer.Outside, ct),
         "menu" => MenuAsync([(16, 1, "Title 11"), (42, 2, "Title 15")], wrongKey: false, hangUp: false, ct),
@@ -101,9 +119,9 @@ public sealed partial class DemoScenarios(
     private enum Answer { Member, Nobody, Voicemail, Outside }
 
     // A call to the demo's line that rings the support team, and how it ends.
-    private async Task RingAsync(Answer answer, CancellationToken ct)
+    private async Task RingAsync(Answer answer, CancellationToken ct, string? from = null, int? quality = null)
     {
-        var call = NewCall(DemoLine);
+        var call = NewCall(DemoLine, from);
         var group = Group();
         if (group is not null)
         {
@@ -134,6 +152,11 @@ public sealed partial class DemoScenarios(
 
                 await PushAsync(call, ct);
                 await WaitAsync(20, ct);
+                if (quality is { } score)
+                {
+                    call.Fields["quality_score"] = score.ToString(CultureInfo.InvariantCulture);
+                }
+
                 break;
 
             case Answer.Nobody:
@@ -217,6 +240,186 @@ public sealed partial class DemoScenarios(
         await EndAsync(call, ct);
     }
 
+    // Answered, then parked and picked up again, as Talk 5.4.5 logs it: who parked it and which lot, then who picked it up.
+    private async Task ParkedAsync(CancellationToken ct)
+    {
+        var call = NewCall(DemoLine);
+        var member = Member();
+        if (Group() is { } group)
+        {
+            call.Fields["to_group_id"] = Quote(group.Id);
+        }
+
+        call.Event("call_started");
+        call.Event("seq_call_trying_endpoints");
+        await PushAsync(call, ct);
+        await WaitAsync(6, ct);
+        call.Status = "accepted";
+        call.Event("call_accepted");
+        if (member is not null)
+        {
+            call.Fields["answered_by_user_uuid"] = Quote(member);
+        }
+
+        await PushAsync(call, ct);
+        await WaitAsync(10, ct);
+        call.Event("call_parked", $$"""{"parking_lot_uuid":"{{ParkingLot}}","parked_by_user_uuid":"{{member}}"}""");
+        await PushAsync(call, ct);
+        await WaitAsync(20, ct);
+        call.Event("call_unparked", $$"""{"unparked_by_user_uuid":"{{member}}"}""");
+        await PushAsync(call, ct);
+        await WaitAsync(15, ct);
+        await EndAsync(call, ct);
+    }
+
+    // A missed call, then someone in the team rings the caller back: the outbound call to their number returns it.
+    private async Task CallBackAsync(CancellationToken ct)
+    {
+        var caller = NextCaller();
+        await RingAsync(Answer.Nobody, ct, from: caller);
+        await WaitAsync(10, ct);
+
+        var member = Member();
+        var ext = live.Snapshot().Users.FirstOrDefault(u => u.Uuid == member)?.Ext ?? "0002";
+        var call = new ScenarioCall(ext, caller, clock.GetUtcNow(), clock) { Direction = "out" };
+        if (member is not null)
+        {
+            call.Fields["from_id"] = Quote(member);
+        }
+
+        call.Event("call_started", member is null ? "{}" : $$"""{"from_user_uuid":"{{member}}"}""");
+        await PushAsync(call, ct);
+        await WaitAsync(6, ct);
+        call.Status = "accepted";
+        call.Event("call_accepted");
+        await PushAsync(call, ct);
+        await WaitAsync(15, ct);
+        await EndAsync(call, ct);
+    }
+
+    // The same caller missed twice, the second time a few seconds after giving up the first.
+    private async Task RepeatCallerAsync(CancellationToken ct)
+    {
+        var caller = NextCaller();
+        await RingAsync(Answer.Nobody, ct, from: caller);
+        await WaitAsync(8, ct);
+        await RingAsync(Answer.Nobody, ct, from: caller);
+    }
+
+    // Six callers inside about a minute, overlapping: what a busy moment looks like on Now. One scenario for the limit.
+    private Task RushAsync(CancellationToken ct)
+    {
+        (int After, Func<Task> Play)[] callers =
+        [
+            (0, () => RingAsync(Answer.Member, ct)),
+            (5, () => RingAsync(Answer.Nobody, ct)),
+            (9, () => MenuAsync([(16, 1, "Title 11"), (42, 2, "Title 15")], wrongKey: false, hangUp: false, ct)),
+            (16, () => RingAsync(Answer.Member, ct)),
+            (24, () => RingAsync(Answer.Voicemail, ct)),
+            (31, () => RingAsync(Answer.Nobody, ct)),
+        ];
+        return Task.WhenAll(callers.Select(async c =>
+        {
+            await WaitAsync(c.After, ct);
+            await c.Play();
+        }));
+    }
+
+    // A desk phone drops off the network for a minute and comes back. Through the live listener, as Talk's own message
+    // would arrive, so the Handset offline alert is raised as it would be.
+    private async Task HandsetOfflineAsync(CancellationToken ct)
+    {
+        if (live.Snapshot().Devices.FirstOrDefault(d => d.Status == "online") is not { } device)
+        {
+            return;
+        }
+
+        await DeviceAsync(device, "offline", ct);
+        await WaitAsync(60, ct);
+        await DeviceAsync(device, "online", ct);
+    }
+
+    private async Task DeviceAsync(LiveDevice device, string status, CancellationToken ct)
+    {
+        var data = System.Text.Json.JsonSerializer.Serialize(
+            new[] { new { device.Mac, device.Model, DisplayName = device.Name, UserId = device.UserUuid, device.Ext, Status = status, SipReg = device.Registered } },
+            TalkJson.Options);
+        if (LiveMessage.Parse($$"""{"event":"{{LiveMessage.DevicesUpdated}}","data":{{data}}}""") is { } message)
+        {
+            await listener.HandleAsync(message, ct);
+        }
+    }
+
+    // Talk loses its cloud services, or runs degraded, for a minute: /api/info says so, as Talk 5.4.5 reports it, and a
+    // poll reads it at once. Both can be playing together, so the response is built from what is playing now.
+    private async Task TalkStateAsync(bool cloud, CancellationToken ct)
+    {
+        if (cloud)
+        {
+            Interlocked.Increment(ref _cloudDown);
+        }
+        else
+        {
+            Interlocked.Increment(ref _degraded);
+        }
+
+        try
+        {
+            await SetInfoAsync(ct);
+            await WaitAsync(60, ct);
+        }
+        finally
+        {
+            if (cloud)
+            {
+                Interlocked.Decrement(ref _cloudDown);
+            }
+            else
+            {
+                Interlocked.Decrement(ref _degraded);
+            }
+
+            await SetInfoAsync(ct);
+        }
+    }
+
+    private async Task SetInfoAsync(CancellationToken ct)
+    {
+        if (_capturedInfo is null)
+        {
+            // Read before any override: the capture's own response, which each override adds to.
+            using var client = console.CreateClient();
+            _capturedInfo = await client.GetStringAsync(new Uri(InfoPath, UriKind.Relative), ct);
+        }
+
+        lock (_info)
+        {
+            if (_cloudDown == 0 && _degraded == 0)
+            {
+                console.Overrides.Remove(InfoPath);
+            }
+            else
+            {
+                var now = clock.GetUtcNow().ToString("O", CultureInfo.InvariantCulture);
+                var info = System.Text.Json.Nodes.JsonNode.Parse(_capturedInfo)!.AsObject();
+                info["cloud_connectivity"] = System.Text.Json.Nodes.JsonNode.Parse(_cloudDown > 0
+                    ? $$"""{"degraded":true,"reason":"no_response","since":"{{now}}"}"""
+                    : """{"degraded":false,"reason":null,"since":null}""");
+                info["degradation"] = System.Text.Json.Nodes.JsonNode.Parse(_degraded > 0
+                    ? $$"""{"degraded":true,"degradation_level":2,"load_level":null,"pressures":[],"targeted_for_suspension":false,"suspended_at":null,"since":"{{now}}"}"""
+                    : """{"degraded":false,"degradation_level":0,"load_level":null,"pressures":[],"targeted_for_suspension":false,"suspended_at":null,"since":null}""");
+                console.Overrides[InfoPath] = info.ToJsonString();
+            }
+        }
+
+        await poller.RunOnceAsync(ct);
+    }
+
+    private const string InfoPath = "/proxy/talk/api/info", ParkingLot = "c4d04912-1f2a-4712-bf86-1571832bc550";
+    private readonly Lock _info = new();
+    private string? _capturedInfo;
+    private int _cloudDown, _degraded;
+
     // Someone in the team goes do-not-disturb, or onto a call, for a minute, then back.
     private async Task PresenceAsync(bool dnd, CancellationToken ct)
     {
@@ -239,11 +442,9 @@ public sealed partial class DemoScenarios(
         }
     }
 
-    private ScenarioCall NewCall(string to)
-    {
-        var from = Callers[Interlocked.Increment(ref _caller) % Callers.Length];
-        return new ScenarioCall(from, to, clock.GetUtcNow(), clock);
-    }
+    private ScenarioCall NewCall(string to, string? from = null) => new(from ?? NextCaller(), to, clock.GetUtcNow(), clock);
+
+    private string NextCaller() => Callers[Interlocked.Increment(ref _caller) % Callers.Length];
 
     private async Task EndAsync(ScenarioCall call, CancellationToken ct)
     {
@@ -284,6 +485,8 @@ public sealed partial class DemoScenarios(
 
         public int Duration { get; set; }
 
+        public string Direction { get; init; } = "in";
+
         /// <summary>Further fields of the record, as raw JSON values.</summary>
         public Dictionary<string, string> Fields { get; } = new(StringComparer.Ordinal);
 
@@ -291,7 +494,7 @@ public sealed partial class DemoScenarios(
             _events.Add($$"""{"time":"{{At(clock.GetUtcNow())}}","event":"{{name}}","event_data":{{data}},"event_uuid":"{{Guid.NewGuid()}}"}""");
 
         public string Json() =>
-            $$"""{"uuid":"{{_uuid}}","time":"{{At(started)}}","direction":"in","status":"{{Status}}","duration":{{Duration}},"from":"{{from}}","to":"{{to}}","country":"GB"{{string.Concat(Fields.Select(f => $",\"{f.Key}\":{f.Value}"))}},"call_events":[{{string.Join(",", _events)}}]}""";
+            $$"""{"uuid":"{{_uuid}}","time":"{{At(started)}}","direction":"{{Direction}}","status":"{{Status}}","duration":{{Duration}},"from":"{{from}}","to":"{{to}}","country":"GB"{{string.Concat(Fields.Select(f => $",\"{f.Key}\":{f.Value}"))}},"call_events":[{{string.Join(",", _events)}}]}""";
 
         private static string At(DateTimeOffset at) => at.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", CultureInfo.InvariantCulture);
     }

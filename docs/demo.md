@@ -48,13 +48,20 @@ happen on your own phones:
 
 - **Calls**: answered, missed, left as voicemail, or put through to an outside
   phone that answers.
+- **More calls**: a call parked and picked up again; a missed call that someone
+  then rings back; a call on a poor line; and a rush of six callers in about a
+  minute, answered, missed, left as voicemail and through the menu, to see Now
+  and Operator busy. The rush counts as one of the four.
 - **Switchboard**: a caller presses 1 and then 2, presses a key that isn't an
   option, or hangs up in the menu. Their card rides through the switchboard on
   **Operator** as they choose.
 - **Alerts**: the missed call and the hang-up during the greeting that the
-  example flows alert on.
+  example flows alert on, and a caller missed twice in a row.
 - **People**: someone in the support team goes do-not-disturb, or is on a
   call, for a minute.
+- **Phones**: a desk phone drops off the network for a minute; Talk can't reach
+  its cloud services for a minute; or Talk reports it is running degraded. The
+  last two show in the strip under the rail, as Talk 5.4.5 reports them.
 
 Each takes about a minute, and up to four play at once, since everyone trying
 the demo shares it. The bar folds down to a tab, and exists only in the demo.
@@ -67,11 +74,16 @@ on your own console:
 | Play | Then look at | Guide |
 |---|---|---|
 | **Missed**, **Missed call alert** | **Call-backs**, the pop-up, the *Missed calls* flow | [Getting back to every missed caller](guides/missed-callers.md) |
+| **Missed, then called back** | the caller leaving **Call-backs** once they're rung back | [Getting back to every missed caller](guides/missed-callers.md) |
+| **Caller tries again** | the *Callers who try again* and *Callers we keep missing* flows | [Getting back to every missed caller](guides/missed-callers.md) |
+| **A rush of calls** | **Now** and **Operator** with several callers at once | [Seeing a bad day coming](guides/busy-line.md) |
+| **Parked and picked up** | the caller shown Parked on **Now** and **Operator**, then the call's route | [Running the front desk from one screen](guides/front-desk.md) |
 | **Presses 1, then 2**, **Presses a wrong key** | **Operator** | [Running the front desk from one screen](guides/front-desk.md) |
 | **Voicemail** | **Now**, the *Voicemail that sounds urgent* flow | [Voicemail that can't wait](guides/voicemail.md) |
 | **Hangs up in the menu**, **Hang-up alert** | **Switchboards**, the *Hung up in the menu* flow | [Callers who give up at the switchboard](guides/switchboard.md) |
 | **Outside phone answers** | who answered on **Now**, the *Put through to a mobile* flow | [Staff who answer on their mobiles](guides/mobiles.md) |
 | **Do not disturb**, **On a call** | **People** on **Operator** and **Now** | [Running the front desk from one screen](guides/front-desk.md) |
+| **Poor line**, **Handset goes offline**, **Talk loses its cloud**, **Talk under strain** | the *Poor call quality* flow, the handsets on **Now**, the strip under the rail | [Knowing when the phones themselves go wrong](guides/phone-health.md) |
 
 ## The guest account
 
