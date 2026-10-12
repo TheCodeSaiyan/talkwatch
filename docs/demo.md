@@ -61,8 +61,10 @@ happen on your own phones:
   call, for a minute.
 - **Phones**: a desk phone drops off the network for a minute; Talk can't reach
   its cloud services for a minute; or Talk reports it is running degraded. The
-  last two show in the strip under the rail, as Talk 5.4.5 reports them.
+  last two show in the strip under the rail, from the next page you open, as
+  Talk 5.4.5 reports them.
 
+The bar shows one kind at a time; pick the kind from the row along its top.
 Each takes about a minute, and up to four play at once, since everyone trying
 the demo shares it. The bar folds down to a tab, and exists only in the demo.
 

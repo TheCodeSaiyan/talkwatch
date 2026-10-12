@@ -36,8 +36,8 @@ public sealed partial class DemoScenarios(
         new("dnd", "People", "Do not disturb", "Someone in the team goes do-not-disturb for a minute."),
         new("busy", "People", "On a call", "Someone in the team is on a call for a minute."),
         new("handset-offline", "Phones", "Handset goes offline", "A desk phone drops off the network for a minute, which raises an alert."),
-        new("cloud-down", "Phones", "Talk loses its cloud", "Talk can't reach its cloud services for a minute; the strip under the rail says so."),
-        new("degraded", "Phones", "Talk under strain", "Talk reports it is running degraded for a minute; the strip under the rail says so."),
+        new("cloud-down", "Phones", "Talk loses its cloud", "Talk can't reach its cloud services for a minute; the strip under the rail says so on the next page you open."),
+        new("degraded", "Phones", "Talk under strain", "Talk reports it is running degraded for a minute; the strip under the rail says so on the next page you open."),
     ];
 
     /// <summary>How many scenarios can play at once: the demo is shared, and a crowd of calls says nothing more.</summary>
