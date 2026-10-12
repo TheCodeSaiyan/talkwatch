@@ -47,12 +47,20 @@ jobs:
         with:
           path: site
 
+  # Built once, for amd64 and arm64 together, alongside the tests rather than after them, and pushed by digest with no
+  # tag: nothing anyone pulls by name changes until the tests, the docs and the upgrade check have passed and the tag job
+  # names it. The upgrade check runs that same image, pulled by its digest, so what's tested is what's tagged.
+  #
+  # The layer cache lives in the registry, under the buildcache tag. GitHub's own cache is kept per ref, and a tag's run
+  # can't read the last tag's, so every release built the Go tunnel helpers and the restore from nothing.
   image:
-    needs: [test, docs]
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+      tags: ${{ steps.meta.outputs.tags }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -63,7 +71,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # 1.2.3, 1.2 and latest for a release; a pre-release (v1.2.3-rc.1) gets only its own tag, so nobody following
-      # latest or 1.2 is moved onto it.
+      # latest or 1.2 is moved onto it. The tags are applied by the tag job; the labels go into the image here.
       - id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
@@ -78,41 +86,53 @@ jobs:
             org.opencontainers.image.description=A self-hosted dashboard and alert router for UniFi Talk
             org.opencontainers.image.licenses=MIT
 
-      # amd64 alone first, loaded into Docker, so the upgrade check runs the image that's about to be pushed. The
-      # Dockerfile cross-compiles on the runner's own architecture, so arm64 needs no emulation either.
-      - name: Build for the upgrade check
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          context: .
-          platforms: linux/amd64
-          load: true
-          tags: talkwatch:release
-          build-args: TALKWATCH_VERSION=${{ github.ref_name }}
-          cache-from: type=gha,scope=release
-          cache-to: type=gha,mode=max,scope=release
-
-      # From the last release, as the upgrading page promises for every published image. The first release has
-      # nothing to upgrade from, and the script says so rather than failing.
-      - name: Upgrade from the last release
-        run: scripts/upgrade-check.sh "$IMAGE:latest" talkwatch:release
-
-      - name: Build and push
+      # The Dockerfile cross-compiles on the runner's own architecture, so arm64 needs no emulation.
+      - id: build
+        name: Build and push by digest
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           platforms: linux/amd64,linux/arm64
-          push: true
           build-args: TALKWATCH_VERSION=${{ github.ref_name }}
-          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=release
-          cache-to: type=gha,mode=max,scope=release
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max,ignore-error=true
+
+      # From the last release, as the upgrading page promises for every published image. The first release has
+      # nothing to upgrade from, and the script says so rather than failing.
+      - name: Upgrade from the last release
+        run: scripts/upgrade-check.sh "$IMAGE:latest" "$IMAGE@${{ steps.build.outputs.digest }}"
+
+  # Names the tested image: a new manifest pointing at what the image job pushed, so no layer is built or copied again.
+  tag:
+    needs: [test, docs, image]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Tag the tested image
+        env:
+          DIGEST: ${{ needs.image.outputs.digest }}
+          TAGS: ${{ needs.image.outputs.tags }}
+        run: |
+          args=()
+          while read -r tag; do [ -n "$tag" ] && args+=(-t "$tag"); done <<< "$TAGS"
+          docker buildx imagetools create "${args[@]}" "$IMAGE@$DIGEST"
+          docker buildx imagetools inspect "${args[1]}"
 
   # Redeploys the maintainer's own TalkWatch on Railway as soon as latest has moved, rather than at its next maintenance
   # window. Skipped while RAILWAY_SERVICE is unset, and for a pre-release, which doesn't move latest. Copies deployed from
   # the template follow latest by Railway's own image updates.
   railway:
-    needs: image
+    needs: tag
     if: vars.RAILWAY_SERVICE != '' && !contains(github.ref_name, '-')
     runs-on: ubuntu-latest
     steps:
@@ -123,7 +143,7 @@ jobs:
         run: npx -y @railway/cli@5.63.1 redeploy --service "$RAILWAY_SERVICE" --from-source --yes
 
   pages:
-    needs: image
+    needs: tag
     runs-on: ubuntu-latest
     permissions:
       pages: write
@@ -135,7 +155,7 @@ jobs:
       - id: deploy
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
   release:
-    needs: [image, pages]
+    needs: [tag, pages]
     runs-on: ubuntu-latest
     permissions:
       contents: write
