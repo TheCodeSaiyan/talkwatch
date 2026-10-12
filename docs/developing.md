@@ -58,6 +58,11 @@ behind on a tag it already thinks is current.
 A release is a tag. Pushing `v1.2.3` runs `.github/workflows/release.yml` on
 GitHub Actions: the tests and fixture guard again, the upgrade from the last
 release, images for amd64 and arm64 on GHCR, this site, and a GitHub release.
+The image is built once, for both architectures, while the tests run, and pushed
+by its digest alone; the upgrade check runs that same image, and only once the
+tests and docs have passed is it given the version's tags, which takes seconds.
+Its layer cache is kept on GHCR as the `buildcache` tag, since GitHub's own cache
+can't be shared from one tag's run to the next.
 
 ## Dependencies
 

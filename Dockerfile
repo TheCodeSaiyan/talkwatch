@@ -2,10 +2,6 @@
 # so an arm64 image does not need a whole build under emulation.
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0@sha256:e70cdb7f80b0348f5cb85f19a8f670fca061f033d57eed12fa003d58b0e06317 AS build
 ARG TARGETARCH
-# The release's tag, such as v0.5.0, for the version the app reports; a local build says it is one. Not called VERSION:
-# a build argument is in every RUN's environment, and MSBuild takes an environment variable named VERSION as the
-# project's version, which then failed every restore without a word.
-ARG TALKWATCH_VERSION=v0.0.0-local
 # Restores are held to the lock files (CI=true): a package that changed, or would resolve differently, fails the build.
 ENV CI=true
 WORKDIR /src
@@ -21,6 +17,11 @@ COPY src/TalkWatch.Web/TalkWatch.Web.csproj src/TalkWatch.Web/
 RUN dotnet restore src/TalkWatch.Web -a $TARGETARCH -p:RestoreLockedMode=false
 
 COPY src/ src/
+# The release's tag, such as v0.5.0, for the version the app reports; a local build says it is one. Declared here, not at
+# the top: a build argument is part of the cache key of every RUN after it, so above the restore it made every release
+# restore again. Not called VERSION: a build argument is in every RUN's environment, and MSBuild takes an environment
+# variable named VERSION as the project's version, which then failed every restore without a word.
+ARG TALKWATCH_VERSION=v0.0.0-local
 # Restore again now the source is here, lock files and all, held to them: .NET 10 decides whether to pull in the Blazor
 # framework scripts from the project's .razor files, which the restore above cannot see. Publishing with --no-restore
 # shipped an image with no _framework/blazor.web.js. The check below fails the build if that ever happens again.
