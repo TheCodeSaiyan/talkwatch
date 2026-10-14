@@ -20,11 +20,17 @@ public sealed record SwitchboardNode(
     /// <summary>For a group node, the ring group it puts calls through to (Talk's numeric id).</summary>
     public string? GroupId { get; init; }
 
-    /// <summary>For a user node, the Talk user it puts calls through to (uuid).</summary>
+    /// <summary>For a user node, the Talk user it puts calls through to (uuid; Talk 5.4.5 sends it as ulp_id).</summary>
     public string? UserUuid { get; init; }
 
     /// <summary>For a contact node, the contact it puts calls through to (uuid).</summary>
     public string? ContactUuid { get; init; }
+
+    /// <summary>The node exactly as Talk sent it, so a field TalkWatch does not read yet is kept rather than lost.</summary>
+    public string Json { get; init; } = "{}";
+
+    /// <summary>Everything else Talk says about the node, read from <see cref="Json"/>; what this Talk does not send reads as null.</summary>
+    public NodeSetup Setup => NodeSetup.Of(Json);
 }
 
 public static class Switchboard
@@ -58,8 +64,9 @@ public static class Switchboard
                 Text(node, "greeting_file_name"))
             {
                 GroupId = Int(node, "group_id")?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? Text(node, "group_id"),
-                UserUuid = Text(node, "user_uuid") ?? Text(node, "user_id"),
+                UserUuid = Text(node, "user_uuid") ?? Text(node, "user_id") ?? Text(node, "ulp_id"),
                 ContactUuid = Text(node, "contact_uuid"),
+                Json = node.GetRawText(),
             });
         }
 
