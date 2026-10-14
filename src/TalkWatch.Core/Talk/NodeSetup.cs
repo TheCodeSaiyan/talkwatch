@@ -35,7 +35,7 @@ public readonly struct NodeSetup
 
     /// <summary>The greeting or prompt it plays; null for a node that plays none (a group, user or contact).</summary>
     public Greeting? Greeting =>
-        Has("greeting") || Has("greeting_file_name") || Has("greeting_type")
+        Has("greeting") || Has("greeting_file_name") || Has("greeting_type") || Has("missing_audio") || Has("generating_audio")
             ? new Greeting(Text("greeting"), Text("greeting_type"), Text("voice_type"), Text("voice_language"), Text("greeting_file_name"),
                 Bool("generating_audio"), Bool("missing_audio"))
             : null;

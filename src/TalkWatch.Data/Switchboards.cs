@@ -31,6 +31,49 @@ public sealed class SwitchboardNodeRow
 
     public bool Present { get; set; } = true;
     public DateTimeOffset UpdatedAt { get; set; }
+
+    /// <summary>The node as Talk last sent it; its <see cref="NodeSetup"/> is read from this. Null until first read with it kept.</summary>
+    public string? Json { get; set; }
+
+    /// <summary>SHA-256 of <see cref="Json"/> as Talk sent it, so a change is seen without comparing the whole of it.</summary>
+    public string? JsonHash { get; set; }
+
+    // Read from Json, kept beside it to filter and badge by without reading every node's JSON.
+    public bool? Disabled { get; set; }
+    public string? Ext { get; set; }
+    public bool? MissingAudio { get; set; }
+    public bool? IsDefaultTime { get; set; }
+
+    public NodeSetup Setup => NodeSetup.Of(Json);
+
+    /// <summary>Takes the node's setup as Talk sent it. True when it differs from what was kept, and so is worth a snapshot.</summary>
+    public bool TakeSetup(SwitchboardNode node)
+    {
+        var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(node.Json)));
+        var setup = node.Setup;
+        (Disabled, Ext, MissingAudio, IsDefaultTime) = (setup.Disabled, setup.Ext, setup.Greeting?.Missing, setup.OpeningHours?.IsDefault);
+        if (hash == JsonHash)
+        {
+            return false;
+        }
+
+        (Json, JsonHash) = (node.Json, hash);
+        return true;
+    }
+}
+
+/// <summary>
+/// A switchboard node as it was from <see cref="CapturedAt"/>, kept whenever its setup changed, so a past call can be
+/// explained by the setup it met and a change can be compared before and after. Kept as long as calls are.
+/// </summary>
+public sealed class SwitchboardNodeSnapshot
+{
+    public long Id { get; set; }
+    public Guid SiteId { get; set; }
+    public required string NodeId { get; set; }
+    public DateTimeOffset CapturedAt { get; set; }
+    public required string JsonHash { get; set; }
+    public required string Json { get; set; }
 }
 
 /// <summary>A menu option, with what became of the calls that chose it.</summary>

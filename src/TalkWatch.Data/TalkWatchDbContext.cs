@@ -50,6 +50,7 @@ public sealed class TalkWatchDbContext(DbContextOptions<TalkWatchDbContext> opti
     public DbSet<ContactLink> ContactLinks => Set<ContactLink>();
     public DbSet<AlertFlow> AlertFlows => Set<AlertFlow>();
     public DbSet<SwitchboardNodeRow> SwitchboardNodes => Set<SwitchboardNodeRow>();
+    public DbSet<SwitchboardNodeSnapshot> SwitchboardNodeSnapshots => Set<SwitchboardNodeSnapshot>();
     public DbSet<CallTranscript> CallTranscripts => Set<CallTranscript>();
     public DbSet<CallerName> CallerNames => Set<CallerName>();
     public DbSet<GroupMapping> GroupMappings => Set<GroupMapping>();
@@ -426,7 +427,20 @@ public sealed class TalkWatchDbContext(DbContextOptions<TalkWatchDbContext> opti
             e.Property(n => n.ParentId).HasMaxLength(100);
             e.Property(n => n.Numbers).HasMaxLength(500);
             e.Property(n => n.GreetingFile).HasMaxLength(200);
+            e.Property(n => n.Json).HasColumnType("jsonb");
+            e.Property(n => n.JsonHash).HasMaxLength(64);
+            e.Property(n => n.Ext).HasMaxLength(16);
             e.HasQueryFilter(n => n.SiteId == ScopeSiteId);
+        });
+
+        builder.Entity<SwitchboardNodeSnapshot>(e =>
+        {
+            e.ToTable("switchboard_node_snapshots");
+            e.HasIndex(s => new { s.SiteId, s.NodeId, s.CapturedAt });
+            e.Property(s => s.NodeId).HasMaxLength(100);
+            e.Property(s => s.JsonHash).HasMaxLength(64);
+            e.Property(s => s.Json).HasColumnType("jsonb");
+            e.HasQueryFilter(s => s.SiteId == ScopeSiteId);
         });
 
         builder.Entity<AlertFlow>(e =>

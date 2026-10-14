@@ -112,7 +112,8 @@ public sealed partial class LineDirectorySync(
 
     /// <summary>
     /// The switchboard tree, for naming menu options, and each greeting's length, measured from its audio when the file
-    /// changes. A failure here keeps the last tree and never the lines: those are already saved.
+    /// changes. Each node's setup is kept, with a snapshot whenever it changes. A failure here keeps the last tree and never
+    /// the lines: those are already saved.
     /// </summary>
     private async Task<IReadOnlyList<SwitchboardNode>?> RefreshSwitchboardAsync(TalkWatchDbContext db, DateTimeOffset now, CancellationToken cancellationToken)
     {
@@ -131,6 +132,11 @@ public sealed partial class LineDirectorySync(
                 var greetingChanged = row.GreetingFile != node.GreetingFileName;
                 (row.InternalId, row.Type, row.Title, row.Key, row.ParentId) = (node.InternalId, node.Type, node.Title, node.Key, node.ParentId);
                 (row.Numbers, row.GreetingFile, row.Present, row.UpdatedAt) = (node.Numbers.Count == 0 ? null : string.Join(',', node.Numbers), node.GreetingFileName, true, now);
+                if (row.TakeSetup(node))
+                {
+                    db.SwitchboardNodeSnapshots.Add(new SwitchboardNodeSnapshot { SiteId = site.Id, NodeId = node.Id, CapturedAt = now, JsonHash = row.JsonHash!, Json = node.Json });
+                }
+
                 if (node.Type is SwitchboardNode.Root or SwitchboardNode.Menu && node.GreetingFileName is { } file && (greetingChanged || row.GreetingSeconds is null))
                 {
                     row.GreetingSeconds = await session.Client.GetSwitchboardAudioAsync(file, cancellationToken) is { } audio
