@@ -54,7 +54,11 @@ happen on your own phones:
   and Operator busy. The rush counts as one of the four.
 - **Switchboard**: a caller presses 1 and then 2, presses a key that isn't an
   option, or hangs up in the menu. Their card rides through the switchboard on
-  **Operator** as they choose.
+  **Operator** as they choose. Three more change the switchboard's setup for a
+  minute. **Out of hours** closes its opening hours, **A prompt loses its
+  audio** takes the audio from option 2's prompt, and **A draft option** adds
+  a switched-off option 4 with nothing under it. Each shows on its stage's
+  badge and in its panel.
 - **Alerts**: the missed call and the hang-up during the greeting that the
   example flows alert on, and a caller missed twice in a row.
 - **People**: someone in the support team goes do-not-disturb, or is on a
@@ -81,6 +85,7 @@ on your own console:
 | **A rush of calls** | **Now** and **Operator** with several callers at once | [Seeing a bad day coming](guides/busy-line.md) |
 | **Parked and picked up** | the caller shown Parked on **Now** and **Operator**, then the call's route | [Running the front desk from one screen](guides/front-desk.md) |
 | **Presses 1, then 2**, **Presses a wrong key** | **Operator** | [Running the front desk from one screen](guides/front-desk.md) |
+| **Out of hours**, **A prompt loses its audio**, **A draft option** | the badges on **Operator**'s switchboard, and each stage's panel | [Running the front desk from one screen](guides/front-desk.md) |
 | **Voicemail** | **Now**, the *Voicemail that sounds urgent* flow | [Voicemail that can't wait](guides/voicemail.md) |
 | **Hangs up in the menu**, **Hang-up alert** | **Switchboards**, the *Hung up in the menu* flow | [Callers who give up at the switchboard](guides/switchboard.md) |
 | **Outside phone answers** | who answered on **Now**, the *Put through to a mobile* flow | [Staff who answer on their mobiles](guides/mobiles.md) |

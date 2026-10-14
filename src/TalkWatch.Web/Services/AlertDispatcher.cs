@@ -616,7 +616,7 @@ public sealed partial class AlertDispatcher(
                     AlertEventType.NegativeCall => "disappointed",
                     AlertEventType.PoorQualityCall => "signal_strength",
                     AlertEventType.HandsetUnregistered or AlertEventType.HandsetUpdateAvailable => "telephone",
-                    AlertEventType.AccountProblem or AlertEventType.SettingTurnedOff => "rotating_light",
+                    AlertEventType.AccountProblem or AlertEventType.SettingTurnedOff or AlertEventType.SwitchboardProblem => "rotating_light",
                     _ => "telephone_receiver",
                 });
                 request.Headers.Add("Priority", acknowledgement ? "low" : urgent || alert.Type is AlertEventType.Drift or AlertEventType.AccountProblem ? "high" : "default");

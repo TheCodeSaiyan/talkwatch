@@ -30,6 +30,9 @@ public sealed partial class DemoScenarios(
         new("menu", "Switchboard", "Presses 1, then 2", "Into Sales and billing, then Billing, then rings the team."),
         new("wrong-key", "Switchboard", "Presses a wrong key", "Presses 7, which isn't an option, then 2 for Technical support."),
         new("menu-hangup", "Switchboard", "Hangs up in the menu", "Presses 1, listens, and hangs up before choosing again."),
+        new("after-hours", "Switchboard", "Out of hours", "The main switchboard's opening hours close for a minute, so calls take its out-of-hours branch. Operator's badges say which branch is open."),
+        new("no-audio", "Switchboard", "A prompt loses its audio", "Option 2's prompt has no audio for a minute. Its node on Operator says so, and its panel says why."),
+        new("broken-draft", "Switchboard", "A draft option", "A switched-off option 4 with nothing under it appears for a minute: Off to operators, and a draft's problem in the admin panel."),
         new("missed-alert", "Alerts", "Missed call alert", "A missed call, which the example flows alert on."),
         new("hangup-alert", "Alerts", "Hang-up alert", "Hangs up during the greeting, which the example flows alert on."),
         new("repeat-caller", "Alerts", "Caller tries again", "The same caller is missed twice in a row, which the example flows treat as urgent."),
@@ -111,6 +114,7 @@ public sealed partial class DemoScenarios(
         "wrong-key" => MenuAsync([(18, 2, "Title 16")], wrongKey: true, hangUp: false, ct),
         "menu-hangup" => MenuAsync([(16, 1, "Title 11")], wrongKey: false, hangUp: true, ct),
         "hangup-alert" => GreetingHangUpAsync(ct),
+        "after-hours" or "no-audio" or "broken-draft" => SetupAsync(id, ct),
         "dnd" => PresenceAsync(dnd: true, ct),
         "busy" => PresenceAsync(dnd: false, ct),
         _ => Task.CompletedTask,
@@ -414,6 +418,88 @@ public sealed partial class DemoScenarios(
 
         await poller.RunOnceAsync(ct);
     }
+
+    // The switchboard's setup changes for a minute: the response is built from the changes playing now, over the
+    // capture's own, and read in at once, so Operator shows it on its next read.
+    private async Task SetupAsync(string change, CancellationToken ct)
+    {
+        lock (_setup)
+        {
+            _setupPlaying.Add(change);
+        }
+
+        try
+        {
+            await SetSwitchboardAsync(ct);
+            await WaitAsync(60, ct);
+        }
+        finally
+        {
+            lock (_setup)
+            {
+                _setupPlaying.Remove(change);
+            }
+
+            await SetSwitchboardAsync(ct);
+        }
+    }
+
+    private async Task SetSwitchboardAsync(CancellationToken ct)
+    {
+        if (_capturedSwitchboard is null)
+        {
+            // Read before any override: the capture's own tree, which each change is made to.
+            using var client = console.CreateClient();
+            _capturedSwitchboard = await client.GetStringAsync(new Uri(SwitchboardPath, UriKind.Relative), ct);
+        }
+
+        lock (_setup)
+        {
+            if (_setupPlaying.Count == 0)
+            {
+                console.Overrides.Remove(SwitchboardPath);
+            }
+            else
+            {
+                var tree = System.Text.Json.Nodes.JsonNode.Parse(_capturedSwitchboard)!;
+                var byId = tree["entities"]!["nodes"]!["byId"]!.AsObject();
+                var nodes = byId.Select(p => p.Value).OfType<System.Text.Json.Nodes.JsonObject>().ToList();
+                if (_setupPlaying.Contains("after-hours"))
+                {
+                    foreach (var hours in nodes.Where(n => (string?)n["type"] == "time" && n["is_default_time_node"]?.GetValue<bool>() != true))
+                    {
+                        hours["day_ranges"] = new System.Text.Json.Nodes.JsonObject();
+                    }
+                }
+
+                if (_setupPlaying.Contains("no-audio") && byId["swb_18"] is System.Text.Json.Nodes.JsonObject option)
+                {
+                    option["missing_audio"] = true;
+                }
+
+                if (_setupPlaying.Contains("broken-draft") && byId[$"swb_{MainSwitchboard}"] is System.Text.Json.Nodes.JsonObject main)
+                {
+                    byId["swb_90"] = System.Text.Json.Nodes.JsonNode.Parse($$"""
+                        {"id":"swb_90","internal_id":90,"key":4,"type":"ivr","title":"Holiday line","disabled":true,"greeting":"We're closed for the holiday.",
+                         "greeting_type":"generated","generating_audio":false,"childNodeIds":[],"path":["container","swb_{{MainSwitchboard}}"]}
+                        """);
+                    main["childNodeIds"]?.AsArray().Add("swb_90");
+                }
+
+                console.Overrides[SwitchboardPath] = tree.ToJsonString();
+            }
+        }
+
+        await directory.RefreshAsync(ct);
+
+        // A poll checks the new setup for problems, as it would after any read of the directory.
+        await poller.RunOnceAsync(ct);
+    }
+
+    private const string SwitchboardPath = "/proxy/talk/api/switchboard";
+    private readonly Lock _setup = new();
+    private readonly HashSet<string> _setupPlaying = [];
+    private string? _capturedSwitchboard;
 
     private const string InfoPath = "/proxy/talk/api/info", ParkingLot = "c4d04912-1f2a-4712-bf86-1571832bc550";
     private readonly Lock _info = new();

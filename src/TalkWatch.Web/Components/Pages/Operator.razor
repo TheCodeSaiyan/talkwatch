@@ -63,10 +63,36 @@
                 var left = Pct((stage.Column + .5) / flow.Columns);
                 var top = FlowTop + flow.Rows[stage.Id] * RowHeight;
                 var marks = (here.Count > 0 ? " hot" : "") + (stage.Kind == "hungup" && stage.Today > 0 ? " alert" : "");
-                <div class="node@(marks)" style="left: @left%; top: @Px(top)px"
-                     data-stage="@stage.Id" data-from="@stage.From" data-kind="@stage.Kind" data-today="@stage.Today" data-now="@here.Count">
-                    <b>@stage.Label</b><span class="m">@string.Join(" · ", new[] { here.Count > 0 ? $"{here.Count} now" : null, stage.Counted ? $"{stage.Today} today" : null }.OfType<string>())</span>
-                </div>
+                var nodeId = stage.Id.StartsWith("n:", StringComparison.Ordinal) ? stage.Id[2..] : null;
+                var badge = nodeId is null ? NodeBadge.None : _badges.GetValueOrDefault(nodeId);
+                var chosen = _panel?.NodeId == nodeId && nodeId is not null;
+                var nodeClass = "node" + marks + (badge == NodeBadge.Off ? " off" : "") + (chosen ? " sel" : "");
+                var counts = string.Join(" · ", new[] { here.Count > 0 ? $"{here.Count} now" : null, stage.Counted ? $"{(stage.Inferred ? "~" : "")}{stage.Today} today" : null }.OfType<string>());
+                @* A node from the switchboard opens its panel: what it does, where it goes, its hours and its health. One
+                   badge says the most pressing of those on the node itself. *@
+                @if (nodeId is not null)
+                {
+                    <button type="button" class="@nodeClass" style="left: @left%; top: @Px(top)px"
+                            data-stage="@stage.Id" data-from="@stage.From" data-kind="@stage.Kind" data-today="@stage.Today" data-now="@here.Count"
+                            aria-expanded="@(chosen ? "true" : "false")" @onclick="() => OpenNodeAsync(nodeId)">
+                        <b>@stage.Label</b>
+                        @if (counts.Length > 0)
+                        {
+                            <span class="m" title="@(stage.Inferred ? InferredWhy : null)">@counts</span>
+                        }
+                        @if (badge != NodeBadge.None)
+                        {
+                            <span class="nb" data-b="@NodeViews.Key(badge)" title="@NodeViews.Why(badge)"><i></i>@NodeViews.Words(badge)</span>
+                        }
+                    </button>
+                }
+                else
+                {
+                    <div class="node@(marks)" style="left: @left%; top: @Px(top)px"
+                         data-stage="@stage.Id" data-from="@stage.From" data-kind="@stage.Kind" data-today="@stage.Today" data-now="@here.Count">
+                        <b>@stage.Label</b><span class="m">@counts</span>
+                    </div>
+                }
                 @* The callers here, as a stack of cards: three show, the rest are counted, and pointing at the stack (or
                    tabbing into it) fans it open to scroll through. A card is the caller and how long they have been here;
                    choosing one opens the call beside the page, with what they did. *@
@@ -88,6 +114,11 @@
         </div>
         </div>
     </section>
+}
+
+@if (_panel is { } panel)
+{
+    <NodePanelView Panel="panel" Zone="_zone" Now="Clock.GetUtcNow()" OnClose="CloseNode" />
 }
 
 <div class="op-grid">
@@ -211,10 +242,44 @@
     private List<LiveCall> _talking = [];
     private List<WaitingCaller> _callBacks = [];
     private List<SwitchboardFlow> _flows = [];
+    private IReadOnlyList<TalkWatch.Core.Talk.SwitchboardNode> _nodes = [];
+    private IReadOnlyDictionary<string, NodeBadge> _badges = new Dictionary<string, NodeBadge>();
+    private NodePanel? _panel;
+    private TimeZoneInfo _zone = TimeZoneInfo.Utc;
 
     // The flow's layout, in pixels: room above the first row and below the last, each row's height, room under the
     // last row for its caller stack, and the narrowest a column gets before the flow scrolls sideways.
     private const int FlowTop = 34, RowHeight = 78, StackRoom = 64, ColumnWidth = 196;
+
+    private async Task OpenNodeAsync(string nodeId)
+    {
+        using var scope = Scopes.CreateScope();
+        scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UsePrincipal(_user);
+        _panel = await PanelAsync(scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>(), nodeId);
+    }
+
+    private void CloseNode() => _panel = null;
+
+    private const string InferredWhy = "Worked out from its hours: Talk doesn't log which branch a call took";
+
+    // Which branch of an opening-hours split took a call at a time, by the branches' hours as they are now.
+    private string? BranchAt(IReadOnlyList<string> branches, DateTimeOffset at) =>
+        TalkWatch.Core.Talk.OpeningHoursEvaluator.Branch(_nodes.Where(n => branches.Contains(n.Id)), at, _zone)?.Id;
+
+    // The panel of someone who may see every line, as on the rest of this page, holds the full setup and its history;
+    // anyone else's is the summary, built without them.
+    private async Task<NodePanel?> PanelAsync(TalkWatchDbContext db, string nodeId)
+    {
+        var admin = _admin;
+        var snapshots = admin
+            ? await db.SwitchboardNodeSnapshots.AsNoTracking().Where(s => s.NodeId == nodeId).OrderBy(s => s.CapturedAt).ToListAsync()
+            : [];
+        var directory = Directory.Current;
+        string? Name(string id) =>
+            directory.Users.FirstOrDefault(u => u.Uuid == id) is { } user ? user.FullName ?? $"{user.FirstName} {user.LastName}".Trim()
+            : directory.Groups.FirstOrDefault(g => g.Id == id)?.Name;
+        return NodeViews.Panel(nodeId, _nodes, Clock.GetUtcNow(), _zone, admin, Name, snapshots);
+    }
 
     private static string Pct(double fraction) => (fraction * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
 
@@ -260,13 +325,21 @@
         var zone = TimeZoneInfo.FindSystemTimeZoneById(SiteSettings.Value.TimeZone);
         var midnight = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(TimeZoneInfo.ConvertTime(now, zone).Date, zone), TimeSpan.Zero);
         var today = await db.Calls.AsNoTracking().Where(c => c.Direction == "in" && c.Time >= midnight && c.Outcome != CallOutcome.Blocked)
-            .Select(c => new { c.Outcome, Events = c.Events.OrderBy(e => e.Sequence).Select(e => new { e.Event, e.DataJson }).ToList() }).ToListAsync();
+            .Select(c => new { c.Outcome, c.Time, Events = c.Events.OrderBy(e => e.Sequence).Select(e => new { e.Event, e.DataJson }).ToList() }).ToListAsync();
         var nodes = await db.SwitchboardNodes.AsNoTracking().ToListAsync();
+        _zone = zone;
+        _nodes = NodeViews.Nodes(nodes);
+        _badges = NodeViews.Badges(_nodes, now, zone);
+        if (_panel is { } shown)
+        {
+            _panel = await PanelAsync(db, shown.NodeId);
+        }
+
         var normaliser = new NumberNormaliser(Site.Region);
         _flows = [.. SwitchboardFlows.Build(nodes,
-            [.. today.Select(c => new FlowHistory(TalkWatch.Core.Talk.MenuJourney.Of(c.Events.Select(e => (e.Event, e.DataJson))), c.Outcome))],
+            [.. today.Select(c => new FlowHistory(TalkWatch.Core.Talk.MenuJourney.Of(c.Events.Select(e => (e.Event, e.DataJson))), c.Outcome, c.Time))],
             [.. live.Select(l => (l, journeys.GetValueOrDefault(l.Call.Id) ?? new TalkWatch.Core.Talk.MenuJourney(null, [])))],
-            _user.FindFirstValue(AccessScopeHolder.DidClaim), normaliser.ToE164)];
+            _user.FindFirstValue(AccessScopeHolder.DidClaim), normaliser.ToE164, BranchAt)];
 
         // Waiting callers, longest wait first: the same rule as Call-backs, over the same window.
         var since = now - TimeSpan.FromDays(Pages.CallBacks.RecentDays);

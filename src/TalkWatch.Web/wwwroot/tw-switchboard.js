@@ -187,6 +187,28 @@
       .catch(function () { }).then(function () { c.remove(); });
   };
 
+  // ---------- a node's greeting ----------
+  // The play button in a node's panel plays its greeting, fetched through TalkWatch, which notes the play in the audit
+  // log. One greeting at a time: pressing it again, or another, stops the one playing. Only ever on request.
+  var greeting = null;
+  function stopGreeting() {
+    if (!greeting) return;
+    greeting.audio.pause(); greeting.button.setAttribute('aria-pressed', 'false'); greeting.button.setAttribute('aria-label', 'Play the greeting');
+    greeting = null;
+  }
+  document.addEventListener('click', function (e) {
+    var button = e.target.closest && e.target.closest('[data-greeting]');
+    if (!button) return;
+    var same = greeting && greeting.button === button;
+    stopGreeting();
+    if (same) return;
+    var audio = new Audio(button.getAttribute('data-greeting'));
+    greeting = { audio: audio, button: button };
+    button.setAttribute('aria-pressed', 'true'); button.setAttribute('aria-label', 'Stop the greeting');
+    audio.addEventListener('ended', stopGreeting);
+    audio.play().catch(stopGreeting);
+  });
+
   // ---------- wiring ----------
   var flows = [];
   function scan() {

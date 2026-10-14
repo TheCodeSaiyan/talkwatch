@@ -58,6 +58,7 @@ public static class FlowText
         AlertEventType.HandsetUpdateAvailable => "Handset update available",
         AlertEventType.AccountProblem => "Talk account problem",
         AlertEventType.SettingTurnedOff => "Recording or transcription switched off",
+        AlertEventType.SwitchboardProblem => "Switchboard problem",
         _ => "TalkWatch stopped copying calls",
     };
 

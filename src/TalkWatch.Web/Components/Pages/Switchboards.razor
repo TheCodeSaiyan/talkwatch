@@ -3,8 +3,12 @@
 @* Where callers who reach a switchboard go: how many leave during the greeting, and what each menu option leads to.
    The figures go through the person's access scope, like the dashboard's; switchboard and option names are the site's. *@
 @using TalkWatch.Data
+@using TalkWatch.Core.Talk
+@using TalkWatch.Web.Components.Calls
+@using Microsoft.EntityFrameworkCore
 @inject TalkWatchDbContext Db
 @inject TimeProvider Clock
+@inject Microsoft.Extensions.Options.IOptions<TalkWatch.Web.Services.SiteOptions> SiteSettings
 
 <PageTitle>Switchboards · TalkWatch</PageTitle>
 
@@ -26,7 +30,7 @@
 <p class="hint">Calls that reached a switchboard: how many hung up during its greeting, before choosing anything or being put through, and
     what became of the rest. A greeting's length is measured from its audio, so changing it in Talk shows here within the hour.</p>
 
-@if (_boards.Count == 0)
+@if (_boards.Count == 0 && !Quiet.Any())
 {
     <div class="plane"><div class="empty" data-kind="none" style="padding: 24px 16px"><b>No calls reached a switchboard in this period.</b><p class="why">Try a longer period, or check that calls come in on a number routed to a menu.</p></div></div>
 }
@@ -60,6 +64,16 @@
             <div data-figure="median-hang-up"><strong>@(board.MedianHangUp is { } m ? $"{m.TotalSeconds:0} s" : "–")</strong> median time before they did</div>
             <div data-figure="passed"><strong>@passed</strong> got past it: @board.Answered answered, @board.Missed missed, @board.Voicemail voicemail</div>
         </div>
+        @if (Problems(board) is { Count: > 0 } problems)
+        {
+            <div class="stack" style="gap: 6px" data-setup-health>
+                @foreach (var (label, flag) in problems)
+                {
+                    var (title, detail) = NodeViews.Words(flag);
+                    <div class="sb-flag" data-issue="@flag.Issue"><b>@label: @title</b><span>@detail</span></div>
+                }
+            </div>
+        }
         @if (board.HungUpInGreeting > 0)
         {
             <p class="hint" data-greeting-detail>
@@ -79,9 +93,17 @@
                 <tbody>
                     @foreach (var option in board.Options)
                     {
+                        var badge = option.NodeId is { } id ? _badges.GetValueOrDefault(id) : NodeBadge.None;
                         <tr data-option="@option.Label">
-                            <td>@option.Label</td><td>@option.Calls</td><td>@option.Answered</td><td>@option.Missed</td><td>@option.Voicemail</td><td>@option.HungUp</td>
+                            <td>@option.Label@if (badge is not (NodeBadge.None or NodeBadge.OpenNow or NodeBadge.NotNow))
+                                {
+                                    <span class="nb" style="margin-left: 8px" data-b="@NodeViews.Key(badge)" title="@NodeViews.Why(badge)"><i></i>@NodeViews.Words(badge)</span>
+                                }</td><td>@option.Calls</td><td>@option.Answered</td><td>@option.Missed</td><td>@option.Voicemail</td><td>@option.HungUp</td>
                         </tr>
+                        @if (option.Hours is { } hours)
+                        {
+                            <BranchRows Split="hours" />
+                        }
                     }
                     @if (board.NoChoice > 0)
                     {
@@ -90,6 +112,36 @@
                 </tbody>
             </table></div>
         }
+        else if (board.Hours is { } split)
+        {
+            <h3 class="eyebrow">Opening hours</h3>
+            <div class="grid-wrap"><table class="dg menu-options">
+                <thead><tr><th>Branch</th><th>Calls</th><th>Answered</th><th>Missed</th><th>Voicemail</th><th></th></tr></thead>
+                <tbody><BranchRows Split="split" /></tbody>
+            </table></div>
+        }
+        </div>
+    </section>
+}
+
+@* A switchboard no call reached in the period is not drawn above, but one with something wrong with its setup still is:
+   a broken switchboard may be why nobody got through. *@
+@foreach (var quiet in Quiet)
+{
+    <section class="plane switchboard" data-switchboard="@quiet.InternalId" aria-label="@quiet.Title">
+        <div class="plane-head">
+            <div class="row" style="gap: 10px"><span class="dir" data-d="int" aria-hidden="true"><Icon Name="attendant" Size="s" /></span><h2>@quiet.Title</h2></div>
+            <div class="end"><span class="cap" data-c="talk">Talk's switchboard</span></div>
+        </div>
+        <div class="plane-body stack" style="gap: 14px">
+            <p class="hint" style="margin: 0">No calls reached it in this period.</p>
+            <div class="stack" style="gap: 6px" data-setup-health>
+                @foreach (var (label, flag) in _problems[quiet.InternalId!.Value])
+                {
+                    var (title, detail) = NodeViews.Words(flag);
+                    <div class="sb-flag" data-issue="@flag.Issue"><b>@label: @title</b><span>@detail</span></div>
+                }
+            </div>
         </div>
     </section>
 }
@@ -100,12 +152,47 @@
     private int Period => Days is 7 or 30 or 90 ? Days.Value : 30;
 
     private IReadOnlyList<SwitchboardStatistics> _boards = [];
+    private IReadOnlyList<SwitchboardNode> _nodes = [];
+    private IReadOnlyDictionary<string, NodeBadge> _badges = new Dictionary<string, NodeBadge>();
+    private ILookup<int, (string Label, HealthFlag Flag)> _problems = Array.Empty<(int, string, HealthFlag)>().ToLookup(p => p.Item1, p => (p.Item2, p.Item3));
 
     protected override async Task OnInitializedAsync()
     {
         var now = Clock.GetUtcNow();
-        _boards = await SwitchboardStatistics.ComputeAsync(Db, now - TimeSpan.FromDays(Period), now, CancellationToken.None);
+        var zone = TimeZoneInfo.FindSystemTimeZoneById(SiteSettings.Value.TimeZone);
+        var rows = await Db.SwitchboardNodes.AsNoTracking().ToListAsync();
+        _boards = await SwitchboardStatistics.ComputeAsync(Db, now - TimeSpan.FromDays(Period), now, CancellationToken.None, zone);
+        _nodes = NodeViews.Nodes(rows);
+        _badges = NodeViews.Badges(_nodes, now, zone);
+
+        // What is wrong with each switchboard's setup now, by the switchboard it is under; switched-off parts raise nothing.
+        var byId = _nodes.ToDictionary(n => n.Id, StringComparer.Ordinal);
+        int? RootOf(SwitchboardNode node)
+        {
+            for (SwitchboardNode? at = node; at is not null; at = at.ParentId is { } p && byId.TryGetValue(p, out var up) ? up : null)
+            {
+                if (at.Type == SwitchboardNode.Root)
+                {
+                    return at.InternalId;
+                }
+            }
+
+            return null;
+        }
+
+        _problems = NodeHealth.Of(_nodes).Where(f => !f.Disabled && byId.ContainsKey(f.NodeId))
+            .Select(f => (Root: RootOf(byId[f.NodeId]), Label: Label(byId[f.NodeId]), Flag: f))
+            .Where(p => p.Root is not null)
+            .ToLookup(p => p.Root!.Value, p => (p.Label, p.Flag));
     }
+
+    private IReadOnlyList<(string Label, HealthFlag Flag)> Problems(SwitchboardStatistics board) => [.. _problems[board.InternalId]];
+
+    // Switchboards with something wrong that no call reached in the period.
+    private IEnumerable<SwitchboardNode> Quiet => _nodes.Where(n => n.Type == SwitchboardNode.Root && n.InternalId is { } id && _problems[id].Any() && _boards.All(b => b.InternalId != id));
+
+    private static string Label(SwitchboardNode node) =>
+        node.Type == SwitchboardNode.Menu && node.Key is { } key ? $"{key} {node.Title}".Trim() : node.Title ?? "Its setup";
 
     private static string Percent(int part, int whole) => whole == 0 ? "–" : ((double)part / whole).ToString("P0", System.Globalization.CultureInfo.CurrentCulture);
 }

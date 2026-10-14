@@ -30,7 +30,7 @@ public sealed class IngestionStatus
 
 /// <summary>Copies new calls from the console on a schedule.</summary>
 public sealed partial class CallLogPoller(
-    IServiceScopeFactory scopes, TalkSession session, ConsoleVersionMonitor versions, LineDirectorySync directory, TranscriptSync transcripts, ConsoleHealthMonitor health, AlertService alerts, IOptions<TalkOptions> options, IngestionStatus status,
+    IServiceScopeFactory scopes, TalkSession session, ConsoleVersionMonitor versions, LineDirectorySync directory, TranscriptSync transcripts, ConsoleHealthMonitor health, SwitchboardHealthMonitor switchboardHealth, AlertService alerts, IOptions<TalkOptions> options, IngestionStatus status,
     AudioStore audio, TimeProvider clock, ILogger<CallLogPoller> logger) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -91,6 +91,7 @@ public sealed partial class CallLogPoller(
             await versions.CheckIfDueAsync(cancellationToken);
             await versions.CheckTalkServiceAsync(cancellationToken);
             await directory.RefreshIfDueAsync(cancellationToken);
+            await switchboardHealth.CheckAsync(cancellationToken);
             await health.CheckIfDueAsync(cancellationToken);
 
             var retention = await db.RetentionSettings.AsNoTracking().SingleOrDefaultAsync(cancellationToken);

@@ -76,9 +76,9 @@
 .page input[type=checkbox], .page input[type=radio] { accent-color: var(--live); width: 15px; height: 15px; }
 .page fieldset { border: 1px solid var(--line); border-radius: var(--r3); padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 10px 14px; }
 .page legend { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .08em; color: var(--fg-3); font-weight: 600; padding: 0 6px; }
-.page button:not(.btn):not(.ws):not(.iconbtn):not(.copy):not(.tab):not(.pp):not(.speed), .page .button {
+.page button:not(.btn):not(.ws):not(.iconbtn):not(.copy):not(.tab):not(.pp):not(.speed):not(.node):not(.sb-play), .page .button {
   display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border-radius: var(--r2); border: 1px solid var(--control-edge); background: var(--s2); font-size: var(--t-md); font-weight: 500; color: var(--fg); text-decoration: none; white-space: nowrap; cursor: pointer; transition: background var(--d-instant), border-color var(--d-instant); }
-.page button:not(.btn):not(.ws):not(.iconbtn):not(.copy):not(.tab):not(.pp):not(.speed):hover, .page .button:hover { background: var(--s3); }
+.page button:not(.btn):not(.ws):not(.iconbtn):not(.copy):not(.tab):not(.pp):not(.speed):not(.node):not(.sb-play):hover, .page .button:hover { background: var(--s3); }
 .page button[disabled] { opacity: .45; cursor: not-allowed; }
 .page audio { height: 32px; max-width: 280px; vertical-align: middle; }
 .audio { display: flex; align-items: center; gap: 8px; font-size: var(--t-sm); color: var(--fg-2); }
@@ -208,6 +208,49 @@ h1:focus { outline: none; }
 .sb-callers:hover .sb-caller, .sb-callers:focus-within .sb-caller { position: relative; transform: none; opacity: 1; pointer-events: auto; flex: none; }
 .sb-callers:hover .sb-more, .sb-callers:focus-within .sb-more { display: none; }
 .sb-caller:hover { background: var(--s4); }
+/* A switchboard node is a button: it opens the node's panel. One badge on it, a shape and a word as well as a colour. */
+.sb-flow button.node { font: inherit; color: inherit; cursor: pointer; gap: 3px; height: auto; }
+.sb-flow button.node:hover { background: var(--s3); border-color: var(--line-strong); }
+.sb-flow .node.sel { outline: 2px solid var(--focus); outline-offset: 2px; }
+.sb-flow .node.off { border-style: dashed; opacity: .72; }
+.nb { display: inline-flex; width: fit-content; justify-content: flex-start; align-items: center; gap: 5px; font: 500 10px/1 var(--mono); letter-spacing: .02em; white-space: nowrap; }
+.nb.nb-lg { font-size: 12px; gap: 6px; }
+.nb i { width: 7px; height: 7px; flex: none; display: inline-block; box-sizing: border-box; }
+.nb[data-b="open"] { color: var(--ok); }
+.nb[data-b="open"] i { border-radius: 50%; background: currentColor; }
+.nb[data-b="closed"], .nb[data-b="off"] { color: var(--fg-3); }
+.nb[data-b="closed"] i { border-radius: 50%; border: 1.5px solid currentColor; }
+.nb[data-b="unknown"] { color: var(--fg-2); }
+.nb[data-b="unknown"] i { border-radius: 50%; border: 1.5px dashed currentColor; }
+.nb[data-b="off"] i { height: 1.5px; background: currentColor; }
+.nb[data-b="noaudio"] { color: var(--warn); }
+.nb[data-b="noaudio"] i { width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-bottom: 7px solid currentColor; }
+.nb[data-b="pending"] { color: var(--route); }
+.nb[data-b="pending"] i { border-radius: 50%; border: 1.5px solid currentColor; border-right-color: transparent; }
+.nb[data-b="broken"] { color: var(--bad); }
+.nb[data-b="broken"] i { width: 8px; height: 2px; background: linear-gradient(90deg, currentColor 0 3px, transparent 3px 5px, currentColor 5px); }
+/* The node's panel floats over the right of the page, as the call inspector does on a narrow screen. */
+.sb-panel { text-align: left; position: fixed; right: 0; top: var(--rail-h); bottom: 0; width: min(var(--insp-w), 100vw); z-index: 41; box-shadow: var(--shadow); animation: inspIn var(--d-structure) var(--ease); }
+.sb-panel .insp-inner { width: 100%; }
+.sb-play { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 50%; border: 0; background: var(--fg); color: var(--ground); cursor: pointer; }
+.sb-play[aria-pressed="true"] { background: var(--live); }
+.sb-greeting { margin: 0; font-size: var(--t-md); line-height: 20px; color: var(--fg-2); }
+.sb-routes { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; column-gap: 10px; font-size: var(--t-md); }
+.sb-routes > * { padding: 8px 0; border-bottom: 1px solid var(--line); align-self: stretch; display: flex; align-items: center; }
+.sb-routes > .stack { align-items: flex-start; justify-content: center; }
+.sb-panel .stack > .nb { align-self: flex-start; }
+.sb-key { font: 600 12px/1 var(--mono); width: 22px; height: 22px; display: grid; place-items: center; border-radius: var(--r1); border: 1px solid var(--control-edge); color: var(--fg-2); }
+.sb-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.sb-day { display: flex; flex-direction: column; gap: 6px; align-items: center; font: 500 11px/1 var(--mono); color: var(--fg-3); }
+.sb-day .bar { width: 100%; height: 56px; border-radius: var(--r1); background: var(--s3); position: relative; overflow: hidden; }
+.sb-day .bar span { position: absolute; left: 0; right: 0; background: var(--route-soft); border-top: 1.5px solid var(--route); border-bottom: 1.5px solid var(--route); box-sizing: border-box; }
+.sb-day .bar .now { height: 1.5px; border: 0; background: var(--live); }
+.sb-day.today { color: var(--fg); }
+.sb-day.today .bar { outline: 1.5px solid var(--fg-3); outline-offset: 1px; }
+.sb-flag { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: var(--r2); background: var(--warn-soft); font-size: var(--t-md); }
+.sb-flag > span { color: var(--fg-2); }
+.sb-flag.draft { background: none; border: 1px dashed var(--line-strong); }
+.sb-admin { border-top: 1px solid var(--line); padding-top: 16px; }
 .team-h { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 16px 6px; border-top: 1px solid var(--line); }
 .team-h:first-of-type { border-top: 0; }
 @media (max-width: 1180px) { .op-grid { grid-template-columns: minmax(0, 1fr); } }

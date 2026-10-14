@@ -90,7 +90,8 @@ public static class Retention
 
 /// <summary>
 /// Removes what the retention settings say has been kept long enough: audio first, then whole calls with their events,
-/// lines, audio, the console responses that held them, and the alerts raised about them. The audit log is kept.
+/// lines, audio, the console responses that held them, the alerts raised about them, and switchboard setups no kept call
+/// met. The audit log is kept.
 /// </summary>
 public sealed class RetentionSweeper(TalkWatchDbContext db, AudioStore store, TimeProvider clock)
 {
@@ -153,6 +154,12 @@ public sealed class RetentionSweeper(TalkWatchDbContext db, AudioStore store, Ti
             // A report copy holds callers' numbers, and every call with the call list, so it goes once the last call it
             // covers has; its deliveries go with it. The report itself is a setting and stays.
             await db.ReportRuns.Where(r => r.To < callCutoff).ExecuteDeleteAsync(cancellationToken);
+
+            // A node's setup goes once a later one had replaced it before the oldest call kept: no kept call met it.
+            // The one in force at the cutoff stays, however old, since calls after it met that setup.
+            await db.SwitchboardNodeSnapshots
+                .Where(s => db.SwitchboardNodeSnapshots.Any(n => n.NodeId == s.NodeId && n.CapturedAt > s.CapturedAt && n.CapturedAt <= callCutoff))
+                .ExecuteDeleteAsync(cancellationToken);
         }
 
         if (settings is not null)

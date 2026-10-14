@@ -185,6 +185,9 @@ public sealed partial class DemoActivity(
                 .ToList();
             var sql = "TRUNCATE TABLE " + string.Join(", ", tables.Select(t => "\"" + t.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"")) + " CASCADE";
             await db.Database.ExecuteSqlRawAsync(sql, cancellationToken);
+
+            // The switchboard's kept setups went with the rest: forget each node's last one, so the next read keeps it again.
+            await db.SwitchboardNodes.ExecuteUpdateAsync(n => n.SetProperty(x => x.JsonHash, (string?)null), cancellationToken);
         }
 
         await GuestAsync(cancellationToken);

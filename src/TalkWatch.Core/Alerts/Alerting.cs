@@ -60,6 +60,13 @@ public enum AlertEventType
     /// alert says which call, never what was said.
     /// </summary>
     VoicemailTranscribed,
+
+    /// <summary>
+    /// Something newly wrong with a switchboard's setup that callers meet: a greeting with no audio, a menu or split that
+    /// goes nowhere, dialling by extension that reaches nobody. Switched-off parts raise nothing. About the whole site,
+    /// so for admins.
+    /// </summary>
+    SwitchboardProblem,
 }
 
 public static class CallAlerts

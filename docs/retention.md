@@ -26,7 +26,8 @@ Every six hours, and when you press **Sweep now**, TalkWatch removes what the po
 1. expired recordings and voicemail, from disk first, so no file outlives the record of it;
 2. expired calls, with their events, lines and audio records;
 3. the console responses that held those calls, and the alerts raised about them, since both carry callers' numbers;
-4. report copies whose whole period is older than the calls being kept, for the same reason. A copy that still covers a kept call stays until its last day passes, and the report itself is never removed.
+4. report copies whose whole period is older than the calls being kept, for the same reason. A copy that still covers a kept call stays until its last day passes, and the report itself is never removed;
+5. switchboard setups that were replaced before the oldest kept call. TalkWatch keeps a copy of a switchboard node's setup each time it changes, so a past call can be explained by the setup it met. The setup in force when the oldest kept call came in stays, however old it is, because the calls since then met it.
 
 The audit log is kept. The page shows how much the last sweep removed.
 

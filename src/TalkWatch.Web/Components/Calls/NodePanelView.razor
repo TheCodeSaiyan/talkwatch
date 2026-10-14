@@ -1,0 +1,205 @@
+@* A switchboard node's panel on Operator: what callers hear, where it goes, its hours this week and its health, opened
+   from its node on the flow without leaving the page. An admin's panel also holds the setup an operator doesn't need:
+   who a caller may dial, who gets voicemail, what a switched-off node would raise, and how the setup has changed.
+   What an operator may not see is never in their panel's model, so it is never sent to their browser. *@
+@using TalkWatch.Core.Talk
+
+<aside class="insp sb-panel" aria-label="@Panel.Title" data-node="@Panel.NodeId">
+    <div class="insp-inner">
+        <div class="insp-head">
+            <div class="insp-title">
+                <span class="eyebrow">Switchboard</span>
+                <b class="insp-name">@Panel.Title</b>
+                <span class="n">@Panel.Context@(Panel.Ext is { } ext ? $" · ext {ext}" : "")</span>
+            </div>
+            <a class="btn ghost sm" href="/switchboard">Switchboards</a>
+            <button type="button" class="iconbtn" data-insp-close @onclick="OnClose" aria-label="Close (Esc)"><Icon Name="x" Size="s" /></button>
+        </div>
+        <div class="insp-body">
+            @if (Panel.Badge is NodeBadge.OpenNow or NodeBadge.NotNow or NodeBadge.HoursUnknown || Panel.Until is not null || Panel.Week is not null)
+            {
+                <section class="stack" style="gap: 6px" aria-label="Open now">
+                    <div class="row" style="gap: 10px; flex-wrap: wrap">
+                        @if (Panel.Badge is NodeBadge.OpenNow or NodeBadge.NotNow or NodeBadge.HoursUnknown)
+                        {
+                            <span class="nb nb-lg" data-b="@NodeViews.Key(Panel.Badge)"><i></i>@NodeViews.Words(Panel.Badge)</span>
+                        }
+                        @if (Panel.Until is { } until)
+                        {
+                            <span class="mono muted" style="font-size: 12px">@until</span>
+                        }
+                    </div>
+                    <div class="row" style="gap: 8px">
+                        <span class="muted" style="font-size: 12px">Hours in @Panel.Zone</span>
+                        <span class="cap" data-c="derived" style="margin-left: auto" title="Worked out from the hours Talk holds, in the time zone reports use">From its hours</span>
+                    </div>
+                </section>
+            }
+            else if (Panel.Badge == NodeBadge.Off)
+            {
+                <span class="nb nb-lg" data-b="off" title="@NodeViews.Why(NodeBadge.Off)"><i></i>Switched off in Talk</span>
+            }
+
+            @if (Panel.Greeting is { } greeting)
+            {
+                <section class="stack" style="gap: 10px" aria-label="What callers hear">
+                    <span class="eyebrow">What callers hear</span>
+                    <div class="row" style="gap: 12px; align-items: flex-start">
+                        @if (Panel.CanPlay)
+                        {
+                            <button type="button" class="sb-play" data-greeting="/switchboard/greeting/@Uri.EscapeDataString(Panel.NodeId)" aria-label="Play the greeting"><Icon Name="play" Size="s" /></button>
+                        }
+                        <div class="stack" style="gap: 6px; min-width: 0">
+                            @if (!string.IsNullOrWhiteSpace(greeting.Text))
+                            {
+                                <p class="sb-greeting">“@greeting.Text”</p>
+                            }
+                            <span class="mono muted" style="font-size: 11px">@string.Join(" · ", new[] { GreetingKind(greeting.Type), greeting.Voice, greeting.Language }.Where(s => !string.IsNullOrEmpty(s)))</span>
+                        </div>
+                    </div>
+                    @if (Panel.CanPlay)
+                    {
+                        <span class="muted" style="font-size: 12px">Playing it is noted in the audit log.</span>
+                    }
+                </section>
+            }
+
+            @if (Panel.Routes.Count > 0 || Panel.NoKeyPress is not null)
+            {
+                <section class="stack" style="gap: 6px" aria-label="Where it goes">
+                    <div class="row"><span class="eyebrow">Where it goes</span><span class="cap" data-c="talk" style="margin-left: auto">From Talk</span></div>
+                    <div class="sb-routes">
+                        @foreach (var route in Panel.Routes)
+                        {
+                            <span>@if (route.Key is { } key) { <span class="sb-key">@key</span> }</span>
+                            <span class="stack" style="gap: 2px; min-width: 0">
+                                <b style="font-weight: 500">@route.Label</b>
+                                @if (route.Detail is { } detail)
+                                {
+                                    <span class="muted" style="font-size: 12px">@detail</span>
+                                }
+                            </span>
+                            <span>@if (route.Badge != NodeBadge.None) { <span class="nb" data-b="@NodeViews.Key(route.Badge)" title="@NodeViews.Why(route.Badge)"><i></i>@NodeViews.Words(route.Badge)</span> }</span>
+                        }
+                        @if (Panel.NoKeyPress is { } nothing)
+                        {
+                            <span><span class="sb-key" aria-hidden="true">–</span></span>
+                            <span>No key pressed</span>
+                            <span style="font-size: 12px">@nothing</span>
+                        }
+                    </div>
+                </section>
+            }
+
+            @if (Panel.Week is { } week)
+            {
+                var today = TimeZoneInfo.ConvertTime(Now, Zone).DayOfWeek;
+                var minute = TimeZoneInfo.ConvertTime(Now, Zone).TimeOfDay.TotalMinutes;
+                <section class="stack" style="gap: 10px" aria-label="This week's hours">
+                    <span class="eyebrow">This week's hours</span>
+                    <div class="sb-week">
+                        @foreach (var day in Week)
+                        {
+                            var ranges = week.Days.TryGetValue(day, out var r) ? r : [];
+                            <div class="sb-day@(day == today ? " today" : "")" title="@day: @NodeViews.Ranges(ranges)">
+                                <div class="bar">
+                                    @foreach (var range in ranges)
+                                    {
+                                        var end = Math.Min(range.To <= range.From ? range.To + 1440 : range.To, 1440);
+                                        <span style="top: @Pct(range.From / 1440.0)%; bottom: @Pct(1 - end / 1440.0)%"></span>
+                                    }
+                                    @if (day == today)
+                                    {
+                                        <span class="now" style="top: @Pct(minute / 1440)%"></span>
+                                    }
+                                </div>
+                                @day.ToString()[..3]
+                            </div>
+                        }
+                    </div>
+                    <span class="mono muted" style="font-size: 12px">@(week.HolidaysEnabled ? week.Holidays is null ? "Holidays on, dates unreadable" : week.Holidays.Count == 0 ? "Holidays on, none set" : $"{week.Holidays.Count} holiday{(week.Holidays.Count == 1 ? "" : "s")} set" : "No holidays set")</span>
+                </section>
+            }
+
+            <section class="stack" style="gap: 8px" aria-label="Health">
+                <span class="eyebrow">Health</span>
+                @if (Panel.Flags.Count == 0 && Panel.Badge != NodeBadge.Off)
+                {
+                    <span class="nb nb-lg" data-b="open"><i></i>Nothing wrong with it</span>
+                }
+                @foreach (var flag in Panel.Flags)
+                {
+                    var (title, detail) = NodeViews.Words(flag);
+                    <div class="sb-flag" data-issue="@flag.Issue"><b>@title</b><span>@detail</span></div>
+                }
+            </section>
+
+            @if (Panel.Setup is { } setup)
+            {
+                @foreach (var flag in setup.DraftFlags)
+                {
+                    var (title, detail) = NodeViews.Words(flag);
+                    <div class="sb-flag draft" data-issue="@flag.Issue"><b>@title <span class="tag">Switched off</span></b><span>@detail No caller meets this while it's off; it matters if it's switched on.</span></div>
+                }
+                <section class="stack sb-admin" style="gap: 12px" aria-label="Setup">
+                    <div class="row"><span class="eyebrow">Setup</span><span class="tag" style="margin-left: auto">Admins only</span></div>
+                    <dl class="insp-facts">
+                        @if (setup.DialByExt is { } dial)
+                        {
+                            <dt>Dial by extension</dt>
+                            <dd class="stack" style="gap: 6px">
+                                <span>@dial</span>
+                                @if (setup.AllowList.Count > 0)
+                                {
+                                    <span class="row" style="flex-wrap: wrap; gap: 6px">@foreach (var who in setup.AllowList) { <span class="tag">@who</span> }</span>
+                                }
+                            </dd>
+                        }
+                        <dt>Voicemail to</dt>
+                        <dd>@(setup.Receivers.Count == 0 ? "Nobody named" : string.Join(", ", setup.Receivers))</dd>
+                        @if (setup.HoldMusic is { } music)
+                        {
+                            <dt>Hold music</dt><dd>@music</dd>
+                        }
+                        @if (setup.Greeting is { } file)
+                        {
+                            <dt>Greeting</dt><dd class="mono" style="font-size: 12px">@file</dd>
+                        }
+                    </dl>
+                </section>
+                @if (setup.Changes.Count > 0)
+                {
+                    <section class="stack sb-admin" style="gap: 8px" aria-label="Changes">
+                        <div class="row"><span class="eyebrow">Changes</span><span class="cap" data-c="stored" style="margin-left: auto">Kept by TalkWatch</span></div>
+                        <dl class="insp-facts">
+                            @foreach (var change in setup.Changes)
+                            {
+                                <dt class="mono" style="font-size: 12px">@TimeZoneInfo.ConvertTime(change.At, Zone).ToString("d MMM HH:mm", System.Globalization.CultureInfo.InvariantCulture)</dt>
+                                <dd>@change.Words</dd>
+                            }
+                        </dl>
+                    </section>
+                }
+            }
+        </div>
+    </div>
+</aside>
+
+@code {
+    [Parameter, EditorRequired] public NodePanel Panel { get; set; } = default!;
+    [Parameter, EditorRequired] public TimeZoneInfo Zone { get; set; } = TimeZoneInfo.Utc;
+    [Parameter] public DateTimeOffset Now { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private static readonly DayOfWeek[] Week = [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday];
+
+    private static string Pct(double fraction) => (Math.Clamp(fraction, 0, 1) * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string? GreetingKind(string? type) => type switch
+    {
+        "generated" => "generated voice",
+        "uploaded" => "uploaded",
+        "default" => "Talk's default",
+        _ => type,
+    };
+}

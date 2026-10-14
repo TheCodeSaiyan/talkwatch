@@ -101,7 +101,20 @@ reached: answered, missed or voicemail.
 - **Hung up during the greeting** comes with how many of those callers had rung
   before or rang again: people who know the number, not just robocalls.
 - **Menu options** lists each option with its calls and what they led to, and a
-  row for callers who **chose nothing**.
+  row for callers who **chose nothing**. An option that is switched off, has no
+  audio or goes nowhere says so beside its name.
+- **Opening hours**: where an option, or the switchboard itself, splits by
+  opening hours, a row under it says how its calls divided between the
+  branches. Talk doesn't log which branch a call took, so each call's branch is
+  worked out from its time and the branches' hours as they were then, from the
+  setup TalkWatch kept at the time. These rows are marked *inferred*. A call
+  that came before TalkWatch first kept the setup is placed by the first one
+  kept. A call whose branch can't be said, because holidays were on with dates
+  TalkWatch can't read, is counted as **Branch not known**.
+- **What's wrong with its setup** shows above the figures: a greeting with no
+  audio, a menu or branch that goes nowhere, dialling by extension that reaches
+  nobody. A switchboard no call reached in the period still appears when it
+  has one of these, because it may be why nobody got through.
 
 If most hang-ups happen in the first fifteen seconds, that's the greeting to
 shorten. See [Callers who give up at the switchboard](guides/switchboard.md) for

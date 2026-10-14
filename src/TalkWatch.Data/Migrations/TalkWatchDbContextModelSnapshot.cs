@@ -1705,6 +1705,13 @@ namespace TalkWatch.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<bool?>("Disabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Ext")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
                     b.Property<string>("GreetingFile")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -1715,8 +1722,21 @@ namespace TalkWatch.Data.Migrations
                     b.Property<int?>("InternalId")
                         .HasColumnType("integer");
 
+                    b.Property<bool?>("IsDefaultTime")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Json")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("JsonHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<int?>("Key")
                         .HasColumnType("integer");
+
+                    b.Property<bool?>("MissingAudio")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Numbers")
                         .HasMaxLength(500)
@@ -1743,6 +1763,41 @@ namespace TalkWatch.Data.Migrations
                     b.HasKey("SiteId", "NodeId");
 
                     b.ToTable("switchboard_nodes", (string)null);
+                });
+
+            modelBuilder.Entity("TalkWatch.Data.SwitchboardNodeSnapshot", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTimeOffset>("CapturedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Json")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("JsonHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("NodeId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("SiteId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SiteId", "NodeId", "CapturedAt");
+
+                    b.ToTable("switchboard_node_snapshots", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
