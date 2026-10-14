@@ -10,20 +10,64 @@ namespace TalkWatch.Web.Services;
 /// through which ring group as they are stored, and in the lines table, for naming lines on screen.
 /// </summary>
 public sealed partial class LineDirectorySync(
-    TalkSession session, IServiceScopeFactory scopes, CurrentSite site, TimeProvider clock, ILogger<LineDirectorySync> logger)
+    TalkSession session, IServiceScopeFactory scopes, CurrentSite site, TimeProvider clock, ILogger<LineDirectorySync> logger) : IDisposable
 {
     public static readonly TimeSpan Interval = TimeSpan.FromHours(1);
 
     private DateTimeOffset? _refreshedAt;
 
+    // One read at a time. The poller, the live feed and the demo each start reads; two at once each saw the rows the
+    // other was about to add as missing, and the slower failed on a duplicate key, on a fresh database every time.
+    private readonly SemaphoreSlim _reading = new(1, 1);
+
     /// <summary>The directory as last read; empty until the first refresh.</summary>
     public LineDirectory Current { get; private set; } = LineDirectory.Empty;
 
-    public Task RefreshIfDueAsync(CancellationToken cancellationToken) =>
-        _refreshedAt is { } last && clock.GetUtcNow() - last < Interval ? Task.CompletedTask : RefreshAsync(cancellationToken);
+    private bool Due => !(_refreshedAt is { } last && clock.GetUtcNow() - last < Interval);
 
-    /// <summary>Reads the directory now. A failure keeps the last directory: calls are still stored, with fewer group lines.</summary>
+    /// <summary>Reads the directory when the last read is an <see cref="Interval"/> old, or there has been none.</summary>
+    public async Task RefreshIfDueAsync(CancellationToken cancellationToken)
+    {
+        if (!Due)
+        {
+            return;
+        }
+
+        await _reading.WaitAsync(cancellationToken);
+        try
+        {
+            // A read that was running while this one waited may have made it no longer due.
+            if (Due)
+            {
+                await ReadAsync(cancellationToken);
+            }
+        }
+        finally
+        {
+            _reading.Release();
+        }
+    }
+
+    /// <summary>
+    /// Reads the directory now, after any read already running. A failure keeps the last directory: calls are still
+    /// stored, with fewer group lines.
+    /// </summary>
     public async Task RefreshAsync(CancellationToken cancellationToken)
+    {
+        await _reading.WaitAsync(cancellationToken);
+        try
+        {
+            await ReadAsync(cancellationToken);
+        }
+        finally
+        {
+            _reading.Release();
+        }
+    }
+
+    public void Dispose() => _reading.Dispose();
+
+    private async Task ReadAsync(CancellationToken cancellationToken)
     {
         try
         {
