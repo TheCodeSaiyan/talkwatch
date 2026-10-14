@@ -1,6 +1,6 @@
 # The SDK stage runs on the build machine's own architecture and cross-compiles for the target,
 # so an arm64 image does not need a whole build under emulation.
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0@sha256:e70cdb7f80b0348f5cb85f19a8f670fca061f033d57eed12fa003d58b0e06317 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa AS build
 ARG TARGETARCH
 # Restores are held to the lock files (CI=true): a package that changed, or would resolve differently, fails the build.
 ENV CI=true
@@ -48,7 +48,7 @@ RUN go install -ldflags="-s -w" github.com/windtf/wireproxy/cmd/wireproxy@v1.1.3
 
 # chiseled-extra: no shell or package manager, but it keeps ICU and tzdata, which time-zone-aware
 # alert rules and locale formatting need.
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra@sha256:00e0ad6a7ef8c0c1391b87f05c7ac757a15740455688f2bfcd146a3f4b987efd
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra@sha256:3ed6558056b54d5c9dfefb7ff473728e022ff2bf1d976cbf8ee07b05ec594374
 WORKDIR /app
 COPY --from=build /app .
 COPY --from=tunnel /out /app/tunnel
