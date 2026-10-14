@@ -48,7 +48,7 @@ RUN go install -ldflags="-s -w" github.com/windtf/wireproxy/cmd/wireproxy@v1.1.3
 
 # chiseled-extra: no shell or package manager, but it keeps ICU and tzdata, which time-zone-aware
 # alert rules and locale formatting need.
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra@sha256:00e0ad6a7ef8c0c1391b87f05c7ac757a15740455688f2bfcd146a3f4b987efd
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra@sha256:3ed6558056b54d5c9dfefb7ff473728e022ff2bf1d976cbf8ee07b05ec594374
 WORKDIR /app
 COPY --from=build /app .
 COPY --from=tunnel /out /app/tunnel
