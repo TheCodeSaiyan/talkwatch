@@ -35,7 +35,7 @@ RUN mkdir -p /data/audio
 # The helpers for a console that isn't on TalkWatch's own network (Talk__Route): wireproxy, a userspace WireGuard client,
 # and Tailscale's own tailscaled and tailscale. Built from source at pinned versions, static, for the target architecture,
 # and run as the app's unprivileged user: neither needs root, a TUN device or a shell.
-FROM --platform=$BUILDPLATFORM golang:1.27.1@sha256:1e93e00a31255c07e9a34c4207f3006e1501730c5323697cee7dfb827fdae44c AS tunnel
+FROM --platform=$BUILDPLATFORM golang:1.27.1@sha256:162be5298a40ed317005c8339c6de4d10d3eef336d66dc8e9259b03ab9d3a6d2 AS tunnel
 ARG TARGETARCH
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH GOFLAGS=-trimpath
 RUN go install -ldflags="-s -w" github.com/windtf/wireproxy/cmd/wireproxy@v1.1.3 \
