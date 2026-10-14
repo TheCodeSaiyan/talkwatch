@@ -204,6 +204,7 @@ app.MapAccount();
 app.MapOidc();
 app.MapOidcLink();
 app.MapAudio();
+app.MapSwitchboard();
 app.MapAdmin();
 app.MapAlertAdmin();
 app.MapAlertLinks();

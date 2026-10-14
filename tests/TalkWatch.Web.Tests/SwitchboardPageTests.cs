@@ -81,6 +81,54 @@ public sealed class SwitchboardPageTests(TalkWatchApp talkwatch) : IClassFixture
         Assert.Contains($"<tr data-option=\"3 {names[19]}\"><td>3 {names[19]}</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>", page, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Each_node_keeps_its_setup_with_a_snapshot_only_when_it_changes()
+    {
+        await using var app = talkwatch.Create(new FixtureConsole(FixtureConsole.DefaultDirectory));
+        var sync = app.Services.GetRequiredService<LineDirectorySync>();
+        await sync.RefreshAsync(Ct);
+        await sync.RefreshAsync(Ct);
+
+        using var scope = app.Services.CreateScope();
+        scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UseSystemScope();
+        var db = scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>();
+        var nodes = await db.SwitchboardNodes.AsNoTracking().ToListAsync(Ct);
+        Assert.NotEmpty(nodes);
+        Assert.All(nodes, n => Assert.NotNull(n.Json));
+        Assert.Equal("0005", nodes.Single(n => n.NodeId == "swb_15").Ext);
+        Assert.Equal(true, nodes.Single(n => n.NodeId == "swb_38").IsDefaultTime);
+        // Read twice, unchanged: one snapshot a node.
+        Assert.Equal(nodes.Select(n => n.NodeId).Order(), (await db.SwitchboardNodeSnapshots.Select(s => s.NodeId).ToListAsync(Ct)).Order());
+    }
+
+    [Fact]
+    public async Task A_greeting_plays_to_anyone_signed_in_and_one_play_is_audited_once()
+    {
+        await using var app = talkwatch.Create(new FixtureConsole(FixtureConsole.DefaultDirectory));
+        await app.Services.GetRequiredService<LineDirectorySync>().RefreshAsync(Ct);
+        using var stranger = TalkWatchApp.Browser(app);
+        Assert.NotEqual(HttpStatusCode.OK, (await stranger.GetAsync(new Uri("/switchboard/greeting/swb_15", UriKind.Relative), Ct)).StatusCode);
+        using var browser = TalkWatchApp.Browser(app);
+        await TalkWatchApp.SignInAsync(browser, TalkWatchApp.AdminUsername, TalkWatchApp.AdminPassword);
+
+        using var first = new HttpRequestMessage(HttpMethod.Get, new Uri("/switchboard/greeting/swb_15", UriKind.Relative)) { Headers = { Range = new(0, 99) } };
+        var start = await browser.SendAsync(first, Ct);
+        using var later = new HttpRequestMessage(HttpMethod.Get, new Uri("/switchboard/greeting/swb_15", UriKind.Relative)) { Headers = { Range = new(100, 199) } };
+        var seek = await browser.SendAsync(later, Ct);
+
+        Assert.Equal(HttpStatusCode.PartialContent, start.StatusCode);
+        Assert.Equal("audio/mpeg", start.Content.Headers.ContentType!.MediaType);
+        Assert.Equal(HttpStatusCode.PartialContent, seek.StatusCode);
+        // A group plays no greeting, and a node the console never had is not there.
+        Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync(new Uri("/switchboard/greeting/grp_39_1", UriKind.Relative), Ct)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await browser.GetAsync(new Uri("/switchboard/greeting/swb_999", UriKind.Relative), Ct)).StatusCode);
+
+        using var scope = app.Services.CreateScope();
+        scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UseSystemScope();
+        Assert.Equal(1, await scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>().AuditEvents
+            .CountAsync(e => e.Action == "greeting.play" && e.TargetId == "swb_15", Ct));
+    }
+
     private static async Task<double?> StoredGreetingAsync(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> app, int switchboard)
     {
         using var scope = app.Services.CreateScope();
