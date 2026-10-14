@@ -128,6 +128,7 @@ builder.Services.AddSingleton<LineDirectorySync>();
 builder.Services.AddSingleton<AnsweringLineCheck>();
 builder.Services.AddSingleton<TranscriptSync>();
 builder.Services.AddSingleton<ConsoleHealthMonitor>();
+builder.Services.AddSingleton<SwitchboardHealthMonitor>();
 builder.Services.AddSingleton<ReportBuilder>();
 builder.Services.AddSingleton<ReportMailer>();
 builder.Services.AddSingleton<ReportScheduler>();

@@ -21,12 +21,13 @@ Channels say where alerts go, and are set up under **Configure → Alert channel
 | Handset update available | Talk has a firmware update waiting for a handset. |
 | Talk account problem | The account stops being active, calling is suspended, a payment fails, or the account is blocked, reports unauthorised use or goes into emergency mode. Once when each problem appears. |
 | Recording or transcription switched off | Call recording or AI transcription goes from on to off in Talk. Off when TalkWatch first looks raises nothing, since it may be off on purpose. |
+| Switchboard problem | Something callers meet goes wrong with a switchboard's setup: a greeting with no audio or still being generated, a menu or opening-hours split that goes nowhere, dialling by extension limited to nobody, or pressing nothing leading to a node that's gone. Once when each problem appears, and again only if it's mended and comes back. A switched-off part raises nothing. |
 
 Missed calls and switchboard hang-ups are kept apart because most switchboard hang-ups aren't missed calls. On the console TalkWatch was built against, 70 of 155 inbound calls ended at the switchboard, averaging about 14 seconds: people hanging up during the greeting, and robocalls. Add a flow for them only if you want to hear about those.
 
 Only calls from the last 30 minutes raise alerts, so importing a history, or catching up after an outage, doesn't send a flood. A call that's still ringing raises only **Any incoming call**; missed, voicemail and switchboard hang-up wait until it has ended.
 
-The Talk account and settings are checked hourly, and what was last seen is kept, so a restart neither misses a change nor raises one twice. Alerts about the whole site (TalkWatch itself, the account, the settings) are on no line, so only admins can build flows on them. There is no alert for running low on included minutes or transcriptions yet: Talk reports usage, but no capture so far shows what its numbers count.
+The Talk account and settings are checked hourly, and what was last seen is kept, so a restart neither misses a change nor raises one twice. The switchboard is checked each time TalkWatch reads it, hourly, in the same way. Alerts about the whole site (TalkWatch itself, the account, the settings, the switchboard's setup) are on no line, so only admins can build flows on them. There is no alert for running low on included minutes or transcriptions yet: Talk reports usage, but no capture so far shows what its numbers count.
 
 ### Calls an outside answering line's voicemail took
 

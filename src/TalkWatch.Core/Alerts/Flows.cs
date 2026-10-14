@@ -410,7 +410,7 @@ public static class Flows
 
     /// <summary>Whether an alert of this type is about the whole site rather than any line: for admins' flows only, with no line conditions.</summary>
     public static bool IsSiteAlert(AlertEventType type) =>
-        type is AlertEventType.Drift or AlertEventType.AccountProblem or AlertEventType.SettingTurnedOff;
+        type is AlertEventType.Drift or AlertEventType.AccountProblem or AlertEventType.SettingTurnedOff or AlertEventType.SwitchboardProblem;
 
     /// <summary>
     /// Whether an incoming call flow waits for the call to be put through to an outside contact: one of its own conditions

@@ -491,6 +491,9 @@ public sealed partial class DemoScenarios(
         }
 
         await directory.RefreshAsync(ct);
+
+        // A poll checks the new setup for problems, as it would after any read of the directory.
+        await poller.RunOnceAsync(ct);
     }
 
     private const string SwitchboardPath = "/proxy/talk/api/switchboard";

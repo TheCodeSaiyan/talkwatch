@@ -28,6 +28,9 @@ Read it like this:
   somewhere that doesn't answer. Look at which ring group it rings, and when.
 - **Chose nothing**: callers who listened to the menu and pressed nothing. If
   that's large, the options probably don't say what callers came for.
+- **An option split by opening hours**: the rows under it say how many of its
+  calls came in hours and how many out of hours, worked out from the hours set
+  at the time. A busy out-of-hours row is callers you could be answering.
 
 A greeting's length is measured from its audio, so a shorter greeting saved in
 Talk shows here within the hour, and the next month's figures say whether it
@@ -52,6 +55,11 @@ Branch  on the caller is someone known
   If so       Notify  the front desk, urgent
   Otherwise   Notify  the front desk
 ```
+
+**Switchboard problem** is the trigger for the switchboard itself going wrong:
+a greeting with no audio, or a menu or out-of-hours branch with nowhere to go.
+It's raised once as each problem appears, so a flow that notifies the person
+who looks after the phones hears about it before callers start giving up.
 
 **If known caller** holds when the caller is named on the call or is one of
 Talk's contacts, so a regular customer hanging up in the menu is urgent and a
