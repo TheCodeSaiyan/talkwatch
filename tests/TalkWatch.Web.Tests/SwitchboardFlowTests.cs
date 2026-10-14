@@ -84,6 +84,33 @@ public sealed class SwitchboardFlowTests
         Assert.Equal("Ring group", flow.Stages.Single(s => s.Id == "n:grp_41_1").Label);
     }
 
+    // With the branches' hours to go on, each branch counts the calls whose time fell in it, marked as worked out, and
+    // where it leads carries that count on. A call whose branch can't be said is in neither.
+    [Fact]
+    public void An_opening_hours_split_counts_each_branch_by_its_hours_marked_as_inferred()
+    {
+        SwitchboardNodeRow[] tree =
+        [
+            new() { NodeId = "swb_15", InternalId = 15, Type = "root", Title = "Main switchboard", Numbers = "+441174960404" },
+            new() { NodeId = "swb_18", InternalId = 18, Type = "ivr", Key = 2, Title = "Support", ParentId = "swb_15" },
+            new() { NodeId = "swb_41", Type = "time", Title = "Open", ParentId = "swb_18" },
+            new() { NodeId = "grp_41_1", Type = "group", ParentId = "swb_41" },
+            new() { NodeId = "swb_40", Type = "time", Title = "Out of hours", ParentId = "swb_18" },
+            new() { NodeId = "grp_40_1", Type = "group", ParentId = "swb_40" },
+        ];
+        FlowHistory Call(int hour) => new(new MenuJourney(15, [new MenuChoice(15, 18, 2, "Support")]), CallOutcome.Answered, T0.Date.AddHours(hour));
+        // Open from nine to five; nothing can be said about midnight.
+        string? BranchAt(IReadOnlyList<string> branches, DateTimeOffset at) =>
+            at.Hour == 0 ? null : at.Hour is >= 9 and < 17 ? "swb_41" : "swb_40";
+
+        var flow = SwitchboardFlows.Build(tree, [Call(10), Call(11), Call(19), Call(0)], [], null, n => n, BranchAt)[0];
+
+        Assert.Equal(
+            [("n:swb_18", 4, true, false), ("n:swb_41", 2, true, true), ("n:grp_41_1", 2, true, true), ("n:swb_40", 1, true, true), ("n:grp_40_1", 1, true, true)],
+            flow.Stages.Where(s => s.Id.StartsWith("n:swb_4", StringComparison.Ordinal) || s.Id.StartsWith("n:grp", StringComparison.Ordinal) || s.Id == "n:swb_18")
+                .Select(s => (s.Id, s.Today, s.Counted, s.Inferred)));
+    }
+
     [Fact]
     public void With_a_number_chosen_only_the_switchboards_it_reaches_are_drawn()
     {

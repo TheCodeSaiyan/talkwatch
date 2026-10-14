@@ -67,7 +67,7 @@
                 var badge = nodeId is null ? NodeBadge.None : _badges.GetValueOrDefault(nodeId);
                 var chosen = _panel?.NodeId == nodeId && nodeId is not null;
                 var nodeClass = "node" + marks + (badge == NodeBadge.Off ? " off" : "") + (chosen ? " sel" : "");
-                var counts = string.Join(" · ", new[] { here.Count > 0 ? $"{here.Count} now" : null, stage.Counted ? $"{stage.Today} today" : null }.OfType<string>());
+                var counts = string.Join(" · ", new[] { here.Count > 0 ? $"{here.Count} now" : null, stage.Counted ? $"{(stage.Inferred ? "~" : "")}{stage.Today} today" : null }.OfType<string>());
                 @* A node from the switchboard opens its panel: what it does, where it goes, its hours and its health. One
                    badge says the most pressing of those on the node itself. *@
                 @if (nodeId is not null)
@@ -78,7 +78,7 @@
                         <b>@stage.Label</b>
                         @if (counts.Length > 0)
                         {
-                            <span class="m">@counts</span>
+                            <span class="m" title="@(stage.Inferred ? InferredWhy : null)">@counts</span>
                         }
                         @if (badge != NodeBadge.None)
                         {
@@ -260,6 +260,12 @@
 
     private void CloseNode() => _panel = null;
 
+    private const string InferredWhy = "Worked out from its hours: Talk doesn't log which branch a call took";
+
+    // Which branch of an opening-hours split took a call at a time, by the branches' hours as they are now.
+    private string? BranchAt(IReadOnlyList<string> branches, DateTimeOffset at) =>
+        TalkWatch.Core.Talk.OpeningHoursEvaluator.Branch(_nodes.Where(n => branches.Contains(n.Id)), at, _zone)?.Id;
+
     // The panel of someone who may see every line, as on the rest of this page, holds the full setup and its history;
     // anyone else's is the summary, built without them.
     private async Task<NodePanel?> PanelAsync(TalkWatchDbContext db, string nodeId)
@@ -319,7 +325,7 @@
         var zone = TimeZoneInfo.FindSystemTimeZoneById(SiteSettings.Value.TimeZone);
         var midnight = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(TimeZoneInfo.ConvertTime(now, zone).Date, zone), TimeSpan.Zero);
         var today = await db.Calls.AsNoTracking().Where(c => c.Direction == "in" && c.Time >= midnight && c.Outcome != CallOutcome.Blocked)
-            .Select(c => new { c.Outcome, Events = c.Events.OrderBy(e => e.Sequence).Select(e => new { e.Event, e.DataJson }).ToList() }).ToListAsync();
+            .Select(c => new { c.Outcome, c.Time, Events = c.Events.OrderBy(e => e.Sequence).Select(e => new { e.Event, e.DataJson }).ToList() }).ToListAsync();
         var nodes = await db.SwitchboardNodes.AsNoTracking().ToListAsync();
         _zone = zone;
         _nodes = NodeViews.Nodes(nodes);
@@ -331,9 +337,9 @@
 
         var normaliser = new NumberNormaliser(Site.Region);
         _flows = [.. SwitchboardFlows.Build(nodes,
-            [.. today.Select(c => new FlowHistory(TalkWatch.Core.Talk.MenuJourney.Of(c.Events.Select(e => (e.Event, e.DataJson))), c.Outcome))],
+            [.. today.Select(c => new FlowHistory(TalkWatch.Core.Talk.MenuJourney.Of(c.Events.Select(e => (e.Event, e.DataJson))), c.Outcome, c.Time))],
             [.. live.Select(l => (l, journeys.GetValueOrDefault(l.Call.Id) ?? new TalkWatch.Core.Talk.MenuJourney(null, [])))],
-            _user.FindFirstValue(AccessScopeHolder.DidClaim), normaliser.ToE164)];
+            _user.FindFirstValue(AccessScopeHolder.DidClaim), normaliser.ToE164, BranchAt)];
 
         // Waiting callers, longest wait first: the same rule as Call-backs, over the same window.
         var since = now - TimeSpan.FromDays(Pages.CallBacks.RecentDays);

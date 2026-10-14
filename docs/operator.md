@@ -23,8 +23,10 @@ calls took them.
   rest are counted. Point at the stack to fan it open and scroll through it.
   Choose a card to open the call beside the page.
 - Each stage shows how many calls reached it today. Talk logs nothing when a
-  call passes an opening-hours split, so the branches after one carry the
-  option's traffic in their streams but show no count of their own.
+  call passes an opening-hours split, so each branch's count is worked out
+  from its hours and the time each call came in, and is marked with a `~`.
+  The hours are those the branch has now, so a change to them today shifts
+  the counts for the calls before it.
 - A stage can carry one badge, the most pressing thing about it. An
   opening-hours branch says **Open now** or **Not now**, worked out from its
   hours in the time zone reports use. It says **Hours unknown** when holidays

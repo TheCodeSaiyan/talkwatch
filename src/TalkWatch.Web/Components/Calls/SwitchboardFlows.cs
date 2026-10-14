@@ -20,6 +20,12 @@ public sealed record FlowStage(string Id, string? From, int Column, string Label
     /// and what it leads to only carry the option's traffic on, to set their stream; their count is not shown.
     /// </summary>
     public bool Counted { get; init; } = true;
+
+    /// <summary>
+    /// Whether <see cref="Today"/> was worked out rather than logged: a branch of an opening-hours split, counted by which
+    /// branch each call's time fell in, and what it leads to.
+    /// </summary>
+    public bool Inferred { get; init; }
 }
 
 /// <summary>A caller in the switchboard now: the stage they are at, and the step that put them there.</summary>
@@ -68,17 +74,20 @@ public sealed record SwitchboardFlow(int Id, string Title, IReadOnlyList<string>
 }
 
 /// <summary>A call from today, as far as the flow needs it: where it went in the switchboard and how it ended.</summary>
-public sealed record FlowHistory(MenuJourney Journey, CallOutcome Outcome);
+/// <param name="Time">When the call came in, which says which branch of an opening-hours split it took.</param>
+public sealed record FlowHistory(MenuJourney Journey, CallOutcome Outcome, DateTimeOffset? Time = null);
 
 public static class SwitchboardFlows
 {
     /// <summary>
     /// The switchboards to draw, each with its stages, today's traffic and the callers in it now. With a number chosen
     /// (<paramref name="chosen"/>, E.164), only the switchboards that number reaches; without one, every switchboard on
-    /// the console.
+    /// the console. With <paramref name="branchAt"/>, which of an opening-hours split's branches (by node id) took a
+    /// call at a time, or null when that can't be said, each branch counts the calls it took, marked as inferred.
     /// </summary>
     public static IReadOnlyList<SwitchboardFlow> Build(
-        IReadOnlyList<SwitchboardNodeRow> nodes, IReadOnlyList<FlowHistory> today, IReadOnlyList<(LiveCall Call, MenuJourney Journey)> live, string? chosen, Func<string?, string?> toE164)
+        IReadOnlyList<SwitchboardNodeRow> nodes, IReadOnlyList<FlowHistory> today, IReadOnlyList<(LiveCall Call, MenuJourney Journey)> live, string? chosen, Func<string?, string?> toE164,
+        Func<IReadOnlyList<string>, DateTimeOffset, string?>? branchAt = null)
     {
         ArgumentNullException.ThrowIfNull(nodes);
         ArgumentNullException.ThrowIfNull(today);
@@ -106,6 +115,7 @@ public static class SwitchboardFlows
 
             // Each option and where it leads, a column further in at each step. Opening-hours splits pass through.
             var byInternal = new Dictionary<int, string>();
+            var callsAt = new Dictionary<string, List<FlowHistory>>(StringComparer.Ordinal) { [rootStage] = through };
             void Add(SwitchboardNodeRow parent, string parentStage, int column)
             {
                 foreach (var node in children[parent.NodeId].OrderBy(n => n.Key ?? int.MaxValue).ThenBy(n => n.Title, StringComparer.Ordinal))
@@ -113,15 +123,33 @@ public static class SwitchboardFlows
                     var stage = "n:" + node.NodeId;
                     var isMenu = node.Type == SwitchboardNode.Menu;
                     var nested = isMenu && children[node.NodeId].Any(c => c.Type == SwitchboardNode.Menu);
-                    // A menu option counts the calls that chose it; an opening-hours split, and where calls end up, carry
-                    // on the traffic of the option before them, since Talk logs no step for passing through them.
-                    var count = isMenu && node.InternalId is { } internalId
-                        ? through.Count(c => c.Journey.Choices.Any(ch => ch.ItemId == internalId))
-                        : stages.First(s => s.Id == parentStage).Today;
                     var label = isMenu && node.Key is { } key ? $"{key} · {node.Title}" : !string.IsNullOrWhiteSpace(node.Title) ? node.Title! : Kind(node.Type);
                     var kind = nested ? "menu" : isMenu ? "option" : node.Type == "time" ? "hours" : "destination";
                     var before = stages.First(s => s.Id == parentStage);
-                    stages.Add(new FlowStage(stage, parentStage, column, label, kind, count) { Counted = isMenu || (before.Counted && before.Kind != "hours" && kind != "hours") });
+                    var arriving = callsAt.GetValueOrDefault(parentStage) ?? [];
+
+                    // A menu option counts the calls that chose it. Talk logs no step for passing an opening-hours split,
+                    // so a branch counts the calls whose time fell in it, worked out from its hours, or shows no count;
+                    // where calls end up carries on the count of what leads to it.
+                    List<FlowHistory> calls;
+                    bool counted, inferred;
+                    if (isMenu && node.InternalId is { } internalId)
+                    {
+                        (calls, counted, inferred) = ([.. through.Where(c => c.Journey.Choices.Any(ch => ch.ItemId == internalId))], true, false);
+                    }
+                    else if (kind == "hours" && branchAt is not null)
+                    {
+                        var branches = children[parent.NodeId].Where(n => n.Type == "time").Select(n => n.NodeId).ToList();
+                        (calls, counted, inferred) = ([.. arriving.Where(c => c.Time is { } at && branchAt(branches, at) == node.NodeId)], before.Counted, true);
+                    }
+                    else
+                    {
+                        (calls, counted, inferred) = (arriving, before.Inferred || (before.Counted && before.Kind != "hours" && kind != "hours"), before.Inferred);
+                    }
+
+                    callsAt[stage] = calls;
+                    var count = isMenu || inferred ? calls.Count : before.Today;
+                    stages.Add(new FlowStage(stage, parentStage, column, label, kind, count) { Counted = counted, Inferred = inferred });
                     if (node.InternalId is { } nodeId)
                     {
                         byInternal[nodeId] = stage;
