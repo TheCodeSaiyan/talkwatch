@@ -64,6 +64,10 @@ public sealed partial class TalkWatchApp : IAsyncLifetime
                 b.ConfigureTestServices(s => s.AddHttpClient(TalkSession.HttpClientName, c => c.BaseAddress = new Uri("https://console.test"))
                     .ConfigurePrimaryHttpMessageHandler(() => console));
             }
+            // A query loading two collections at once comes back as every row of one against every row of the other,
+            // and in production EF only warns. Here it fails the test, so a new one is split before it ships.
+            b.ConfigureTestServices(s => s.ConfigureDbContext<TalkWatch.Data.TalkWatchDbContext>(o =>
+                o.ConfigureWarnings(w => w.Throw(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.MultipleCollectionIncludeWarning))));
             if (services is not null)
             {
                 b.ConfigureTestServices(services);

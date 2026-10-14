@@ -210,7 +210,7 @@ public sealed class DemoActivityTests(TalkWatchApp talkwatch) : IClassFixture<Ta
 
         var (held, reports, runs) = await DbAsync(app, async (db, _) => (
             await db.NumberRoles.ToListAsync(Ct),
-            await db.Reports.Include(r => r.Numbers).Include(r => r.Recipients).ToListAsync(Ct),
+            await db.Reports.Include(r => r.Numbers).Include(r => r.Recipients).AsSplitQuery().ToListAsync(Ct),
             await db.ReportRuns.ToListAsync(Ct)));
         var roles = app.Services.CreateScope().ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
         var heldRoles = new List<Permission>();

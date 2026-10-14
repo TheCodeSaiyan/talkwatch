@@ -108,7 +108,7 @@ public static class ApiEndpoints
         });
 
         api.MapGet("/calls/{uuid}", async (string uuid, TalkWatchDbContext db) =>
-            await db.Calls.AsNoTracking().Include(c => c.Lines).Include(c => c.Events).SingleOrDefaultAsync(c => c.TalkUuid == uuid) is { } call
+            await db.Calls.AsNoTracking().Include(c => c.Lines).Include(c => c.Events).AsSplitQuery().SingleOrDefaultAsync(c => c.TalkUuid == uuid) is { } call
                 ? Results.Ok(new { call = Shape(call), events = call.Events.OrderBy(e => e.Sequence).Select(e => new { e.Time, e.Event }) })
                 : Results.NotFound());
 

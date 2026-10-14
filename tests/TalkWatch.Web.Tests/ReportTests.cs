@@ -300,7 +300,7 @@ public sealed partial class ReportTests(TalkWatchApp talkwatch) : IClassFixture<
 
         Assert.Equal(HttpStatusCode.Redirect, again.StatusCode);
         Assert.Contains("saved", again.Headers.Location!.OriginalString, StringComparison.Ordinal);
-        var saved = await DbAsync(app, db => db.Reports.Include(r => r.Recipients).Include(r => r.Numbers).SingleAsync(Ct));
+        var saved = await DbAsync(app, db => db.Reports.Include(r => r.Recipients).Include(r => r.Numbers).AsSplitQuery().SingleAsync(Ct));
         Assert.Equal("Weekly, renamed", saved.Name);
         Assert.Equal([adminId], saved.Recipients.Select(r => r.UserId!.Value));
         Assert.Equal([did], saved.Numbers.Select(n => n.Did));

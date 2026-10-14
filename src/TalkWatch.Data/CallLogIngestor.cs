@@ -77,6 +77,8 @@ public sealed class CallLogIngestor(
             .Where(c => c.SiteId == siteId && uuids.Contains(c.TalkUuid))
             .Include(c => c.Events)
             .Include(c => c.Lines)
+            // Two collections in one query come back as every event against every line; one query for each does not.
+            .AsSplitQuery()
             .ToDictionaryAsync(c => c.TalkUuid, cancellationToken);
 
         // What an answering line's transcript showed about a call outlives this re-read: it is laid over the outcome again.
