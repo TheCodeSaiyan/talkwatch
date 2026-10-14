@@ -9,6 +9,8 @@
 
   <ItemGroup>
     <PackageReference Include="MailKit" />
+    <!-- MailKit's MimeKit asks for a version with known vulnerabilities: see Directory.Packages.props. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
     <PackageReference Include="Npgsql.OpenTelemetry" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
