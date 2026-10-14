@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using TalkWatch.Core.Calls;
 using TalkWatch.Data;
 using TalkWatch.Replay;
+using TalkWatch.Web.Components.Calls;
 using TalkWatch.Web.Services;
 
 namespace TalkWatch.Web.Tests;
@@ -248,5 +249,41 @@ public sealed class DemoScenariosTests(TalkWatchApp talkwatch) : IClassFixture<T
 
         Assert.Equal((cloudDown, degraded), during);
         Assert.Equal((false, false), (platform.CloudDown, platform.Degraded));
+    }
+
+    [Theory]
+    [InlineData("after-hours")]
+    [InlineData("no-audio")]
+    [InlineData("broken-draft")]
+    public async Task A_switchboard_setup_change_shows_while_it_plays_and_is_undone_after(string scenario)
+    {
+        var console = new FixtureConsole(FixtureConsole.DefaultDirectory);
+        await using var app = talkwatch.Create(console);
+        await app.Services.GetRequiredService<LineDirectorySync>().RefreshAsync(Ct);
+
+        async Task<NodeBadge?> BadgeAsync()
+        {
+            using var scope = app.Services.CreateScope();
+            scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UseSystemScope();
+            var rows = await scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>().SwitchboardNodes.AsNoTracking().ToListAsync(Ct);
+            var badges = NodeViews.Badges(NodeViews.Nodes(rows), new DateTimeOffset(2026, 10, 14, 10, 42, 0, TimeSpan.FromHours(1)), TimeZoneInfo.FindSystemTimeZoneById("Europe/London"));
+            return badges.TryGetValue(scenario switch { "after-hours" => "swb_38", "no-audio" => "swb_18", _ => "swb_90" }, out var badge) ? badge : null;
+        }
+
+        var before = await BadgeAsync();
+        var expected = scenario switch { "after-hours" => NodeBadge.OpenNow, "no-audio" => NodeBadge.MissingAudio, _ => NodeBadge.Off };
+        _ = Scenarios(app, console, new HeldAtTheMinute()).Start(scenario);
+        NodeBadge? during = null;
+        for (var i = 0; i < 100 && during != expected; i++)
+        {
+            await Task.Delay(50, Ct);
+            during = await BadgeAsync();
+        }
+
+        await Scenarios(app, console, new NoWaiting()).Start(scenario)!;
+
+        Assert.Equal(expected, during);
+        Assert.NotEqual(expected, before);
+        Assert.Equal(before, await BadgeAsync());
     }
 }
