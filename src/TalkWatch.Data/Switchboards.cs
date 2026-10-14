@@ -78,7 +78,25 @@ public sealed class SwitchboardNodeSnapshot
 
 /// <summary>A menu option, with what became of the calls that chose it.</summary>
 /// <param name="Label">The keys and titles on the way, such as "1 Sales › 2 New orders".</param>
-public sealed record MenuOptionStatistics(string Label, int Calls, int Answered, int Missed, int Voicemail, int HungUp);
+public sealed record MenuOptionStatistics(string Label, int Calls, int Answered, int Missed, int Voicemail, int HungUp)
+{
+    /// <summary>The option's node, the last one chosen on the way; null when the switchboard no longer has it.</summary>
+    public string? NodeId { get; init; }
+
+    /// <summary>How its calls divided between the branches of an opening-hours split under it; empty when there is none.</summary>
+    public HoursSplit? Hours { get; init; }
+}
+
+/// <summary>
+/// The branches of an opening-hours split and the calls each took. Talk logs no step for passing a split, so each call's
+/// branch is worked out from its time and the branches' hours as they were then: the setup kept at or before the call,
+/// or the first kept when the call came before any.
+/// </summary>
+/// <param name="Unplaced">Calls whose branch can't be said: holidays on with dates TalkWatch can't read, or no setup kept.</param>
+public sealed record HoursSplit(IReadOnlyList<BranchStatistics> Branches, int Unplaced);
+
+/// <summary>One branch of an opening-hours split, with what became of the calls it took.</summary>
+public sealed record BranchStatistics(string NodeId, string Label, bool OutOfHours, int Calls, int Answered, int Missed, int Voicemail);
 
 /// <summary>
 /// What happened to the calls one switchboard answered in a period. Counted through the person's access scope, like the
@@ -94,14 +112,19 @@ public sealed record SwitchboardStatistics(
     int HungUpInGreeting, TimeSpan? MedianHangUp, int? HungUpBeforeGreetingEnded, int HungUpRepeatCallers,
     IReadOnlyList<MenuOptionStatistics> Options, int NoChoice)
 {
-    public static async Task<IReadOnlyList<SwitchboardStatistics>> ComputeAsync(TalkWatchDbContext db, DateTimeOffset start, DateTimeOffset end, CancellationToken cancellationToken)
+    /// <summary>How calls that chose nothing divided between the branches of an opening-hours split on the switchboard itself.</summary>
+    public HoursSplit? Hours { get; init; }
+
+    /// <param name="zone">The zone opening hours are read in; without one, no split is worked out.</param>
+    public static async Task<IReadOnlyList<SwitchboardStatistics>> ComputeAsync(
+        TalkWatchDbContext db, DateTimeOffset start, DateTimeOffset end, CancellationToken cancellationToken, TimeZoneInfo? zone = null)
     {
         (start, end) = (start.ToUniversalTime(), end.ToUniversalTime());
         var calls = await db.Calls.AsNoTracking()
             .Where(c => c.Direction == "in" && c.Time >= start && c.Time < end && c.Outcome != CallOutcome.Blocked)
             .Select(c => new
             {
-                c.Id, c.Outcome, c.FromE164,
+                c.Id, c.Outcome, c.FromE164, c.Time,
                 Events = c.Events.OrderBy(e => e.Sequence).Select(e => new { e.Event, e.Time, e.DataJson }).ToList(),
             })
             .ToListAsync(cancellationToken);
@@ -120,6 +143,7 @@ public sealed record SwitchboardStatistics(
 
         var nodes = await db.SwitchboardNodes.AsNoTracking().ToListAsync(cancellationToken);
         var byInternal = nodes.Where(n => n.InternalId is not null).GroupBy(n => n.InternalId!.Value).ToDictionary(g => g.Key, g => g.OrderByDescending(n => n.Present).First());
+        var splits = zone is null ? null : await HoursSplits.ReadAsync(db, nodes, zone, cancellationToken);
 
         var result = new List<SwitchboardStatistics>();
         foreach (var group in journeys.GroupBy(j => j.Journey.SwitchboardId!.Value))
@@ -134,9 +158,17 @@ public sealed record SwitchboardStatistics(
 
             var options = group.Where(j => j.Journey.Choices.Count > 0)
                 .GroupBy(j => string.Join(" › ", j.Journey.Choices.Select(Name)))
-                .Select(g => new MenuOptionStatistics(g.Key, g.Count(),
-                    g.Count(j => j.Call.Outcome == CallOutcome.Answered), g.Count(j => j.Call.Outcome.IsMissed()),
-                    g.Count(j => j.Call.Outcome.IsVoicemail()), g.Count(j => j.Call.Outcome == CallOutcome.HungUpAtSwitchboard)))
+                .Select(g =>
+                {
+                    var option = byInternal.GetValueOrDefault(g.First().Journey.Choices[^1].ItemId);
+                    return new MenuOptionStatistics(g.Key, g.Count(),
+                        g.Count(j => j.Call.Outcome == CallOutcome.Answered), g.Count(j => j.Call.Outcome.IsMissed()),
+                        g.Count(j => j.Call.Outcome.IsVoicemail()), g.Count(j => j.Call.Outcome == CallOutcome.HungUpAtSwitchboard))
+                    {
+                        NodeId = option?.NodeId,
+                        Hours = option is null ? null : splits?.Of(option.NodeId, [.. g.Where(j => j.Call.Outcome != CallOutcome.HungUpAtSwitchboard).Select(j => (j.Call.Time, j.Call.Outcome))]),
+                    };
+                })
                 .OrderByDescending(o => o.Calls).ThenBy(o => o.Label, StringComparer.Ordinal)
                 .ToList();
 
@@ -155,9 +187,93 @@ public sealed record SwitchboardStatistics(
                 root?.GreetingSeconds is { } greeting ? inGreeting.Count(j => j.Lasted is { } t && t.TotalSeconds < greeting) : null,
                 inGreeting.Count(j => j.Call.FromE164 is { } from && repeat.Contains(from)),
                 options,
-                hasMenu ? group.Count(j => j.Journey.Choices.Count == 0 && j.Call.Outcome != CallOutcome.HungUpAtSwitchboard) : 0));
+                hasMenu ? group.Count(j => j.Journey.Choices.Count == 0 && j.Call.Outcome != CallOutcome.HungUpAtSwitchboard) : 0)
+            {
+                Hours = root is null ? null : splits?.Of(root.NodeId,
+                    [.. group.Where(j => j.Journey.Choices.Count == 0 && j.Call.Outcome != CallOutcome.HungUpAtSwitchboard).Select(j => (j.Call.Time, j.Call.Outcome))]),
+            });
         }
 
         return [.. result.OrderByDescending(s => s.Calls)];
+    }
+}
+
+/// <summary>Each opening-hours split's branches as they were set up over time, from the snapshots kept of them.</summary>
+internal sealed class HoursSplits
+{
+    private readonly ILookup<string, SwitchboardNodeRow> _children;
+    private readonly Dictionary<string, List<SwitchboardNodeSnapshot>> _snapshots;
+    private readonly Dictionary<string, SwitchboardNodeRow> _rows;
+    private readonly TimeZoneInfo _zone;
+    private readonly Dictionary<string, SwitchboardNode?> _parsed = new(StringComparer.Ordinal);
+
+    private HoursSplits(IReadOnlyList<SwitchboardNodeRow> nodes, List<SwitchboardNodeSnapshot> snapshots, TimeZoneInfo zone)
+    {
+        _children = nodes.Where(n => n.Present && n.ParentId is not null).ToLookup(n => n.ParentId!, StringComparer.Ordinal);
+        _rows = nodes.ToDictionary(n => n.NodeId, StringComparer.Ordinal);
+        _snapshots = snapshots.GroupBy(s => s.NodeId, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.OrderBy(s => s.CapturedAt).ToList(), StringComparer.Ordinal);
+        _zone = zone;
+    }
+
+    public static async Task<HoursSplits> ReadAsync(TalkWatchDbContext db, IReadOnlyList<SwitchboardNodeRow> nodes, TimeZoneInfo zone, CancellationToken cancellationToken)
+    {
+        var timed = nodes.Where(n => n.Type == "time").Select(n => n.NodeId).ToList();
+        var snapshots = await db.SwitchboardNodeSnapshots.AsNoTracking().Where(s => timed.Contains(s.NodeId)).ToListAsync(cancellationToken);
+        return new HoursSplits(nodes, snapshots, zone);
+    }
+
+    /// <summary>How these calls divided between the branches of the split under a node; null when it has none.</summary>
+    public HoursSplit? Of(string nodeId, IReadOnlyList<(DateTimeOffset Time, CallOutcome Outcome)> calls)
+    {
+        var branches = _children[nodeId].Where(n => n.Type == "time").ToList();
+        if (branches.Count == 0)
+        {
+            return null;
+        }
+
+        var took = new Dictionary<string, List<CallOutcome>>(StringComparer.Ordinal);
+        var unplaced = 0;
+        foreach (var (time, outcome) in calls)
+        {
+            var then = branches.Select(b => SetupAt(b.NodeId, time)).OfType<SwitchboardNode>().ToList();
+            if (then.Count == branches.Count && OpeningHoursEvaluator.Branch(then, time, _zone) is { } branch)
+            {
+                (took.TryGetValue(branch.Id, out var list) ? list : took[branch.Id] = []).Add(outcome);
+            }
+            else
+            {
+                unplaced++;
+            }
+        }
+
+        return new HoursSplit(
+            [.. branches.OrderBy(b => b.IsDefaultTime == true).ThenBy(b => b.Title, StringComparer.Ordinal).Select(b =>
+            {
+                var outcomes = took.GetValueOrDefault(b.NodeId) ?? [];
+                return new BranchStatistics(b.NodeId, string.IsNullOrWhiteSpace(b.Title) ? (b.IsDefaultTime == true ? "Out of hours" : "Opening hours") : b.Title!,
+                    b.IsDefaultTime == true, outcomes.Count, outcomes.Count(o => o == CallOutcome.Answered), outcomes.Count(o => o.IsMissed()), outcomes.Count(o => o.IsVoicemail()));
+            })],
+            unplaced);
+    }
+
+    // The branch as it was set up at a time: the setup kept at or before it, or the first kept when the time came before
+    // any, on the footing that it had not changed before TalkWatch first saw it; the node as it is now when none is kept.
+    private SwitchboardNode? SetupAt(string nodeId, DateTimeOffset time)
+    {
+        var json = _snapshots.TryGetValue(nodeId, out var kept) && kept.Count > 0
+            ? (kept.LastOrDefault(s => s.CapturedAt <= time) ?? kept[0]).Json
+            : _rows.GetValueOrDefault(nodeId)?.Json;
+        if (json is null)
+        {
+            return null;
+        }
+
+        var key = nodeId + "\n" + json;
+        if (!_parsed.TryGetValue(key, out var node))
+        {
+            _parsed[key] = node = Switchboard.ParseNode(nodeId, json);
+        }
+
+        return node;
     }
 }

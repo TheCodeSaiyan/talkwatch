@@ -1,0 +1,20 @@
+@* The branches of an opening-hours split as rows under the option that leads to them: the calls each took, worked out
+   from each call's time and the branch's hours as they were then, since Talk logs no step for passing a split. *@
+@using TalkWatch.Data
+
+@foreach (var branch in Split.Branches)
+{
+    <tr class="branch" data-branch="@branch.NodeId">
+        <td><span class="faint" aria-hidden="true">↳ </span>@branch.Label <span class="cap" data-c="derived" title="Worked out from each call's time and the branch's hours then: Talk doesn't log which branch a call took">inferred</span></td><td>@branch.Calls</td><td>@branch.Answered</td><td>@branch.Missed</td><td>@branch.Voicemail</td><td></td>
+    </tr>
+}
+@if (Split.Unplaced > 0)
+{
+    <tr class="branch" data-branch="unplaced">
+        <td><span class="faint" aria-hidden="true">↳ </span><em>Branch not known</em></td><td>@Split.Unplaced</td><td colspan="4" class="muted" style="font-size: 12px">Holidays were on with dates TalkWatch can't read, or no setup was kept.</td>
+    </tr>
+}
+
+@code {
+    [Parameter, EditorRequired] public HoursSplit Split { get; set; } = default!;
+}

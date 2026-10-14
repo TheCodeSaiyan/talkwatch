@@ -73,6 +73,10 @@ public static class Switchboard
         return nodes;
     }
 
+    /// <summary>One node from its id and its JSON as Talk sent it, as <see cref="Parse"/> reads it; null when it isn't an object.</summary>
+    public static SwitchboardNode? ParseNode(string id, string json) =>
+        Parse("{\"entities\":{\"nodes\":{\"byId\":{" + JsonSerializer.Serialize(id) + ":" + json + "}}}}").SingleOrDefault();
+
     private static string? Text(JsonElement node, string name) =>
         node.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
