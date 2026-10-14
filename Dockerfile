@@ -1,6 +1,6 @@
 # The SDK stage runs on the build machine's own architecture and cross-compiles for the target,
 # so an arm64 image does not need a whole build under emulation.
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0@sha256:e70cdb7f80b0348f5cb85f19a8f670fca061f033d57eed12fa003d58b0e06317 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0@sha256:0d99ebf1ccad15037b5c98c9fe8979d6b8dbac23812feae2277a0b277b5c5ffa AS build
 ARG TARGETARCH
 # Restores are held to the lock files (CI=true): a package that changed, or would resolve differently, fails the build.
 ENV CI=true
