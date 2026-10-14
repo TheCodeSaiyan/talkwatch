@@ -75,4 +75,27 @@ public sealed partial class OperatorSwitchboardTests(TalkWatchApp talkwatch) : I
         Assert.DoesNotContain("data-switchboard=\"15\"", page, StringComparison.Ordinal);
         Assert.Contains("data-switchboard=\"45\"", page, StringComparison.Ordinal);
     }
+
+    // A node on the flow: its opening tag and what it holds, up to its closing tag.
+    [GeneratedRegex("""<button type="button" class="([^"]*)"[^>]*data-stage="([^"]+)"[^>]*>(.*?)</button>""", RegexOptions.Singleline)]
+    private static partial Regex NodeButton();
+
+    [Fact]
+    public async Task Each_switchboard_node_opens_its_panel_and_an_hours_split_says_which_branch_is_taking_calls()
+    {
+        var (app, browser, _) = await StartAsync();
+        await using var _ = app;
+        using var __ = browser;
+
+        var page = WebUtility.HtmlDecode(await browser.GetStringAsync(new Uri("/operator", UriKind.Relative), Ct));
+
+        var nodes = NodeButton().Matches(page).ToDictionary(m => m.Groups[2].Value, m => m.Groups[3].Value);
+        Assert.Contains("n:swb_16", nodes.Keys);
+        // Switchboard 15's option 1 splits by weekday hours (swb_39) with a default branch (swb_38): exactly one takes calls now.
+        var branches = new[] { nodes["n:swb_39"], nodes["n:swb_38"] };
+        Assert.Single(branches, b => b.Contains("data-b=\"open\"", StringComparison.Ordinal));
+        Assert.Single(branches, b => b.Contains("data-b=\"closed\"", StringComparison.Ordinal));
+        // No panel until a node is chosen, so nothing of any node's setup is on the page.
+        Assert.DoesNotContain("data-node=", page, StringComparison.Ordinal);
+    }
 }

@@ -90,7 +90,8 @@ public static class NodeHealth
         return flags;
     }
 
-    private static bool IsDisabled(SwitchboardNode node, Dictionary<string, SwitchboardNode> byId)
+    /// <summary>Whether the node, or one above it, is switched off, so no caller reaches it.</summary>
+    public static bool IsDisabled(SwitchboardNode node, IReadOnlyDictionary<string, SwitchboardNode> byId)
     {
         for (SwitchboardNode? at = node; at is not null; at = at.ParentId is { } parent && byId.TryGetValue(parent, out var up) ? up : null)
         {

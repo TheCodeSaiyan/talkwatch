@@ -25,6 +25,31 @@ calls took them.
 - Each stage shows how many calls reached it today. Talk logs nothing when a
   call passes an opening-hours split, so the branches after one carry the
   option's traffic in their streams but show no count of their own.
+- A stage can carry one badge, the most pressing thing about it. An
+  opening-hours branch says **Open now** or **Not now**, worked out from its
+  hours in the time zone reports use. It says **Hours unknown** when holidays
+  are on but TalkWatch can't read their dates, because then it won't guess.
+  **Off** means the stage is switched off in Talk. **No audio** and **Audio
+  pending** mean its greeting is missing or still being generated. **Goes
+  nowhere** means there's nothing to put callers through to.
+
+### A stage's panel
+
+Choose a switchboard stage to open its panel beside the flow, without leaving
+the page. It shows what callers hear, with a button to play the greeting.
+Each play is written to the audit log, as playing a recording is. It also
+shows where each key or branch goes and what happens when a caller presses
+nothing. Then come the week's opening hours, with the time zone they're read
+in, and anything wrong with the stage. Esc closes it.
+
+Someone who may see every line's calls also sees the setup: who a caller may
+reach by dialling an extension, who gets voicemail, the hold music and the
+greeting's file. They also see what a switched-off stage would raise if it
+were switched on. Then there's a list of changes. TalkWatch keeps a copy of
+each stage's setup whenever it changes, so the list can say when a greeting
+changed or a stage was switched off. The copies are kept as long as calls
+are; see [Retention](retention.md). Anyone else's panel doesn't hold any of
+this, so it never reaches their browser.
 
 ## Who's free, and who's waiting
 
