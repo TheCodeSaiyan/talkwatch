@@ -56,7 +56,7 @@ public sealed partial class AlertService(
         await WithDbAsync(async (db, site) =>
         {
             var uuids = recent.Select(r => r.Uuid).ToList();
-            var calls = await db.Calls.Include(c => c.Lines).Include(c => c.Events).Where(c => uuids.Contains(c.TalkUuid)).ToListAsync(cancellationToken);
+            var calls = await db.Calls.Include(c => c.Lines).Include(c => c.Events).AsSplitQuery().Where(c => uuids.Contains(c.TalkUuid)).ToListAsync(cancellationToken);
             var names = await CallerNames.ForAsync(db, calls.Select(c => c.FromE164), cancellationToken);
             foreach (var call in calls)
             {
@@ -144,7 +144,7 @@ public sealed partial class AlertService(
     /// </summary>
     public async Task RaiseCallLateAsync(Guid callId, AlertEventType type, TimeSpan recentEnough, CancellationToken cancellationToken) => await WithDbAsync(async (db, site) =>
     {
-        var call = await db.Calls.Include(c => c.Lines).Include(c => c.Events).SingleOrDefaultAsync(c => c.Id == callId, cancellationToken);
+        var call = await db.Calls.Include(c => c.Lines).Include(c => c.Events).AsSplitQuery().SingleOrDefaultAsync(c => c.Id == callId, cancellationToken);
         if (call is null || clock.GetUtcNow() - call.Time > recentEnough)
         {
             return;
@@ -200,7 +200,7 @@ public sealed partial class AlertService(
     /// </summary>
     public async Task RaiseVoicemailTranscribedAsync(Guid callId, string transcript, TimeSpan recentEnough, CancellationToken cancellationToken) => await WithDbAsync(async (db, site) =>
     {
-        var call = await db.Calls.Include(c => c.Lines).Include(c => c.Events).SingleOrDefaultAsync(c => c.Id == callId, cancellationToken);
+        var call = await db.Calls.Include(c => c.Lines).Include(c => c.Events).AsSplitQuery().SingleOrDefaultAsync(c => c.Id == callId, cancellationToken);
         if (call is null || !call.Outcome.IsVoicemail() || clock.GetUtcNow() - call.Time > recentEnough)
         {
             return;
@@ -403,7 +403,7 @@ public sealed partial class AlertService(
             return new DryRun(0, [], "Only flows that start on an incoming call, a missed call, a voicemail, a transcribed voicemail or a hang-up in the menu can be tried on past calls.");
         }
 
-        var calls = await db.Calls.AsNoTracking().Include(c => c.Lines).Include(c => c.Events)
+        var calls = await db.Calls.AsNoTracking().Include(c => c.Lines).Include(c => c.Events).AsSplitQuery()
             .Where(c => c.Time >= since && c.Direction == "in").OrderByDescending(c => c.Time).Take(DryRunCalls).ToListAsync(cancellationToken);
         var transcripts = flow.Trigger == AlertEventType.VoicemailTranscribed
             ? await db.CallTranscripts.AsNoTracking().Where(t => calls.Select(c => c.Id).Contains(t.CallId)).ToDictionaryAsync(t => t.CallId, t => t.Text, cancellationToken)

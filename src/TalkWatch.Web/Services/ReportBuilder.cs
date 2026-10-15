@@ -52,7 +52,7 @@ public sealed class ReportBuilder(IServiceScopeFactory scopes, IOptions<SiteOpti
         using var scope = scopes.CreateScope();
         scope.ServiceProvider.GetRequiredService<AccessScopeHolder>().UseSystemScope();
         var db = scope.ServiceProvider.GetRequiredService<TalkWatchDbContext>();
-        var report = await db.Reports.Include(r => r.Recipients).Include(r => r.Numbers).SingleAsync(r => r.Id == reportId, cancellationToken);
+        var report = await db.Reports.Include(r => r.Recipients).Include(r => r.Numbers).AsSplitQuery().SingleAsync(r => r.Id == reportId, cancellationToken);
         var (from, to) = ReportTiming.PeriodOf(report, runAt, Zone);
 
         var channelIds = report.Recipients.Select(r => r.ChannelId).OfType<Guid>().ToList();

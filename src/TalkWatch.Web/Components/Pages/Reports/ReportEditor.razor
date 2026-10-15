@@ -221,7 +221,7 @@ else
     {
         if (Id is { } id)
         {
-            _report = await Db.Reports.AsNoTracking().Include(r => r.Recipients).Include(r => r.Numbers).SingleOrDefaultAsync(r => r.Id == id);
+            _report = await Db.Reports.AsNoTracking().Include(r => r.Recipients).Include(r => r.Numbers).AsSplitQuery().SingleOrDefaultAsync(r => r.Id == id);
         }
         else
         {
