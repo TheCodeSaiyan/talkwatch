@@ -37,6 +37,8 @@ calls took them.
 
 ### A stage's panel
 
+![The main switchboard's panel: its greeting, where each key goes, its health, and the setup an admin sees](images/operator-panel.png)
+
 Choose a switchboard stage to open its panel beside the flow, without leaving
 the page. It shows what callers hear, with a button to play the greeting.
 Each play is written to the audit log, as playing a recording is. It also
