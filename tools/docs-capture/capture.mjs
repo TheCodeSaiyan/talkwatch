@@ -73,9 +73,11 @@ async function record(page, name, run, { keep } = {}) {
   log('recorded', name, frames.length, 'frames', marks.length, 'marks');
 }
 
-// Plays one of the demo's scenarios from its bar, hidden or not: the bar answers a click like any button.
-async function scenario(page, label) {
-  await page.locator('[data-demobar] button', { hasText: label }).first().dispatchEvent('click');
+// Plays one of the demo's scenarios from its bar, hidden or not: the bar answers a click like any button. The bar shows
+// one kind of scenario at a time, so the kind is chosen first.
+async function scenario(page, kind, label) {
+  await page.locator('[data-demobar] .demobar-kinds button', { hasText: kind }).first().dispatchEvent('click');
+  await page.locator('[data-demobar] .demobar-buttons button', { hasText: label }).first().dispatchEvent('click');
   log('scenario', label);
 }
 
@@ -116,11 +118,19 @@ async function operatorRide() {
     await page.goto(base + '/operator');
     const board = page.locator('section[aria-label="Main switchboard"]');
     await board.waitFor({ state: 'attached', timeout: 60000 });
-    // Not Playwright's own scroll, which waits for the section to stop moving: its streams never do.
-    await board.evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
+    // Not Playwright's own scroll, which waits for the section to stop moving: its streams never do. After the page has
+    // settled, since a scroll before then is lost as the page fills in, and the menu then sits below the picture.
     await settle(page);
+    await board.evaluate((el) => {
+      el.scrollIntoView({ block: 'start', behavior: 'instant' });
+      // Clear of the rail, which stays at the top of the window and would otherwise be in the picture.
+      scrollBy(0, -(document.querySelector('.rail, header')?.getBoundingClientRect().bottom ?? 0) - 8);
+    });
+    // An alert from one of the demo's own calls would pop up over the flow mid-ride.
+    await page.addStyleTag({ content: '[data-popup] { visibility: hidden !important; }' });
+    await wait(300);
     await record(page, 'operator-ride', async (mark) => {
-      await scenario(page, 'Presses 1, then 2');
+      await scenario(page, 'Switchboard', 'Presses 1, then 2');
       await wait(4500);
       mark('start');
       await wait(9500);
@@ -130,6 +140,32 @@ async function operatorRide() {
     await page.context().close();
   } catch (e) {
     log('FAILED operator-ride', e.message);
+  }
+}
+
+// Operator with callers in the main switchboard's menu: three set going a few seconds apart, so they are at different
+// stages when the picture is taken, with option 2's prompt lost so a badge shows something wrong. Then the main
+// switchboard's own panel, opened from its node.
+async function operatorShots(page) {
+  await page.goto(base + '/operator');
+  await settle(page);
+  await scenario(page, 'Switchboard', 'A prompt loses its audio');
+  await wait(2000);
+  await scenario(page, 'Switchboard', 'Presses 1, then 2');
+  await wait(4000);
+  await scenario(page, 'Switchboard', 'Presses a wrong key');
+  await wait(3000);
+  await scenario(page, 'Switchboard', 'Hangs up in the menu');
+  await wait(4500);
+  await page.locator('section[aria-label="Main switchboard"]').evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
+  await shot(page, 'operator', { settleMs: 400 });
+  try {
+    await page.locator('section[aria-label="Main switchboard"] button.node[data-kind=menu]').first().dispatchEvent('click');
+    await page.locator('aside.sb-panel').waitFor({ timeout: 15000 });
+    await shot(page, 'operator-panel');
+    await page.keyboard.press('Escape');
+  } catch (e) {
+    log('FAILED operator-panel', e.message);
   }
 }
 
@@ -248,7 +284,7 @@ async function alertPopup() {
       // A pop-up already showing, from one of the demo's own calls, would leave nothing to see arrive.
       await page.locator('[data-popup]').waitFor({ state: 'detached', timeout: 60000 }).catch(() => {});
       const asked = Date.now();
-      await scenario(page, 'Missed call alert');
+      await scenario(page, 'Alerts', 'Missed call alert');
       await page.locator('[data-popup]').waitFor({ timeout: 150000 });
       const at = Date.now();
       // From a moment before it arrives, so the eye is on the page when it does.
@@ -317,6 +353,21 @@ if (process.env.TW_ONLY === 'operator-ride') {
   process.exit(0);
 }
 
+// Operator's pictures and the Switchboards page, after a change to the switchboard's drawing.
+if (process.env.TW_ONLY === 'operator') {
+  try {
+    const page = await signedIn();
+    await operatorShots(page);
+    await wait(50000);
+    await visit(page, '/switchboard', 'switchboards', { full: true });
+    await page.context().close();
+  } catch (e) { log('FAILED', e.stack); }
+  await operatorRide();
+  await browser.close();
+  log('done');
+  process.exit(0);
+}
+
 if (process.env.TW_ONLY === 'call-detail') {
   try { await callDetail(await signedIn()); } catch (e) { log('FAILED', e.stack); }
   await browser.close();
@@ -336,18 +387,7 @@ try {
   const page = await signedIn();
 
   await nowShots(page);
-  // Operator with callers in the main switchboard's menu: three set going a few seconds apart, so they are at different
-  // stages when the picture is taken.
-  await page.goto(base + '/operator');
-  await settle(page);
-  await scenario(page, 'Presses 1, then 2');
-  await wait(4000);
-  await scenario(page, 'Presses a wrong key');
-  await wait(3000);
-  await scenario(page, 'Hangs up in the menu');
-  await wait(4500);
-  await page.locator('section[aria-label="Main switchboard"]').evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
-  await shot(page, 'operator', { settleMs: 400 });
+  await operatorShots(page);
   // Each scenario plays out in about a minute: let them finish before the next pictures.
   await wait(50000);
   await visit(page, '/calls', 'calls');
