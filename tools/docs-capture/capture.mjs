@@ -14,15 +14,17 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
 
-async function signedIn({ theme = 'dark', width = 1440, height = 900, mobile = false } = {}) {
+async function signedIn({ theme = 'dark', width = 1440, height = 900, mobile = false, popups = false } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, colorScheme: theme, isMobile: mobile, hasTouch: mobile, deviceScaleFactor: mobile ? 2 : 1 });
   const page = await context.newPage();
-  // The demo's scenario bar stays out of every picture: it floats over the page, and isn't TalkWatch's own.
-  await context.addInitScript(() => addEventListener('DOMContentLoaded', () => {
+  // The demo's scenario bar stays out of every picture: it floats over the page, and isn't TalkWatch's own. So do the
+  // alerts the demo's own calls pop up, which land on whatever page is being taken, except where they are the subject.
+  const hidden = popups ? '[data-demobar]' : '[data-demobar], [data-popup]';
+  await context.addInitScript((hidden) => addEventListener('DOMContentLoaded', () => {
     const style = document.createElement('style');
-    style.textContent = '[data-demobar] { visibility: hidden !important; }';
+    style.textContent = hidden + ' { visibility: hidden !important; }';
     document.head.appendChild(style);
-  }));
+  }), hidden);
   await page.goto(base + '/signin');
   await page.fill('input[name=Username]:not([type=hidden])', 'alex.morgan');
   await page.fill('input[name=Password]:not([type=hidden])', 'docs-capture-passphrase');
@@ -245,12 +247,13 @@ async function guideShots(page) {
   } catch (e) { log('FAILED flow-try', e.message); }
 
   await visit(page, '/reports/new', 'report-new');
-  // Each outside number folds away; the first is opened, to show what's set on one.
+  // Each outside number folds away; the first is opened, to show what's set on one. Opened rather than clicked, since one
+  // somebody carries is open already and a click would fold it.
   for (const [route, name] of [['/admin/outside-voicemail', 'outside-voicemail'], ['/admin/outside-phones', 'outside-phones']]) {
     try {
       await page.goto(base + route);
       await settle(page);
-      await page.locator('main details > summary').first().click();
+      await page.locator('main details').first().evaluate((d) => { d.open = true; });
       await shot(page, name, { full: true, settleMs: 500 });
     } catch (e) { log('FAILED', name, e.message); }
   }
@@ -277,7 +280,7 @@ async function guideShots(page) {
 // scenario and the example flow that notifies the signed-in person.
 async function alertPopup() {
   try {
-    const page = await signedIn();
+    const page = await signedIn({ popups: true });
     await page.goto(base + '/live');
     await settle(page);
     await record(page, 'alert-popup', async (mark) => {
@@ -285,7 +288,8 @@ async function alertPopup() {
       await page.locator('[data-popup]').waitFor({ state: 'detached', timeout: 60000 }).catch(() => {});
       const asked = Date.now();
       await scenario(page, 'Alerts', 'Missed call alert');
-      await page.locator('[data-popup]').waitFor({ timeout: 150000 });
+      // The scenario's own: the demo's calls raise other alerts all the while, put through outside or poor quality.
+      await page.locator('[data-popup]', { hasText: 'Missed call' }).waitFor({ timeout: 150000 });
       const at = Date.now();
       // From a moment before it arrives, so the eye is on the page when it does.
       mark('start', at - 1500);
